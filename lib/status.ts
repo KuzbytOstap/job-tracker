@@ -10,6 +10,20 @@ export const TERMINAL_STATUSES: readonly Status[] = [
   Status.IGNORED,
 ];
 
+export const REPLIED_OR_FURTHER_STATUSES: ReadonlySet<Status> = new Set([
+  Status.HR_REPLIED,
+  Status.HR_CALL,
+  Status.TECH_INTERVIEW,
+  Status.TEST_TASK,
+  Status.OFFER,
+]);
+
+export const INTERVIEW_OR_FURTHER_STATUSES: ReadonlySet<Status> = new Set([
+  Status.TECH_INTERVIEW,
+  Status.TEST_TASK,
+  Status.OFFER,
+]);
+
 export type StatusSource = Pick<JobApplication, "status" | "lastActivityAt">;
 
 export function effectiveStatus(application: StatusSource, now: Date): Status {
