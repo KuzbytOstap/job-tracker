@@ -7,8 +7,7 @@ import type {
   StatsResponse,
   UpdateApplicationPayload,
 } from "@/lib/api-types";
-import type { SortOption } from "@/lib/validation";
-import type { Status } from "@/app/generated/prisma/client";
+import type { SortOption, StatusFilter } from "@/lib/validation";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -50,7 +49,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export type GetApplicationsParams = {
-  status?: Status | "ALL";
+  status?: StatusFilter;
   sort?: SortOption;
   q?: string;
 };

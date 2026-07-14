@@ -1,22 +1,7 @@
 import { Platform, Status } from "@/app/generated/prisma/enums";
 import type { SortOption } from "@/lib/validation";
 
-export type StatusFilter = Status | "ALL";
-
-export const STATUS_TAB_ORDER: StatusFilter[] = [
-  "ALL",
-  Status.APPLIED,
-  Status.HR_REPLIED,
-  Status.HR_CALL,
-  Status.TECH_INTERVIEW,
-  Status.TEST_TASK,
-  Status.OFFER,
-  Status.REJECTED,
-  Status.IGNORED,
-];
-
-export const STATUS_LABELS: Record<StatusFilter, string> = {
-  ALL: "All",
+export const STATUS_LABELS: Record<Status, string> = {
   APPLIED: "Applied",
   HR_REPLIED: "HR replied",
   HR_CALL: "HR call",

@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import { DashboardPage } from "@/components/dashboard/dashboard-page";
+import { BoardShell } from "@/components/board/board-shell";
 
 export default function Home() {
-  return (
-    <Suspense>
-      <DashboardPage />
-    </Suspense>
-  );
+  return <BoardShell />;
 }

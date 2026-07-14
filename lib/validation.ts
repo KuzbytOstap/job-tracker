@@ -9,6 +9,8 @@ export const STATUS_FILTER_VALUES = [...STATUS_VALUES, "ALL"] as [
   ...Array<Status | "ALL">,
 ];
 
+export type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
+
 export const SORT_VALUES = ["newest", "oldest", "activity", "company"] as const;
 export type SortOption = (typeof SORT_VALUES)[number];
 

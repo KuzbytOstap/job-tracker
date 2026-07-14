@@ -20,7 +20,7 @@ export function ApplicationCard({ application, onSelect }: ApplicationCardProps)
 
   return (
     <motion.div
-      layout="position"
+      layoutId={application.id}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}

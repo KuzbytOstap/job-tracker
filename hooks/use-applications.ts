@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getApplications, type GetApplicationsParams } from "@/lib/api";
 
 export function useApplicationsQuery(params: GetApplicationsParams) {
@@ -9,6 +9,10 @@ export function useApplicationsQuery(params: GetApplicationsParams) {
   return useQuery({
     queryKey: ["applications", status, sort, q],
     queryFn: () => getApplications({ status, sort, q }),
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousQuery) return undefined;
+      const previousStatus = previousQuery.queryKey[1];
+      return previousStatus === status ? previousData : undefined;
+    },
   });
 }
