@@ -4,9 +4,9 @@ import { motion } from "motion/react";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { cn } from "@/lib/utils";
 import type { ApplicationDTO } from "@/lib/api-types";
 
@@ -57,19 +57,7 @@ export function ApplicationCard({ application, onSelect }: ApplicationCardProps)
           <div className="flex flex-wrap items-center gap-1.5">
             <PlatformBadge platform={application.platform} />
             <StatusBadge status={application.effectiveStatus} />
-            {application.hasTestTask && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "border-transparent",
-                  application.testTaskDone
-                    ? "bg-green-100 text-green-700 dark:bg-green-400/15 dark:text-green-300"
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
-                )}
-              >
-                {application.testTaskDone ? "Test task done" : "Test task pending"}
-              </Badge>
-            )}
+            {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

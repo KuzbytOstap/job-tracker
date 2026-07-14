@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { BoardColumnConfig } from "@/lib/board-columns";
+import { getStatusPageHref, type BoardColumnConfig } from "@/lib/board-columns";
 
 type KanbanColumnHeaderProps = {
   column: BoardColumnConfig;
@@ -13,7 +13,7 @@ export function KanbanColumnHeader({ column, count }: KanbanColumnHeaderProps) {
 
   return (
     <Link
-      href={`/status/${column.slug}`}
+      href={getStatusPageHref(column.status)}
       className="group flex shrink-0 items-center gap-2 rounded-t-xl px-3.5 py-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <span className={cn("size-2 shrink-0 rounded-full", column.dotClassName)} />

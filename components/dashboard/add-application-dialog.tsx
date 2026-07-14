@@ -1,29 +1,34 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useState } from "react";
+import { ResponsiveApplicationOverlay } from "@/components/overlay/responsive-application-overlay";
+import { ApplicationCreateForm } from "@/components/applications/application-create-form";
 
 type AddApplicationDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currentStatusSlug?: string;
 };
 
-export function AddApplicationDialog({ open, onOpenChange }: AddApplicationDialogProps) {
+export function AddApplicationDialog({ open, onOpenChange, currentStatusSlug }: AddApplicationDialogProps) {
+  const [isDirty, setIsDirty] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add application</DialogTitle>
-          <DialogDescription>
-            The full form is coming soon. This placeholder keeps the add flow wired up.
-          </DialogDescription>
-        </DialogHeader>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveApplicationOverlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add application"
+      description="Track a new job application. It starts in Applied."
+      isDirty={isDirty}
+      isPending={isPending}
+    >
+      <ApplicationCreateForm
+        currentStatusSlug={currentStatusSlug}
+        onCreated={() => onOpenChange(false)}
+        onDirtyChange={setIsDirty}
+        onPendingChange={setIsPending}
+      />
+    </ResponsiveApplicationOverlay>
   );
 }

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getApplications, type GetApplicationsParams } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
 
 export function useApplicationsQuery(params: GetApplicationsParams) {
   const status = params.status ?? "ALL";
@@ -7,11 +8,11 @@ export function useApplicationsQuery(params: GetApplicationsParams) {
   const q = params.q ?? "";
 
   return useQuery({
-    queryKey: ["applications", status, sort, q],
+    queryKey: queryKeys.applications.list({ status, sort, q }),
     queryFn: () => getApplications({ status, sort, q }),
     placeholderData: (previousData, previousQuery) => {
       if (!previousQuery) return undefined;
-      const previousStatus = previousQuery.queryKey[1];
+      const previousStatus = previousQuery.queryKey[2];
       return previousStatus === status ? previousData : undefined;
     },
   });

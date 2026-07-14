@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Platform, Status } from "@/app/generated/prisma/client";
+import { Platform, Status } from "@/app/generated/prisma/enums";
 
 export const PLATFORM_VALUES = Object.values(Platform) as [Platform, ...Platform[]];
 export const STATUS_VALUES = Object.values(Status) as [Status, ...Status[]];

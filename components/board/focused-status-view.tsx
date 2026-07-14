@@ -79,16 +79,16 @@ export function FocusedStatusView({ slug }: FocusedStatusViewProps) {
           search={search}
           onSearchChange={setSearch}
           debouncedSearch={debouncedSearch}
-          onSelectApplication={detail.openDetail}
+          onSelectApplication={(application) => detail.openDetail(application.id)}
           onAddClick={() => setAddDialogOpen(true)}
         />
       </div>
 
       <FloatingAddButton onClick={() => setAddDialogOpen(true)} />
 
-      <AddApplicationDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <AddApplicationDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} currentStatusSlug={column.slug} />
       <ApplicationDetailDialog
-        application={detail.selectedApplication}
+        applicationId={detail.selectedApplicationId}
         open={detail.open}
         onOpenChange={detail.setOpen}
       />

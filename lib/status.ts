@@ -1,4 +1,5 @@
-import { Status, type JobApplication } from "@/app/generated/prisma/client";
+import { Status } from "@/app/generated/prisma/enums";
+import type { JobApplication } from "@/app/generated/prisma/client";
 
 export const AUTO_IGNORE_AFTER_DAYS = 21;
 

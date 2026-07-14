@@ -65,7 +65,7 @@ export function BoardShell() {
           <KanbanBoard
             applications={applications}
             sort={sort}
-            onSelectApplication={detail.openDetail}
+            onSelectApplication={(application) => detail.openDetail(application.id)}
           />
         )}
       </div>
@@ -74,7 +74,7 @@ export function BoardShell() {
 
       <AddApplicationDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
       <ApplicationDetailDialog
-        application={detail.selectedApplication}
+        applicationId={detail.selectedApplicationId}
         open={detail.open}
         onOpenChange={detail.setOpen}
       />

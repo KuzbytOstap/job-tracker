@@ -1,47 +1,35 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { PlatformBadge } from "@/components/dashboard/platform-badge";
-import { StatusBadge } from "@/components/dashboard/status-badge";
-import type { ApplicationDTO } from "@/lib/api-types";
+import { useState } from "react";
+import { ResponsiveApplicationOverlay } from "@/components/overlay/responsive-application-overlay";
+import { ApplicationDetail } from "@/components/applications/application-detail";
 
 type ApplicationDetailDialogProps = {
-  application: ApplicationDTO | null;
+  applicationId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-export function ApplicationDetailDialog({
-  application,
-  open,
-  onOpenChange,
-}: ApplicationDetailDialogProps) {
+export function ApplicationDetailDialog({ applicationId, open, onOpenChange }: ApplicationDetailDialogProps) {
+  const [isDirty, setIsDirty] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {application && (
-          <>
-            <DialogHeader>
-              <DialogTitle>{application.company}</DialogTitle>
-              <DialogDescription>{application.position}</DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <PlatformBadge platform={application.platform} />
-              <StatusBadge status={application.effectiveStatus} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Full editing tools are coming soon. For now this confirms which application you
-              selected.
-            </p>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+    <ResponsiveApplicationOverlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Application details"
+      isDirty={isDirty}
+      isPending={isPending}
+    >
+      {applicationId && (
+        <ApplicationDetail
+          applicationId={applicationId}
+          onClose={() => onOpenChange(false)}
+          onDirtyChange={setIsDirty}
+          onPendingChange={setIsPending}
+        />
+      )}
+    </ResponsiveApplicationOverlay>
   );
 }

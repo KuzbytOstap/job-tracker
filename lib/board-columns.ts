@@ -104,6 +104,10 @@ export function getSlugForStatus(status: Status): string {
   return BOARD_COLUMNS_BY_STATUS[status].slug;
 }
 
+export function getStatusPageHref(status: Status): string {
+  return `/status/${getSlugForStatus(status)}`;
+}
+
 export type BoardColumnBucket<T> = {
   status: Status;
   applications: T[];
