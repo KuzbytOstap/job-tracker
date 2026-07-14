@@ -11,3 +11,58 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Platform {
+  DJINNI
+  DOU
+  LINKEDIN
+  ROBOTA_UA
+  DIRECT
+  OTHER
+}
+
+enum Status {
+  APPLIED
+  HR_REPLIED
+  HR_CALL
+  TECH_INTERVIEW
+  TEST_TASK
+  OFFER
+  REJECTED
+  IGNORED
+}
+
+model JobApplication {
+  id                String   @id @default(cuid())
+  company           String
+  position          String
+  platform          Platform
+  link              String?
+  status            Status   @default(APPLIED)
+  hasTestTask       Boolean  @default(false)
+  testTaskDone      Boolean  @default(false)
+  salaryExpectation String?
+  notes             String?
+  appliedAt         DateTime @default(now())
+  lastActivityAt    DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  statusChanges StatusChange[]
+
+  @@index([status])
+  @@index([appliedAt])
+  @@index([lastActivityAt])
+  @@index([company])
+}
+
+model StatusChange {
+  id            String   @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStatus    Status
+  toStatus      Status
+  changedAt     DateTime @default(now())
+
+  @@index([applicationId])
+}
