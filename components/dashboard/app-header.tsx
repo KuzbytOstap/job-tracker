@@ -11,7 +11,7 @@ type AppHeaderProps = {
 export function AppHeader({ total, onAddClick }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="min-w-0">
           <h1 className="font-heading text-lg font-semibold tracking-tight sm:text-xl">
             Job Tracker

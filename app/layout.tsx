@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/app/providers";
 import "./globals.css";
@@ -15,7 +15,35 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Job Tracker",
-  description: "Personal job application tracker",
+  description: "Track job applications from first contact through offer, with a Kanban board, statistics, and status history.",
+  applicationName: "Job Tracker",
+  keywords: ["job tracker", "job applications", "job search", "kanban board", "application pipeline"],
+  manifest: "/manifest.webmanifest",
+
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Job Tracker",
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export default function RootLayout({

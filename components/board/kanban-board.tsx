@@ -15,14 +15,8 @@ export function KanbanBoard({ applications, sort, onSelectApplication }: KanbanB
   const columns = distributeApplicationsIntoColumns(applications);
 
   return (
-    <div className="w-full overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:thin]">
-      <div
-        className="flex w-max snap-x snap-mandatory gap-4 sm:snap-none"
-        style={{
-          paddingLeft: "max(1rem, env(safe-area-inset-left))",
-          paddingRight: "max(1rem, env(safe-area-inset-right))",
-        }}
-      >
+    <div className="mx-auto w-full max-w-[1600px] overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:thin]">
+      <div className="flex w-max snap-x snap-mandatory gap-4 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] sm:snap-none sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))]">
         {columns.map(({ status, applications: columnApplications }) => (
           <KanbanColumn
             key={status}

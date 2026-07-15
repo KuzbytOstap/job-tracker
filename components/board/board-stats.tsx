@@ -18,7 +18,7 @@ export function BoardStats() {
   return (
     <section
       aria-label="Application statistics"
-      className="mx-auto w-full max-w-[1100px] px-4 pt-4 sm:px-6"
+      className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6"
     >
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger

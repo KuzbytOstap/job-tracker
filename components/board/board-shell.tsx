@@ -38,7 +38,7 @@ export function BoardShell() {
 
       <AppHeader total={statsQuery.data?.total} onAddClick={() => setAddDialogOpen(true)} />
 
-      <div className="mx-auto w-full max-w-[1100px] px-4 pt-4 sm:px-6">
+      <div className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6">
         <DashboardControls
           search={search}
           onSearchChange={setSearch}
@@ -51,13 +51,13 @@ export function BoardShell() {
 
       <div className="pt-4 pb-24 sm:pb-16">
         {applicationsQuery.isError ? (
-          <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
+          <div className="mx-auto max-w-[1600px] px-4 sm:px-6">
             <DashboardErrorState onRetry={() => applicationsQuery.refetch()} />
           </div>
         ) : applicationsQuery.isPending ? (
           <BoardSkeleton />
         ) : applications.length === 0 ? (
-          <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
+          <div className="mx-auto max-w-[1600px] px-4 sm:px-6">
             <DashboardEmptyState
               variant={debouncedSearch ? "search" : "all"}
               searchQuery={debouncedSearch}

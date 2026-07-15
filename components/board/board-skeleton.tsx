@@ -14,7 +14,7 @@ const SKELETON_COLUMN_COUNT = 4;
 
 export function BoardSkeleton() {
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="mx-auto w-full max-w-[1600px] overflow-x-hidden">
       <div className="flex gap-4 px-4 sm:px-6">
         {Array.from({ length: SKELETON_COLUMN_COUNT }).map((_, index) => (
           <SkeletonColumn key={index} />
