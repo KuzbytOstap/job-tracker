@@ -11,6 +11,9 @@ import { serverErrorResponse } from "@/lib/api-response";
 import { buildFunnelStage } from "@/lib/stats";
 import type { StatsResponse } from "@/lib/api-types";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const applications = await prisma.jobApplication.findMany({

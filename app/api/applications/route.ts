@@ -15,6 +15,9 @@ import {
 import { jsonError, serverErrorResponse, zodErrorResponse } from "@/lib/api-response";
 import type { ApplicationsListResponse } from "@/lib/api-types";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const parsedQuery = listApplicationsQuerySchema.safeParse({
     status: request.nextUrl.searchParams.get("status") ?? undefined,

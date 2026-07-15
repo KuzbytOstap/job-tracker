@@ -9,6 +9,9 @@ import {
   zodErrorResponse,
 } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
