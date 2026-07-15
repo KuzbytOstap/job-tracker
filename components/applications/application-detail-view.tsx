@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, Pencil } from "lucide-react";
-import { format, formatDistanceToNowStrict } from "date-fns";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +13,7 @@ import { TestTaskBranch } from "@/components/applications/test-task-branch";
 import { TerminalStatusActions } from "@/components/applications/terminal-status-actions";
 import { TestTaskControls } from "@/components/applications/test-task-controls";
 import { StatusHistory } from "@/components/applications/status-history";
+import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
 import { useReactivateApplication } from "@/hooks/use-reactivate-application";
 import { STATUS_LABELS } from "@/lib/labels";
@@ -131,7 +132,9 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
         )}
         <DetailRow label="Applied on">{format(new Date(application.appliedAt), "d MMM yyyy")}</DetailRow>
         <DetailRow label="Last activity">
-          {formatDistanceToNowStrict(new Date(application.lastActivityAt), { addSuffix: true })}
+          <span title={formatExactDateTime(application.lastActivityAt)}>
+            {formatRelativeDate(application.lastActivityAt)}
+          </span>
         </DetailRow>
         <DetailRow label="Created">{format(new Date(application.createdAt), "d MMM yyyy")}</DetailRow>
       </dl>

@@ -8,18 +8,8 @@ import {
   REPLIED_OR_FURTHER_STATUSES,
 } from "@/lib/status";
 import { serverErrorResponse } from "@/lib/api-response";
-import type { FunnelStage, StatsResponse } from "@/lib/api-types";
-
-function percentage(count: number, total: number): number {
-  if (total === 0) {
-    return 0;
-  }
-  return Math.round((count / total) * 1000) / 10;
-}
-
-function funnelStage(count: number, total: number): FunnelStage {
-  return { count, percentage: percentage(count, total) };
-}
+import { buildFunnelStage } from "@/lib/stats";
+import type { StatsResponse } from "@/lib/api-types";
 
 export async function GET() {
   try {
@@ -69,10 +59,10 @@ export async function GET() {
       interviewsOrFurther,
       offers,
       funnel: {
-        applied: funnelStage(total, total),
-        replied: funnelStage(repliedOrFurther, total),
-        interviews: funnelStage(interviewsOrFurther, total),
-        offers: funnelStage(offers, total),
+        applied: buildFunnelStage(total, total),
+        replied: buildFunnelStage(repliedOrFurther, total),
+        interviews: buildFunnelStage(interviewsOrFurther, total),
+        offers: buildFunnelStage(offers, total),
       },
     };
 

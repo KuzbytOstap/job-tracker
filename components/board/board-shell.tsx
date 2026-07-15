@@ -10,6 +10,7 @@ import { AddApplicationDialog } from "@/components/dashboard/add-application-dia
 import { ApplicationDetailDialog } from "@/components/dashboard/application-detail-dialog";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { BoardSkeleton } from "@/components/board/board-skeleton";
+import { BoardStats } from "@/components/board/board-stats";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -45,6 +46,8 @@ export function BoardShell() {
           onSortChange={setSort}
         />
       </div>
+
+      <BoardStats />
 
       <div className="pt-4 pb-24 sm:pb-16">
         {applicationsQuery.isError ? (

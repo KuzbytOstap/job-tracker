@@ -2,12 +2,12 @@
 
 import { motion } from "motion/react";
 import { ChevronRight, ExternalLink } from "lucide-react";
-import { formatDistanceToNowStrict } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { cn } from "@/lib/utils";
+import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import type { ApplicationDTO } from "@/lib/api-types";
 
 type ApplicationCardProps = {
@@ -61,12 +61,11 @@ export function ApplicationCard({ application, onSelect }: ApplicationCardProps)
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span>
-              Applied {formatDistanceToNowStrict(new Date(application.appliedAt), { addSuffix: true })}
+            <span title={formatExactDateTime(application.appliedAt)}>
+              Applied {formatRelativeDate(application.appliedAt)}
             </span>
-            <span>
-              Last activity{" "}
-              {formatDistanceToNowStrict(new Date(application.lastActivityAt), { addSuffix: true })}
+            <span title={formatExactDateTime(application.lastActivityAt)}>
+              Last activity {formatRelativeDate(application.lastActivityAt)}
             </span>
           </div>
 
