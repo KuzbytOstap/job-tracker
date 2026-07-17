@@ -6,6 +6,7 @@ Job Tracker is a personal, single-user Kanban application for tracking job appli
 
 ## Features
 
+- Google sign-in restricted to a single allowed account
 - Jira-style status board
 - Focused status pages
 - Date-grouped applications
@@ -43,7 +44,7 @@ Job Tracker is a personal, single-user Kanban application for tracking job appli
    npm install
    ```
 
-2. Create a `.env` file with the required environment variables (see below).
+2. Create a `.env` file from [`.env.example`](./.env.example) and fill in real values (see [Environment variables](#environment-variables) below).
 
 3. Generate the Prisma client:
 
@@ -69,17 +70,57 @@ Job Tracker is a personal, single-user Kanban application for tracking job appli
    npm run dev
    ```
 
+## Authentication
+
+The app is single-user and gated behind Google sign-in (Auth.js). Only the Google account whose email matches the server-only `ALLOWED_EMAIL` environment variable can sign in — there is no registration flow and no other account can ever get in.
+
+- Sessions are self-contained, signed **JWT cookies** — there is no Auth.js database adapter and no `User`/`Account`/`Session` table in `prisma/schema.prisma`. Signing in doesn't touch the database at all.
+- The allowlist is checked **twice, independently**: once in the Auth.js `signIn` callback (rejects the OAuth sign-in itself for any other account, so no session is ever issued), and again on every subsequent request via a shared `checkSession()` helper (`lib/auth.ts`) that re-validates `session.user.email` against `ALLOWED_EMAIL`.
+- **Every page** (`/`, `/status/*`) is server-side gated by `app/(protected)/layout.tsx`, a Server Component that redirects to `/sign-in` when not authorized — not a client-side check.
+- **Every API route** (`/api/applications/*`, `/api/stats`) independently calls the same `checkSession()` helper before doing anything else. An unauthenticated request gets `401`; an authenticated request from a session that doesn't match `ALLOWED_EMAIL` gets `403`. API routes never redirect.
+- `/api/auth/[...nextauth]` (the sign-in/callback/sign-out machinery) and `/sign-in` itself stay reachable while signed out, by design — they live outside the protected route group.
+
 ## Environment variables
+
+See [`.env.example`](./.env.example) for the full list with placeholder values. All of the following are server-only and are never sent to the browser or read from client components.
 
 ```env
 DATABASE_URL="postgresql://..."
 DIRECT_URL="postgresql://..."
-APP_SECRET="added during the privacy-gate step"
+AUTH_SECRET=""
+AUTH_GOOGLE_ID=""
+AUTH_GOOGLE_SECRET=""
+ALLOWED_EMAIL="your-email@example.com"
 ```
 
-- `DATABASE_URL` — the connection string used by the running application at runtime (Prisma Client via `@prisma/adapter-pg`). Use the Neon **pooled** connection string. Server-only; never exposed to the browser.
-- `DIRECT_URL` — the connection string used by Prisma CLI commands (`migrate`, `studio`). Use the Neon **direct, non-pooled** connection string. Server-only; never exposed to the browser.
-- `APP_SECRET` — reserved for the upcoming privacy-gate/authentication step. Not yet used by the application.
+- `DATABASE_URL` — the connection string used by the running application at runtime (Prisma Client via `@prisma/adapter-pg`). Use the Neon **pooled** connection string.
+- `DIRECT_URL` — the connection string used by Prisma CLI commands (`migrate`, `studio`). Use the Neon **direct, non-pooled** connection string.
+- `AUTH_SECRET` — random value Auth.js uses to sign/encrypt session JWTs. Generate one with:
+  ```bash
+  npx auth secret
+  # or
+  openssl rand -base64 33
+  ```
+- `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` — credentials from a Google Cloud OAuth 2.0 Client ID (see below). Read automatically by the `Google` provider — nothing else to configure.
+- `ALLOWED_EMAIL` — the single Google account email allowed to sign in.
+
+### Google OAuth setup
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create (or reuse) a project, then go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+2. Application type: **Web application**.
+3. Add an authorized redirect URI for local development:
+   ```
+   http://localhost:3000/api/auth/callback/google
+   ```
+4. Once deployed, add the production equivalent too:
+   ```
+   https://YOUR-PRODUCTION-DOMAIN/api/auth/callback/google
+   ```
+5. Copy the generated **Client ID** and **Client secret** into `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` in your local `.env`.
+
+### Vercel
+
+Add `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `ALLOWED_EMAIL` as environment variables on the Vercel project (alongside `DATABASE_URL`/`DIRECT_URL`). Changing them requires a redeploy to take effect.
 
 ## Database commands
 
@@ -114,10 +155,10 @@ The app ships a web app manifest and app icons, so it supports "Add to Home Scre
 
 1. Push the repository to GitHub.
 2. Create or select a Neon production database.
-3. Configure the Vercel project's environment variables (`DATABASE_URL`, and `DIRECT_URL` if running migrations from Vercel).
+3. Configure the Vercel project's environment variables: `DATABASE_URL` (and `DIRECT_URL` if running migrations from Vercel), plus `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `ALLOWED_EMAIL` (see [Google OAuth setup](#google-oauth-setup)).
 4. Run production migrations with `npm run db:migrate:deploy` against the production database.
 5. Deploy the application on Vercel.
 
-## Privacy warning
+## Privacy
 
-This application currently has **no authentication**. Anyone with the deployment URL can view and modify the tracker's data. Do not share the production URL publicly before the privacy gate is implemented.
+The app is gated behind Google sign-in restricted to a single allowed email (see [Authentication](#authentication)) — but that protection is only active once real values are set for `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `ALLOWED_EMAIL`. Until those are configured (locally and on the deployment), don't treat the app as private, and don't share the production URL.

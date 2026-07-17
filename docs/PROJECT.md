@@ -45,12 +45,14 @@ statistics/funnel view and relative dates → dark mode and PWA polish →
 production deployment. The commit history in this repository follows that
 same sequence.
 
-One deliberate reframe from the original ask: the "no login" requirement was
-kept, but a lightweight privacy gate (a secret key in the URL, remembered via
-cookie) was flagged as necessary before sharing the deployment URL with
-anyone — an unauthenticated Kanban board containing salary expectations and
-company notes is otherwise readable by anyone who finds the link. This is
-tracked but **not yet implemented**; see [Status](#status--whats-left) below.
+One deliberate reframe from the original ask: the "no login" requirement
+(no *registration* flow, no accounts to manage) was kept, but a privacy gate
+was flagged as necessary before sharing the deployment URL with anyone — an
+unauthenticated Kanban board containing salary expectations and company
+notes is otherwise readable by anyone who finds the link. The gate that
+shipped is Google sign-in restricted to a single allowed email, not the
+originally-sketched URL-embedded secret key; see
+[Status](#status--whats-left) below.
 
 ## What was built
 
@@ -125,10 +127,19 @@ app.
 
 - Core tracking, pipeline, board, statistics, dark mode, and PWA metadata are
   built (see `README.md` for the full feature list and how to run/deploy).
-- **Privacy gate is not implemented.** `APP_SECRET` exists as a reserved
-  environment variable but is not enforced anywhere yet. Per the README's
-  own warning, the deployment currently has no authentication — do not share
-  the production URL until this is added.
+- **Privacy gate is implemented.** The earlier reserved `APP_SECRET`
+  approach (a URL-embedded key) was replaced with Google sign-in via
+  Auth.js, restricted to a single email in the server-only `ALLOWED_EMAIL`
+  variable — see `README.md`'s Authentication section for the enforcement
+  details (double allowlist check, protected route group, per-route 401/403
+  in every API handler). The deployment is only actually private once real
+  `AUTH_SECRET`/`AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`/`ALLOWED_EMAIL` values
+  are configured, both locally and on Vercel.
+- The AI-assisted "paste a job posting, auto-fill the form" feature
+  discussed earlier is deliberately parked, to be re-planned with a
+  provider-agnostic extraction interface (`AI_PROVIDER=mock` for dev/tests,
+  `AI_PROVIDER=openai` with GPT-5 nano for production) rather than the
+  Claude-API-specific design originally sketched.
 - Drag-and-drop board interactions were mid-implementation as of this
   writing (`hooks/use-application-drag-and-drop.ts`,
   `lib/drag-drop-transitions.ts`, and related board components) — check

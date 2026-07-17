@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { LogOut, Plus } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
 type AppHeaderProps = {
@@ -21,10 +22,22 @@ export function AppHeader({ total, onAddClick }: AppHeaderProps) {
             {typeof total === "number" ? ` · ${total} application${total === 1 ? "" : "s"}` : ""}
           </p>
         </div>
-        <Button onClick={onAddClick} className="hidden shrink-0 sm:inline-flex">
-          <Plus data-icon="inline-start" />
-          Add
-        </Button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button onClick={onAddClick} className="hidden sm:inline-flex">
+            <Plus data-icon="inline-start" />
+            Add
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title="Sign out"
+            aria-label="Sign out"
+            onClick={() => signOut({ redirectTo: "/sign-in" })}
+          >
+            <LogOut />
+          </Button>
+        </div>
       </div>
     </header>
   );

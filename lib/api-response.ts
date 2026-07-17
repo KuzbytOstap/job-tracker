@@ -18,6 +18,14 @@ export function notFoundResponse(resource = "Application") {
   return jsonError(404, `${resource} not found`);
 }
 
+export function unauthorizedResponse() {
+  return jsonError(401, "Unauthorized");
+}
+
+export function forbiddenResponse() {
+  return jsonError(403, "Forbidden");
+}
+
 export function serverErrorResponse() {
   return jsonError(500, "Internal server error");
 }

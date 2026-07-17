@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@/app/generated/prisma/client";
+import { checkSession } from "@/lib/auth";
 import { STATUS_VALUES } from "@/lib/validation";
 import {
   effectiveStatus,
   INTERVIEW_OR_FURTHER_STATUSES,
   REPLIED_OR_FURTHER_STATUSES,
 } from "@/lib/status";
-import { serverErrorResponse } from "@/lib/api-response";
+import { forbiddenResponse, serverErrorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { buildFunnelStage } from "@/lib/stats";
 import type { StatsResponse } from "@/lib/api-types";
 
@@ -15,6 +16,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const check = await checkSession();
+  if (check.status === "unauthenticated") return unauthorizedResponse();
+  if (check.status === "forbidden") return forbiddenResponse();
+
   try {
     const applications = await prisma.jobApplication.findMany({
       select: {

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkSession } from "@/lib/auth";
 import { updateApplicationSchema } from "@/lib/validation";
 import { resolveTestTaskFlags, toApplicationDTO, toApplicationWithMeta } from "@/lib/applications";
 import {
+  forbiddenResponse,
   jsonError,
   notFoundResponse,
   serverErrorResponse,
+  unauthorizedResponse,
   zodErrorResponse,
 } from "@/lib/api-response";
 
@@ -15,6 +18,10 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
+  const check = await checkSession();
+  if (check.status === "unauthenticated") return unauthorizedResponse();
+  if (check.status === "forbidden") return forbiddenResponse();
+
   const { id } = await params;
 
   try {
@@ -35,6 +42,10 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
+  const check = await checkSession();
+  if (check.status === "unauthenticated") return unauthorizedResponse();
+  if (check.status === "forbidden") return forbiddenResponse();
+
   const { id } = await params;
 
   let payload: unknown;
@@ -97,6 +108,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteContext) {
+  const check = await checkSession();
+  if (check.status === "unauthenticated") return unauthorizedResponse();
+  if (check.status === "forbidden") return forbiddenResponse();
+
   const { id } = await params;
 
   try {

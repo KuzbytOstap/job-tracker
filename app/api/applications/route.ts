@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@/app/generated/prisma/client";
+import { checkSession } from "@/lib/auth";
 import {
   createApplicationSchema,
   listApplicationsQuerySchema,
@@ -12,13 +13,23 @@ import {
   toApplicationDTO,
   toApplicationWithMeta,
 } from "@/lib/applications";
-import { jsonError, serverErrorResponse, zodErrorResponse } from "@/lib/api-response";
+import {
+  forbiddenResponse,
+  jsonError,
+  serverErrorResponse,
+  unauthorizedResponse,
+  zodErrorResponse,
+} from "@/lib/api-response";
 import type { ApplicationsListResponse } from "@/lib/api-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const check = await checkSession();
+  if (check.status === "unauthenticated") return unauthorizedResponse();
+  if (check.status === "forbidden") return forbiddenResponse();
+
   const parsedQuery = listApplicationsQuerySchema.safeParse({
     status: request.nextUrl.searchParams.get("status") ?? undefined,
     sort: request.nextUrl.searchParams.get("sort") ?? undefined,
@@ -60,6 +71,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const check = await checkSession();
+  if (check.status === "unauthenticated") return unauthorizedResponse();
+  if (check.status === "forbidden") return forbiddenResponse();
+
   let payload: unknown;
   try {
     payload = await request.json();
