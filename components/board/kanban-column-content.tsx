@@ -35,6 +35,7 @@ export function KanbanColumnContent({
                 key={group.key}
                 group={group}
                 onSelectApplication={onSelectApplication}
+                enableDrag
               />
             ))}
           </AnimatePresence>

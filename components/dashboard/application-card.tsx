@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,9 +14,10 @@ import type { ApplicationDTO } from "@/lib/api-types";
 type ApplicationCardProps = {
   application: ApplicationDTO;
   onSelect: (application: ApplicationDTO) => void;
+  dragHandle?: ReactNode;
 };
 
-export function ApplicationCard({ application, onSelect }: ApplicationCardProps) {
+export function ApplicationCard({ application, onSelect, dragHandle }: ApplicationCardProps) {
   const isIgnored = application.effectiveStatus === "IGNORED";
 
   return (
@@ -44,8 +46,9 @@ export function ApplicationCard({ application, onSelect }: ApplicationCardProps)
         )}
       >
         <CardContent className="flex flex-col gap-2.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            {dragHandle}
+            <div className="min-w-0 flex-1">
               <p className="truncate font-heading text-base leading-tight font-semibold">
                 {application.company}
               </p>

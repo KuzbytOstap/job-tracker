@@ -9,6 +9,7 @@ import { FloatingAddButton } from "@/components/dashboard/floating-add-button";
 import { AddApplicationDialog } from "@/components/dashboard/add-application-dialog";
 import { ApplicationDetailDialog } from "@/components/dashboard/application-detail-dialog";
 import { KanbanBoard } from "@/components/board/kanban-board";
+import { KanbanDndContext } from "@/components/board/kanban-dnd-context";
 import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { BoardStats } from "@/components/board/board-stats";
 import { useApplicationsQuery } from "@/hooks/use-applications";
@@ -65,11 +66,13 @@ export function BoardShell() {
             />
           </div>
         ) : (
-          <KanbanBoard
-            applications={applications}
-            sort={sort}
-            onSelectApplication={(application) => detail.openDetail(application.id)}
-          />
+          <KanbanDndContext>
+            <KanbanBoard
+              applications={applications}
+              sort={sort}
+              onSelectApplication={(application) => detail.openDetail(application.id)}
+            />
+          </KanbanDndContext>
         )}
       </div>
 

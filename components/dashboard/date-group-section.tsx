@@ -2,15 +2,17 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { ApplicationCard } from "@/components/dashboard/application-card";
+import { DraggableApplicationCard } from "@/components/board/draggable-application-card";
 import type { ApplicationDTO } from "@/lib/api-types";
 import type { DateGroup } from "@/lib/date-grouping";
 
 type DateGroupSectionProps = {
   group: DateGroup<ApplicationDTO>;
   onSelectApplication: (application: ApplicationDTO) => void;
+  enableDrag?: boolean;
 };
 
-export function DateGroupSection({ group, onSelectApplication }: DateGroupSectionProps) {
+export function DateGroupSection({ group, onSelectApplication, enableDrag = false }: DateGroupSectionProps) {
   return (
     <motion.section
       layout="position"
@@ -26,13 +28,21 @@ export function DateGroupSection({ group, onSelectApplication }: DateGroupSectio
       </div>
       <div className="flex flex-col gap-2.5">
         <AnimatePresence initial={false}>
-          {group.applications.map((application) => (
-            <ApplicationCard
-              key={application.id}
-              application={application}
-              onSelect={onSelectApplication}
-            />
-          ))}
+          {group.applications.map((application) =>
+            enableDrag ? (
+              <DraggableApplicationCard
+                key={application.id}
+                application={application}
+                onSelect={onSelectApplication}
+              />
+            ) : (
+              <ApplicationCard
+                key={application.id}
+                application={application}
+                onSelect={onSelectApplication}
+              />
+            ),
+          )}
         </AnimatePresence>
       </div>
     </motion.section>

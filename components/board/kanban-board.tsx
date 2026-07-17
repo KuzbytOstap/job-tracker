@@ -1,6 +1,6 @@
 "use client";
 
-import { KanbanColumn } from "@/components/board/kanban-column";
+import { DroppableKanbanColumn } from "@/components/board/droppable-kanban-column";
 import { distributeApplicationsIntoColumns } from "@/lib/board-columns";
 import type { ApplicationDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
@@ -18,7 +18,7 @@ export function KanbanBoard({ applications, sort, onSelectApplication }: KanbanB
     <div className="mx-auto w-full max-w-[1600px] overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:thin]">
       <div className="flex w-max snap-x snap-mandatory gap-4 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] sm:snap-none sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))]">
         {columns.map(({ status, applications: columnApplications }) => (
-          <KanbanColumn
+          <DroppableKanbanColumn
             key={status}
             status={status}
             applications={columnApplications}
