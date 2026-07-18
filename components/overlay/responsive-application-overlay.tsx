@@ -85,7 +85,7 @@ export function ResponsiveApplicationOverlay({
       ) : (
         <Drawer open={open} onOpenChange={handlePrimitiveOpenChange}>
           <DrawerContent className={cn("max-h-[92dvh]", contentClassName)}>
-            <DrawerHeader className="relative pr-12">
+            <DrawerHeader className="relative pt-[max(1rem,env(safe-area-inset-top))] pr-12">
               <DrawerTitle>{title}</DrawerTitle>
               {description && <DrawerDescription>{description}</DrawerDescription>}
               <DrawerClose

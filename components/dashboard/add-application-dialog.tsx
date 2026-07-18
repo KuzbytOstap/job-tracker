@@ -26,6 +26,7 @@ export function AddApplicationDialog({ open, onOpenChange, currentStatusSlug }: 
       <ApplicationCreateForm
         currentStatusSlug={currentStatusSlug}
         onCreated={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
         onDirtyChange={setIsDirty}
         onPendingChange={setIsPending}
       />

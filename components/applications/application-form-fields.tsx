@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,21 @@ import type { ApplicationFormValues } from "@/lib/application-form";
 
 type ApplicationFormFieldsProps = {
   showTestTaskCheckbox?: boolean;
+  /** Interspersed section headings for the mobile-first create flow. Edit form omits this to stay unchanged. */
+  sectioned?: boolean;
 };
 
-export function ApplicationFormFields({ showTestTaskCheckbox = false }: ApplicationFormFieldsProps) {
+function SectionHeading({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={`text-xs font-medium tracking-wide text-muted-foreground uppercase ${className ?? ""}`}>
+      {children}
+    </p>
+  );
+}
+
+const fieldInputClassName = "h-10 sm:h-8";
+
+export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned = false }: ApplicationFormFieldsProps) {
   const {
     register,
     control,
@@ -23,12 +36,15 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false }: Applicat
 
   return (
     <div className="flex flex-col gap-4">
+      {sectioned && <SectionHeading>Main information</SectionHeading>}
+
       <Field data-invalid={!!errors.company}>
         <FieldLabel htmlFor="application-company">Company</FieldLabel>
         <Input
           id="application-company"
           autoFocus
           aria-invalid={!!errors.company}
+          className={fieldInputClassName}
           {...register("company")}
         />
         <FieldError errors={[errors.company]} />
@@ -36,7 +52,12 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false }: Applicat
 
       <Field data-invalid={!!errors.position}>
         <FieldLabel htmlFor="application-position">Position</FieldLabel>
-        <Input id="application-position" aria-invalid={!!errors.position} {...register("position")} />
+        <Input
+          id="application-position"
+          aria-invalid={!!errors.position}
+          className={fieldInputClassName}
+          {...register("position")}
+        />
         <FieldError errors={[errors.position]} />
       </Field>
 
@@ -71,14 +92,22 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false }: Applicat
           inputMode="url"
           placeholder="https://…"
           aria-invalid={!!errors.link}
+          className={fieldInputClassName}
           {...register("link")}
         />
         <FieldError errors={[errors.link]} />
       </Field>
 
+      {sectioned && <SectionHeading className="mt-2">Application details</SectionHeading>}
+
       <Field>
         <FieldLabel htmlFor="application-salary">Salary expectation</FieldLabel>
-        <Input id="application-salary" placeholder="e.g. $4000–5000" {...register("salaryExpectation")} />
+        <Input
+          id="application-salary"
+          placeholder="e.g. $4000–5000"
+          className={fieldInputClassName}
+          {...register("salaryExpectation")}
+        />
       </Field>
 
       <Field data-invalid={!!errors.appliedAt}>
@@ -87,14 +116,10 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false }: Applicat
           id="application-applied-at"
           type="date"
           aria-invalid={!!errors.appliedAt}
+          className={fieldInputClassName}
           {...register("appliedAt")}
         />
         <FieldError errors={[errors.appliedAt]} />
-      </Field>
-
-      <Field>
-        <FieldLabel htmlFor="application-notes">Notes</FieldLabel>
-        <Textarea id="application-notes" rows={3} {...register("notes")} />
       </Field>
 
       {showTestTaskCheckbox && (
@@ -115,6 +140,15 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false }: Applicat
           </FieldLabel>
         </Field>
       )}
+
+      {sectioned && <SectionHeading className="mt-2">Notes</SectionHeading>}
+
+      <Field>
+        <FieldLabel htmlFor="application-notes" className={sectioned ? "sr-only" : undefined}>
+          Notes
+        </FieldLabel>
+        <Textarea id="application-notes" rows={3} className="min-h-24" {...register("notes")} />
+      </Field>
     </div>
   );
 }
