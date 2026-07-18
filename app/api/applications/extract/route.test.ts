@@ -24,6 +24,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
+import type { ApplicationExtractionErrorKind } from "@/lib/ai/application-extraction-provider";
 import { POST } from "./route";
 
 const AUTHORIZED: SessionCheck = {
@@ -147,4 +148,50 @@ describe("POST /api/applications/extract", () => {
     expect(prismaFindManyMock).not.toHaveBeenCalled();
     expect(prismaCreateMock).not.toHaveBeenCalled();
   });
+
+  it("returns 200 with provider metadata 'openai' for a successful mocked OpenAI result", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const extractApplicationMock = vi.fn().mockResolvedValue({
+      company: "Acme",
+      position: "Engineer",
+      platform: null,
+      link: null,
+      salaryExpectation: null,
+      notes: null,
+    });
+    getProviderMock.mockReturnValue({ name: "openai", extractApplication: extractApplicationMock });
+
+    const response = await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.meta).toEqual({ provider: "openai" });
+    expect(extractApplicationMock).toHaveBeenCalledTimes(1);
+    expect(prismaFindManyMock).not.toHaveBeenCalled();
+    expect(prismaCreateMock).not.toHaveBeenCalled();
+  });
+
+  function providerErrorCase(kind: ApplicationExtractionErrorKind, expectedStatus: number) {
+    it(`maps a "${kind}" provider error to HTTP ${expectedStatus}`, async () => {
+      checkSessionMock.mockResolvedValue(AUTHORIZED);
+      getProviderMock.mockReturnValue({
+        name: "openai",
+        extractApplication: vi
+          .fn()
+          .mockRejectedValue(new ApplicationExtractionProviderError("safe message", kind)),
+      });
+
+      const response = await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+      expect(response.status).toBe(expectedStatus);
+      const body = await response.json();
+      expect(JSON.stringify(body)).not.toContain("OpenAI");
+    });
+  }
+
+  providerErrorCase("configuration", 503);
+  providerErrorCase("rate_limit", 429);
+  providerErrorCase("timeout", 504);
+  providerErrorCase("network", 502);
+  providerErrorCase("invalid_result", 502);
 });

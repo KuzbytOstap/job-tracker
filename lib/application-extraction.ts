@@ -66,7 +66,7 @@ export function emptyApplicationExtractionResult(): ApplicationExtractionResult 
   };
 }
 
-export const applicationExtractionProviderNameSchema = z.enum(["mock"]);
+export const applicationExtractionProviderNameSchema = z.enum(["mock", "openai"]);
 
 export const applicationExtractionResponseSchema = z
   .object({

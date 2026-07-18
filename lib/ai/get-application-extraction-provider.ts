@@ -1,6 +1,7 @@
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 import type { ApplicationExtractionProvider } from "@/lib/ai/application-extraction-provider";
 import { MockApplicationExtractionProvider } from "@/lib/ai/providers/mock-application-extraction-provider";
+import { OpenAIApplicationExtractionProvider } from "@/lib/ai/providers/openai-application-extraction-provider";
 
 export function getApplicationExtractionProvider(): ApplicationExtractionProvider {
   const providerName = process.env.AI_PROVIDER;
@@ -8,6 +9,7 @@ export function getApplicationExtractionProvider(): ApplicationExtractionProvide
   if (!providerName) {
     throw new ApplicationExtractionProviderError(
       "AI_PROVIDER is not configured. Set AI_PROVIDER=mock to enable AI-assisted form filling.",
+      "configuration",
     );
   }
 
@@ -15,5 +17,12 @@ export function getApplicationExtractionProvider(): ApplicationExtractionProvide
     return new MockApplicationExtractionProvider();
   }
 
-  throw new ApplicationExtractionProviderError(`Unsupported AI_PROVIDER: "${providerName}".`);
+  if (providerName === "openai") {
+    return new OpenAIApplicationExtractionProvider();
+  }
+
+  throw new ApplicationExtractionProviderError(
+    `Unsupported AI_PROVIDER: "${providerName}".`,
+    "configuration",
+  );
 }

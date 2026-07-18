@@ -128,7 +128,7 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
           </DetailRow>
         )}
         {application.salaryExpectation && (
-          <DetailRow label="Salary expectation">{application.salaryExpectation}</DetailRow>
+          <DetailRow label="Salary expectation">{application.salaryExpectation}?? 3000</DetailRow>
         )}
         <DetailRow label="Applied on">{format(new Date(application.appliedAt), "d MMM yyyy")}</DetailRow>
         <DetailRow label="Last activity">

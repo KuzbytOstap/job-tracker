@@ -122,18 +122,21 @@ ALLOWED_EMAIL="your-email@example.com"
 
 Add `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `ALLOWED_EMAIL` as environment variables on the Vercel project (alongside `DATABASE_URL`/`DIRECT_URL`). Changing them requires a redeploy to take effect.
 
-## AI-assisted form filling — development mode
+## AI-assisted form filling
 
 The "Add application" form has a **Fill from job posting** panel: paste a job posting (and optionally a cover letter for context), click **Analyze posting**, and the extracted values prefill the form's Company, Position, Platform, Vacancy link, Salary expectation, and Notes fields. You stay in control — nothing is auto-saved, and you review and click **Add application** yourself.
 
-The current implementation uses a **deterministic mock provider** (`AI_PROVIDER="mock"`):
+Extraction is served by `POST /api/applications/extract`, protected by the same `checkSession()` authentication as every other API route, behind a provider-agnostic interface (`ApplicationExtractionProvider`) selected at runtime by `AI_PROVIDER`.
+
+### Development mode — mock provider
+
+Set `AI_PROVIDER="mock"` (the default in `.env.example`):
 
 - it makes **no external network requests** and costs nothing to run;
+- **no `OPENAI_API_KEY` is required**;
 - it only prefills the create form — it never auto-submits or creates an application;
 - the pasted job posting and cover letter are **not persisted** anywhere (not sent in the create payload, not stored in the database, not written to `localStorage` or the URL);
-- a real OpenAI-backed provider is a **future separate step** — it is not implemented yet.
-
-Extraction is served by `POST /api/applications/extract`, protected by the same `checkSession()` authentication as every other API route.
+- fixture markers remain available for manual testing (see below).
 
 For local testing, embed one of these markers anywhere in the pasted job posting text to select a fixture:
 
@@ -147,6 +150,30 @@ For local testing, embed one of these markers anywhere in the pasted job posting
 | `[mock:error]` | Throws a controlled error, to test the UI's error state |
 
 With no marker, the default complete fixture is returned. Set `AI_MOCK_DELAY_MS` (milliseconds) to add an artificial delay so the loading state is easy to see manually — leave it at `0` for tests and normal development.
+
+### Production — OpenAI provider
+
+Set `AI_PROVIDER="openai"` and a server-only `OPENAI_API_KEY` to switch extraction to the real OpenAI-backed provider (`lib/ai/providers/openai-application-extraction-provider.ts`):
+
+- it uses **GPT-5 nano**, pinned to the exact snapshot `gpt-5-nano-2025-08-07` in server code — there is no `OPENAI_MODEL` environment variable, so the model can't be accidentally switched to something more expensive;
+- it calls the OpenAI **Responses API** with **strict structured output** (JSON Schema derived from the same Zod shape as the mock provider, then re-validated through the canonical `applicationExtractionResultSchema`);
+- it still **only prefills the existing form fields** — nothing is ever saved automatically, and the create/update payloads are unchanged;
+- the pasted job posting and cover letter are sent to OpenAI for the single Analyze request only — they are **not stored** anywhere, by OpenAI (`store: false`) or by this app;
+- the mock provider **remains available** for local development and is what automated tests always use;
+- `OPENAI_API_KEY` is **server-only** — it is never read by client components and never sent to the browser. There is no `NEXT_PUBLIC_OPENAI_API_KEY`.
+
+`OPENAI_API_KEY` is only required when `AI_PROVIDER="openai"`; the app builds, tests, and runs fine under `AI_PROVIDER="mock"` with no key configured at all.
+
+### Vercel
+
+Add `AI_PROVIDER` and (in production) `OPENAI_API_KEY` as environment variables on the Vercel project. As with all other environment variables, changing them requires a redeploy to take effect.
+
+### Cost safety
+
+- automated tests always run with the mock provider and the real `openai` SDK fully mocked — they make zero network requests and never touch a real API key;
+- there are no automatic paid retries or fallbacks: the OpenAI client is created with `maxRetries: 0`, and the app never silently falls back from `openai` to `mock` (or vice versa) on failure;
+- one **Analyze posting** click performs at most one OpenAI request; the button is disabled while a request is pending;
+- avoid switching your local `.env` to `AI_PROVIDER="openai"` for routine UI testing — use the mock provider instead, and only exercise the real provider for the specific manual checks you intend to pay for.
 
 ## Database commands
 

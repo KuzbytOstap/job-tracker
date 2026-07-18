@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Platform } from "@/app/generated/prisma/enums";
 import {
   applicationExtractionInputSchema,
+  applicationExtractionProviderNameSchema,
   applicationExtractionResultSchema,
 } from "@/lib/application-extraction";
 
@@ -136,5 +137,16 @@ describe("applicationExtractionInputSchema", () => {
   it("accepts a valid minimal request", () => {
     const parsed = applicationExtractionInputSchema.safeParse({ jobPostingText: "Valid posting" });
     expect(parsed.success).toBe(true);
+  });
+});
+
+describe("applicationExtractionProviderNameSchema", () => {
+  it("accepts 'mock' and 'openai'", () => {
+    expect(applicationExtractionProviderNameSchema.safeParse("mock").success).toBe(true);
+    expect(applicationExtractionProviderNameSchema.safeParse("openai").success).toBe(true);
+  });
+
+  it("rejects an unsupported provider name", () => {
+    expect(applicationExtractionProviderNameSchema.safeParse("anthropic").success).toBe(false);
   });
 });

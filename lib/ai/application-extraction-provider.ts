@@ -11,9 +11,19 @@ export interface ApplicationExtractionProvider {
   ): Promise<ApplicationExtractionResult>;
 }
 
+export type ApplicationExtractionErrorKind =
+  | "configuration"
+  | "rate_limit"
+  | "timeout"
+  | "network"
+  | "invalid_result";
+
 export class ApplicationExtractionProviderError extends Error {
-  constructor(message: string) {
+  readonly kind: ApplicationExtractionErrorKind;
+
+  constructor(message: string, kind: ApplicationExtractionErrorKind = "invalid_result") {
     super(message);
     this.name = "ApplicationExtractionProviderError";
+    this.kind = kind;
   }
 }

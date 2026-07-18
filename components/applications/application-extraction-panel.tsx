@@ -33,7 +33,7 @@ export function ApplicationExtractionPanel({
   onCoverLetterTextChange,
 }: ApplicationExtractionPanelProps) {
   const [open, setOpen] = useState(true);
-  const [lastResultWasMock, setLastResultWasMock] = useState(false);
+  const [lastResultProvider, setLastResultProvider] = useState<"mock" | "openai" | null>(null);
   const form = useFormContext<ApplicationFormValues>();
   const mutation = useExtractApplication();
 
@@ -82,7 +82,7 @@ export function ApplicationExtractionPanel({
       },
       {
         onSuccess: (response) => {
-          setLastResultWasMock(response.meta.provider === "mock");
+          setLastResultProvider(response.meta.provider);
           const { filled, kept } = applyExtractionResult(response.result);
           const summary =
             kept > 0
@@ -159,8 +159,11 @@ export function ApplicationExtractionPanel({
             >
               {mutation.isPending ? "Analyzing…" : "Analyze posting"}
             </Button>
-            {mutation.isSuccess && lastResultWasMock && (
+            {mutation.isSuccess && lastResultProvider === "mock" && (
               <p className="text-xs text-muted-foreground">Mock result — no external AI request was made.</p>
+            )}
+            {mutation.isSuccess && lastResultProvider === "openai" && (
+              <p className="text-xs text-muted-foreground">Posting analyzed.</p>
             )}
           </div>
         </div>

@@ -48,7 +48,21 @@ export async function POST(request: NextRequest) {
   let rawResult;
   try {
     rawResult = await provider.extractApplication(parsedInput.data);
-  } catch {
+  } catch (error) {
+    if (error instanceof ApplicationExtractionProviderError) {
+      switch (error.kind) {
+        case "configuration":
+          return jsonError(503, "AI extraction is not configured correctly.");
+        case "rate_limit":
+          return jsonError(429, "AI extraction is temporarily unavailable due to a usage limit.");
+        case "timeout":
+          return jsonError(504, "AI extraction timed out. Please try again.");
+        case "network":
+          return jsonError(502, "Couldn't reach the AI extraction service. Please try again.");
+        case "invalid_result":
+          return jsonError(502, "Couldn't extract application details. You can retry or fill the form manually.");
+      }
+    }
     return jsonError(502, "Couldn't analyze the posting. You can retry or fill the form manually.");
   }
 
