@@ -10,12 +10,14 @@ import { AddApplicationDialog } from "@/components/dashboard/add-application-dia
 import { ApplicationDetailDialog } from "@/components/dashboard/application-detail-dialog";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { KanbanDndContext } from "@/components/board/kanban-dnd-context";
+import { MobilePipelineView } from "@/components/board/mobile-pipeline-view";
 import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { BoardStats } from "@/components/board/board-stats";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useApplicationDetailState } from "@/hooks/use-application-detail";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { SortOption } from "@/lib/validation";
 
 export function BoardShell() {
@@ -23,6 +25,7 @@ export function BoardShell() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   const detail = useApplicationDetailState();
 
@@ -65,7 +68,7 @@ export function BoardShell() {
               onAddClick={() => setAddDialogOpen(true)}
             />
           </div>
-        ) : (
+        ) : isDesktop ? (
           <KanbanDndContext>
             <KanbanBoard
               applications={applications}
@@ -73,6 +76,14 @@ export function BoardShell() {
               onSelectApplication={(application) => detail.openDetail(application.id)}
             />
           </KanbanDndContext>
+        ) : (
+          <div className="mx-auto w-full max-w-[760px] px-4">
+            <MobilePipelineView
+              applications={applications}
+              sort={sort}
+              onSelectApplication={(application) => detail.openDetail(application.id)}
+            />
+          </div>
         )}
       </div>
 
