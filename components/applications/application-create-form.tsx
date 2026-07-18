@@ -14,11 +14,12 @@ import {
   applicationFormSchema,
   applicationFormValuesToCreatePayload,
   defaultApplicationFormValues,
+  normalizeSourceText,
   type ApplicationFormValues,
 } from "@/lib/application-form";
 import { getStatusPageHref } from "@/lib/board-columns";
 import { Status } from "@/app/generated/prisma/enums";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationDTO, CreateApplicationPayload } from "@/lib/api-types";
 
 type ApplicationCreateFormProps = {
   currentStatusSlug?: string;
@@ -79,7 +80,11 @@ export function ApplicationCreateForm({
   function onValid(values: ApplicationFormValues) {
     if (mutation.isPending) return;
 
-    const payload = applicationFormValuesToCreatePayload(values);
+    const payload: CreateApplicationPayload = {
+      ...applicationFormValuesToCreatePayload(values),
+      jobPostingText: normalizeSourceText(jobPostingText),
+      coverLetterText: normalizeSourceText(coverLetterText),
+    };
     mutation.mutate(payload, {
       onSuccess: (created) => {
         const showViewAppliedAction = currentStatusSlug != null && currentStatusSlug !== "applied";

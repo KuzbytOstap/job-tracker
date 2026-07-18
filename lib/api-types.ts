@@ -57,6 +57,8 @@ export type CreateApplicationPayload = {
   hasTestTask?: boolean;
   testTaskDone?: boolean;
   appliedAt?: string;
+  jobPostingText?: string | null;
+  coverLetterText?: string | null;
 };
 
 export type UpdateApplicationPayload = Partial<CreateApplicationPayload> & {

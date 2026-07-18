@@ -39,6 +39,8 @@ function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDT
     testTaskDone: false,
     salaryExpectation: null,
     notes: null,
+    jobPostingText: null,
+    coverLetterText: null,
     appliedAt: "2026-07-10T00:00:00.000Z",
     lastActivityAt: "2026-07-10T00:00:00.000Z",
     createdAt: "2026-07-10T00:00:00.000Z",
@@ -103,7 +105,7 @@ afterEach(() => {
 });
 
 describe("ApplicationCreateForm", () => {
-  it("submits the existing payload shape with no new fields", async () => {
+  it("submits the existing payload shape plus null source texts when the AI panel was never used", async () => {
     const user = userEvent.setup();
     createApplicationMock.mockResolvedValue(fakeApplication());
     const { onCreated } = renderForm();
@@ -114,12 +116,25 @@ describe("ApplicationCreateForm", () => {
     await waitFor(() => expect(createApplicationMock).toHaveBeenCalledTimes(1));
     const payload = createApplicationMock.mock.calls[0][0];
     expect(Object.keys(payload).sort()).toEqual(
-      ["appliedAt", "company", "hasTestTask", "link", "notes", "platform", "position", "salaryExpectation"].sort(),
+      [
+        "appliedAt",
+        "company",
+        "coverLetterText",
+        "hasTestTask",
+        "jobPostingText",
+        "link",
+        "notes",
+        "platform",
+        "position",
+        "salaryExpectation",
+      ].sort(),
     );
     expect(payload.company).toBe("Acme");
     expect(payload.position).toBe("Engineer");
     expect(payload.link).toBeUndefined();
     expect(payload.notes).toBeUndefined();
+    expect(payload.jobPostingText).toBeNull();
+    expect(payload.coverLetterText).toBeNull();
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
   });
 
@@ -147,6 +162,22 @@ describe("ApplicationCreateForm", () => {
     expect(onCreated).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Company")).toHaveValue("Acme");
     expect(screen.getByLabelText("Position")).toHaveValue("Engineer");
+  });
+
+  it("keeps pasted source text in the form when the create request fails", async () => {
+    const user = userEvent.setup();
+    createApplicationMock.mockRejectedValue(new Error("network error"));
+    const { onCreated } = renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+    await user.type(screen.getByLabelText("Cover letter (optional)"), "cover letter text");
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(createApplicationMock).toHaveBeenCalledTimes(1));
+    expect(onCreated).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Job posting")).toHaveValue("posting text");
+    expect(screen.getByLabelText("Cover letter (optional)")).toHaveValue("cover letter text");
   });
 
   it("cancel does not submit and closes immediately when the form is untouched", async () => {
@@ -281,7 +312,7 @@ describe("ApplicationCreateForm AI-assisted extraction", () => {
     expect(createApplicationMock).not.toHaveBeenCalled();
   });
 
-  it("submits the existing payload shape only, without pasted source text, after extraction", async () => {
+  it("includes the pasted source text in the create payload exactly once, only on Save", async () => {
     const user = userEvent.setup();
     extractApplicationFromPostingMock.mockResolvedValue(
       fakeExtractionResponse({ company: "Acme", position: "Engineer" }),
@@ -292,16 +323,46 @@ describe("ApplicationCreateForm AI-assisted extraction", () => {
     await user.type(screen.getByLabelText("Job posting"), "posting text");
     await user.click(screen.getByRole("button", { name: /analyze posting/i }));
     await waitFor(() => expect(screen.getByLabelText("Company")).toHaveValue("Acme"));
+    expect(createApplicationMock).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: /add application/i }));
 
     await waitFor(() => expect(createApplicationMock).toHaveBeenCalledTimes(1));
     const payload = createApplicationMock.mock.calls[0][0];
-    expect(Object.keys(payload).sort()).toEqual(
-      ["appliedAt", "company", "hasTestTask", "link", "notes", "platform", "position", "salaryExpectation"].sort(),
-    );
-    expect(payload).not.toHaveProperty("jobPostingText");
-    expect(payload).not.toHaveProperty("coverLetterText");
+    expect(Object.keys(payload).filter((key) => key === "jobPostingText")).toHaveLength(1);
+    expect(payload.jobPostingText).toBe("posting text");
+    expect(payload.coverLetterText).toBeNull();
+  });
+
+  it("includes both source texts, trimmed, when both are pasted", async () => {
+    const user = userEvent.setup();
+    createApplicationMock.mockResolvedValue(fakeApplication());
+    const { onCreated } = renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "  posting text  ");
+    await user.type(screen.getByLabelText("Cover letter (optional)"), "  cover letter text  ");
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(createApplicationMock).toHaveBeenCalledTimes(1));
+    const payload = createApplicationMock.mock.calls[0][0];
+    expect(payload.jobPostingText).toBe("posting text");
+    expect(payload.coverLetterText).toBe("cover letter text");
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+  });
+
+  it("normalizes a whitespace-only cover letter to null", async () => {
+    const user = userEvent.setup();
+    createApplicationMock.mockResolvedValue(fakeApplication());
+    renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Cover letter (optional)"), "   ");
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(createApplicationMock).toHaveBeenCalledTimes(1));
+    const payload = createApplicationMock.mock.calls[0][0];
+    expect(payload.coverLetterText).toBeNull();
   });
 
   it("preserves source text and form values when extraction fails", async () => {

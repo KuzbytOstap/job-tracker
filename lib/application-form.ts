@@ -84,3 +84,35 @@ export function applicationFormValuesToUpdatePayload(values: ApplicationFormValu
     appliedAt: payload.appliedAt,
   };
 }
+
+export function normalizeSourceText(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
+}
+
+const applicationSourceTextFields = {
+  jobPostingText: z.string().max(50_000, "Job posting text is too long"),
+  coverLetterText: z.string().max(20_000, "Cover letter text is too long"),
+};
+
+export const applicationEditFormSchema = applicationFormSchema.extend(applicationSourceTextFields);
+
+export type ApplicationEditFormValues = z.infer<typeof applicationEditFormSchema>;
+
+export function applicationEditFormValuesFromApplication(application: ApplicationDTO): ApplicationEditFormValues {
+  return {
+    ...applicationFormValuesFromApplication(application),
+    jobPostingText: application.jobPostingText ?? "",
+    coverLetterText: application.coverLetterText ?? "",
+  };
+}
+
+export function applicationEditFormValuesToUpdatePayload(
+  values: ApplicationEditFormValues,
+): UpdateApplicationPayload {
+  return {
+    ...applicationFormValuesToUpdatePayload(values),
+    jobPostingText: normalizeSourceText(values.jobPostingText),
+    coverLetterText: normalizeSourceText(values.coverLetterText),
+  };
+}

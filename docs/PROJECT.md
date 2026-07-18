@@ -63,6 +63,9 @@ A single `JobApplication` row per application, plus an append-only
 
 - `company`, `position`, `platform` (`DJINNI` / `DOU` / `LINKEDIN` /
   `ROBOTA_UA` / `DIRECT` / `OTHER`), `link`, `salaryExpectation`, `notes`.
+- `jobPostingText`, `coverLetterText` — optional archival copies of the
+  pasted source materials, saved only on a manual Save (see README's
+  "Source materials are stored with the application").
 - `status` — one of `APPLIED`, `HR_REPLIED`, `HR_CALL`, `TECH_INTERVIEW`,
   `TEST_TASK`, `OFFER`, `REJECTED`, `IGNORED`.
 - `hasTestTask` / `testTaskDone` — the test task is modeled as a **branch**,

@@ -13,6 +13,7 @@ import { TestTaskBranch } from "@/components/applications/test-task-branch";
 import { TerminalStatusActions } from "@/components/applications/terminal-status-actions";
 import { TestTaskControls } from "@/components/applications/test-task-controls";
 import { StatusHistory } from "@/components/applications/status-history";
+import { SourceMaterialsSection } from "@/components/applications/source-materials-section";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
 import { useReactivateApplication } from "@/hooks/use-reactivate-application";
@@ -144,6 +145,11 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
           <p className="whitespace-pre-wrap text-sm">{application.notes}</p>
         </DetailRow>
       )}
+
+      <SourceMaterialsSection
+        jobPostingText={application.jobPostingText}
+        coverLetterText={application.coverLetterText}
+      />
 
       <Separator />
 

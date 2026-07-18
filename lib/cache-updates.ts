@@ -92,6 +92,8 @@ export function buildOptimisticApplication(
     testTaskDone: input.testTaskDone ?? false,
     salaryExpectation: input.salaryExpectation ?? null,
     notes: input.notes ?? null,
+    jobPostingText: input.jobPostingText ?? null,
+    coverLetterText: input.coverLetterText ?? null,
     appliedAt: input.appliedAt ?? nowIso,
     lastActivityAt: nowIso,
     createdAt: nowIso,

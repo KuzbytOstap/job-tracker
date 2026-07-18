@@ -37,6 +37,22 @@ function optionalNullableText() {
     });
 }
 
+// Source-text fields accept an explicit `null` on the wire (in addition to
+// omission) so an edit save can distinguish "clear this field" from "leave it
+// untouched" — see applicationEditFormValuesToUpdatePayload in application-form.ts.
+function optionalSourceText(maxLength: number, maxLengthMessage: string) {
+  const stringSchema = z.string().trim().max(maxLength, maxLengthMessage);
+
+  return z
+    .union([stringSchema, z.null()])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) return undefined;
+      if (value === null) return null;
+      return value.length === 0 ? null : value;
+    });
+}
+
 const linkSchema = z
   .string()
   .optional()
@@ -64,6 +80,8 @@ const baseApplicationFields = {
   link: linkSchema,
   salaryExpectation: optionalNullableText(),
   notes: optionalNullableText(),
+  jobPostingText: optionalSourceText(50_000, "Job posting text is too long"),
+  coverLetterText: optionalSourceText(20_000, "Cover letter text is too long"),
   hasTestTask: z.boolean().optional(),
   testTaskDone: z.boolean().optional(),
   appliedAt: z.coerce.date().optional(),

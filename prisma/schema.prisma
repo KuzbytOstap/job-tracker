@@ -43,6 +43,8 @@ model JobApplication {
   testTaskDone      Boolean  @default(false)
   salaryExpectation String?
   notes             String?
+  jobPostingText    String?
+  coverLetterText   String?
   appliedAt         DateTime @default(now())
   lastActivityAt    DateTime @default(now())
   createdAt         DateTime @default(now())

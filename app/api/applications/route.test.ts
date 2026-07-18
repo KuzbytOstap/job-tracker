@@ -66,6 +66,30 @@ describe("GET /api/applications", () => {
   });
 });
 
+function fakeCreatedRow(overrides: Record<string, unknown> = {}) {
+  const now = new Date("2026-07-18T12:00:00.000Z");
+  return {
+    id: "app-1",
+    company: "Acme",
+    position: "Engineer",
+    platform: "DIRECT",
+    link: null,
+    status: "APPLIED",
+    hasTestTask: false,
+    testTaskDone: false,
+    salaryExpectation: null,
+    notes: null,
+    jobPostingText: null,
+    coverLetterText: null,
+    appliedAt: now,
+    lastActivityAt: now,
+    createdAt: now,
+    updatedAt: now,
+    statusChanges: [],
+    ...overrides,
+  };
+}
+
 describe("POST /api/applications", () => {
   it("returns 401 before touching Prisma when unauthenticated", async () => {
     checkSessionMock.mockResolvedValue({ status: "unauthenticated" });
@@ -95,5 +119,58 @@ describe("POST /api/applications", () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "Forbidden" });
     expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it("persists both source texts and returns them in the response", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    createMock.mockResolvedValue(
+      fakeCreatedRow({ jobPostingText: "We are hiring an engineer.", coverLetterText: "Dear hiring manager," }),
+    );
+    const request = new NextRequest("http://localhost:3000/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company: "Acme",
+        position: "Engineer",
+        platform: "DIRECT",
+        jobPostingText: "We are hiring an engineer.",
+        coverLetterText: "Dear hiring manager,",
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    expect(createMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          jobPostingText: "We are hiring an engineer.",
+          coverLetterText: "Dear hiring manager,",
+        }),
+      }),
+    );
+    const body = await response.json();
+    expect(body.jobPostingText).toBe("We are hiring an engineer.");
+    expect(body.coverLetterText).toBe("Dear hiring manager,");
+  });
+
+  it("creates an application without source texts, storing them as null", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    createMock.mockResolvedValue(fakeCreatedRow());
+    const request = new NextRequest("http://localhost:3000/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company: "Acme", position: "Engineer", platform: "DIRECT" }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    const createCallData = createMock.mock.calls[0][0].data;
+    expect(createCallData.jobPostingText).toBeUndefined();
+    expect(createCallData.coverLetterText).toBeUndefined();
+    const body = await response.json();
+    expect(body.jobPostingText).toBeNull();
+    expect(body.coverLetterText).toBeNull();
   });
 });

@@ -124,9 +124,18 @@ Add `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `ALLOWED_EMAIL` a
 
 ## AI-assisted form filling
 
-The "Add application" form has a **Fill from job posting** panel: paste a job posting (and optionally a cover letter for context), click **Analyze posting**, and the extracted values prefill the form's Company, Position, Platform, Vacancy link, Salary expectation, and Notes fields. You stay in control — nothing is auto-saved, and you review and click **Add application** yourself.
+The "Add application" form has a **Fill from job posting** panel: paste a job posting (and optionally a cover letter for context), click **Analyze posting**, and the extracted values prefill the form's Company, Position, Platform, Vacancy link, Salary expectation, and Notes fields. You stay in control — **Analyze** never creates or saves anything by itself; nothing is persisted until you review the form and click **Add application** yourself.
 
-Extraction is served by `POST /api/applications/extract`, protected by the same `checkSession()` authentication as every other API route, behind a provider-agnostic interface (`ApplicationExtractionProvider`) selected at runtime by `AI_PROVIDER`.
+Extraction is served by `POST /api/applications/extract`, protected by the same `checkSession()` authentication as every other API route, behind a provider-agnostic interface (`ApplicationExtractionProvider`) selected at runtime by `AI_PROVIDER`. That endpoint is read/analyze-only — it never writes to the database, regardless of provider.
+
+### Source materials are stored with the application
+
+The pasted job posting and cover letter (`jobPostingText` / `coverLetterText` on `JobApplication`) are saved as part of the application record, but only when you manually click **Add application** (create) or **Save changes** (edit) — never on Analyze, and never on a failed create/extraction. Both fields are optional and nullable:
+
+- applications created before this feature, and any created without pasting source text, have `jobPostingText`/`coverLetterText` set to `null`;
+- either value can be viewed and edited later from the application's **Source materials** section (visible on the detail view when at least one is set, editable from the edit form);
+- clearing a source-text field and saving stores `null`, not an empty string;
+- both fields are rendered as plain text (line breaks preserved, no HTML/Markdown interpretation) and are never included in toasts, logs, query keys, or URLs.
 
 ### Development mode — mock provider
 
@@ -135,7 +144,7 @@ Set `AI_PROVIDER="mock"` (the default in `.env.example`):
 - it makes **no external network requests** and costs nothing to run;
 - **no `OPENAI_API_KEY` is required**;
 - it only prefills the create form — it never auto-submits or creates an application;
-- the pasted job posting and cover letter are **not persisted** anywhere (not sent in the create payload, not stored in the database, not written to `localStorage` or the URL);
+- the Analyze request itself never persists the pasted job posting or cover letter anywhere (not stored by the extraction endpoint, not written to `localStorage` or the URL) — see [Source materials are stored with the application](#source-materials-are-stored-with-the-application) for what happens once you actually click Save;
 - fixture markers remain available for manual testing (see below).
 
 For local testing, embed one of these markers anywhere in the pasted job posting text to select a fixture:
@@ -157,8 +166,8 @@ Set `AI_PROVIDER="openai"` and a server-only `OPENAI_API_KEY` to switch extracti
 
 - it uses **GPT-5 nano**, pinned to the exact snapshot `gpt-5-nano-2025-08-07` in server code — there is no `OPENAI_MODEL` environment variable, so the model can't be accidentally switched to something more expensive;
 - it calls the OpenAI **Responses API** with **strict structured output** (JSON Schema derived from the same Zod shape as the mock provider, then re-validated through the canonical `applicationExtractionResultSchema`);
-- it still **only prefills the existing form fields** — nothing is ever saved automatically, and the create/update payloads are unchanged;
-- the pasted job posting and cover letter are sent to OpenAI for the single Analyze request only — they are **not stored** anywhere, by OpenAI (`store: false`) or by this app;
+- it still **only prefills the existing form fields** — nothing is ever saved automatically;
+- the pasted job posting and cover letter are sent to OpenAI for the single Analyze request only, and are **not stored** by OpenAI (`store: false`) or by the extraction endpoint itself — see [Source materials are stored with the application](#source-materials-are-stored-with-the-application) for what a manual Save then persists;
 - the mock provider **remains available** for local development and is what automated tests always use;
 - `OPENAI_API_KEY` is **server-only** — it is never read by client components and never sent to the browser. There is no `NEXT_PUBLIC_OPENAI_API_KEY`.
 
