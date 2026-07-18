@@ -8,6 +8,10 @@ import type {
   UpdateApplicationPayload,
 } from "@/lib/api-types";
 import type { SortOption, StatusFilter } from "@/lib/validation";
+import type {
+  ApplicationExtractionInput,
+  ApplicationExtractionResponse,
+} from "@/lib/application-extraction";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -93,4 +97,13 @@ export function deleteApplication(id: string): Promise<DeleteResponse> {
 
 export function getStats(): Promise<StatsResponse> {
   return request<StatsResponse>("/api/stats");
+}
+
+export function extractApplicationFromPosting(
+  input: ApplicationExtractionInput,
+): Promise<ApplicationExtractionResponse> {
+  return request<ApplicationExtractionResponse>("/api/applications/extract", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

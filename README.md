@@ -122,6 +122,32 @@ ALLOWED_EMAIL="your-email@example.com"
 
 Add `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `ALLOWED_EMAIL` as environment variables on the Vercel project (alongside `DATABASE_URL`/`DIRECT_URL`). Changing them requires a redeploy to take effect.
 
+## AI-assisted form filling — development mode
+
+The "Add application" form has a **Fill from job posting** panel: paste a job posting (and optionally a cover letter for context), click **Analyze posting**, and the extracted values prefill the form's Company, Position, Platform, Vacancy link, Salary expectation, and Notes fields. You stay in control — nothing is auto-saved, and you review and click **Add application** yourself.
+
+The current implementation uses a **deterministic mock provider** (`AI_PROVIDER="mock"`):
+
+- it makes **no external network requests** and costs nothing to run;
+- it only prefills the create form — it never auto-submits or creates an application;
+- the pasted job posting and cover letter are **not persisted** anywhere (not sent in the create payload, not stored in the database, not written to `localStorage` or the URL);
+- a real OpenAI-backed provider is a **future separate step** — it is not implemented yet.
+
+Extraction is served by `POST /api/applications/extract`, protected by the same `checkSession()` authentication as every other API route.
+
+For local testing, embed one of these markers anywhere in the pasted job posting text to select a fixture:
+
+| Marker | Behavior |
+| --- | --- |
+| `[mock:complete]` | Returns a complete fixture with all fields filled |
+| `[mock:partial]` | Returns only a few fields; the rest are `null` |
+| `[mock:linkedin]` | Returns a LinkedIn-style fixture (`platform: LINKEDIN`) |
+| `[mock:djinni]` | Returns a Djinni-style fixture (`platform: DJINNI`) |
+| `[mock:dou]` | Returns a DOU-style fixture (`platform: DOU`) |
+| `[mock:error]` | Throws a controlled error, to test the UI's error state |
+
+With no marker, the default complete fixture is returned. Set `AI_MOCK_DELAY_MS` (milliseconds) to add an artificial delay so the loading state is easy to see manually — leave it at `0` for tests and normal development.
+
 ## Database commands
 
 - `npm run db:generate` — regenerate the Prisma Client from `prisma/schema.prisma`.

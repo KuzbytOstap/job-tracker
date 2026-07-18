@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ApplicationFormFields } from "@/components/applications/application-form-fields";
+import { ApplicationExtractionPanel } from "@/components/applications/application-extraction-panel";
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
 import { useCreateApplication } from "@/hooks/use-create-application";
 import {
@@ -37,14 +38,18 @@ export function ApplicationCreateForm({
   const router = useRouter();
   const mutation = useCreateApplication();
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const [jobPostingText, setJobPostingText] = useState("");
+  const [coverLetterText, setCoverLetterText] = useState("");
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationFormSchema),
     defaultValues: defaultApplicationFormValues(),
   });
 
+  const hasSourceText = jobPostingText.trim().length > 0 || coverLetterText.trim().length > 0;
+
   useEffect(() => {
-    onDirtyChange(form.formState.isDirty);
-  }, [form.formState.isDirty, onDirtyChange]);
+    onDirtyChange(form.formState.isDirty || hasSourceText);
+  }, [form.formState.isDirty, hasSourceText, onDirtyChange]);
 
   useEffect(() => {
     onPendingChange(mutation.isPending);
@@ -56,7 +61,7 @@ export function ApplicationCreateForm({
   }
 
   function handleCancelClick() {
-    if (form.formState.isDirty) {
+    if (form.formState.isDirty || hasSourceText) {
       setConfirmDiscardOpen(true);
       return;
     }
@@ -66,6 +71,8 @@ export function ApplicationCreateForm({
   function handleConfirmDiscard() {
     setConfirmDiscardOpen(false);
     form.reset(defaultApplicationFormValues());
+    setJobPostingText("");
+    setCoverLetterText("");
     onCancel();
   }
 
@@ -85,6 +92,8 @@ export function ApplicationCreateForm({
             : undefined,
         });
         form.reset(defaultApplicationFormValues());
+        setJobPostingText("");
+        setCoverLetterText("");
         onCreated(created);
       },
     });
@@ -93,6 +102,12 @@ export function ApplicationCreateForm({
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onValid, onInvalid)} noValidate className="flex flex-col gap-4">
+        <ApplicationExtractionPanel
+          jobPostingText={jobPostingText}
+          coverLetterText={coverLetterText}
+          onJobPostingTextChange={setJobPostingText}
+          onCoverLetterTextChange={setCoverLetterText}
+        />
         <ApplicationFormFields showTestTaskCheckbox sectioned />
         <div
           className="sticky bottom-0 -mx-4 flex flex-col-reverse gap-2 border-t bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-0"
