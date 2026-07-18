@@ -32,7 +32,7 @@ export function KanbanColumn({
       ref={dropRef}
       aria-label={`${column.label} column`}
       className={cn(
-        "flex h-[calc(100dvh-260px)] min-h-[360px] w-[85vw] max-w-[340px] shrink-0 snap-start flex-col rounded-xl bg-muted/40 transition-colors sm:w-[300px] sm:snap-align-none",
+        "flex min-h-[360px] w-[85vw] max-w-[340px] shrink-0 snap-start flex-col rounded-xl bg-muted/40 transition-colors sm:w-[300px] sm:snap-align-none",
         isDropTarget && "bg-primary/5 ring-2 ring-primary",
         isDragSource && !isDropTarget && "bg-muted/60",
       )}

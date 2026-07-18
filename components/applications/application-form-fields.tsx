@@ -105,6 +105,7 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
         <Input
           id="application-salary"
           placeholder="e.g. $4000–5000"
+          defaultValue={3000}
           className={fieldInputClassName}
           {...register("salaryExpectation")}
         />

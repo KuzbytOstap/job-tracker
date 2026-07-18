@@ -24,7 +24,7 @@ export function KanbanColumnContent({
   const groups = groupApplicationsByAppliedDate(applications, sort);
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+    <div className="px-3 pb-3">
       {groups.length === 0 ? (
         <BoardColumnEmptyState column={column} />
       ) : (

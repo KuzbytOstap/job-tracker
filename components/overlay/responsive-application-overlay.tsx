@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { XIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerClose,
@@ -27,6 +27,11 @@ type ResponsiveApplicationOverlayProps = {
   isPending?: boolean;
   children: ReactNode;
   contentClassName?: string;
+  /**
+   * Below the desktop breakpoint, present as a full-screen app screen (compact header,
+   * single scroll area) instead of the default bottom sheet. Desktop is unaffected.
+   */
+  mobileFullScreen?: boolean;
 };
 
 /**
@@ -44,6 +49,7 @@ export function ResponsiveApplicationOverlay({
   isPending = false,
   children,
   contentClassName,
+  mobileFullScreen = false,
 }: ResponsiveApplicationOverlayProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
@@ -80,6 +86,33 @@ export function ResponsiveApplicationOverlay({
               {description && <DialogDescription>{description}</DialogDescription>}
             </DialogHeader>
             {children}
+          </DialogContent>
+        </Dialog>
+      ) : mobileFullScreen ? (
+        <Dialog open={open} onOpenChange={handlePrimitiveOpenChange}>
+          <DialogContent
+            showCloseButton={false}
+            className={cn(
+              "inset-0 flex h-[100dvh] max-h-[100dvh] max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none p-0 ring-0",
+              contentClassName,
+            )}
+          >
+            <div
+              className="flex shrink-0 items-center gap-1 border-b bg-popover px-2 pb-3"
+              style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+            >
+              <DialogClose render={<Button type="button" variant="ghost" size="icon-sm" />}>
+                <XIcon />
+                <span className="sr-only">Close</span>
+              </DialogClose>
+              <DialogTitle className="text-base font-medium">{title}</DialogTitle>
+            </div>
+            <div
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+            >
+              {children}
+            </div>
           </DialogContent>
         </Dialog>
       ) : (

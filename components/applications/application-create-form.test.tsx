@@ -174,6 +174,21 @@ describe("ApplicationCreateForm", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it("places the Cancel and Save actions after Notes in normal document flow, with no duplicates", () => {
+    renderForm();
+
+    const notes = screen.getByLabelText("Notes");
+    const cancelButton = screen.getByRole("button", { name: /^cancel$/i });
+    const saveButton = screen.getByRole("button", { name: /add application/i });
+
+    expect(screen.getAllByRole("button", { name: /^cancel$/i })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /add application/i })).toHaveLength(1);
+
+    const position = notes.compareDocumentPosition(cancelButton);
+    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(notes.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("pressing Enter in Notes inserts a newline instead of submitting", async () => {
     const user = userEvent.setup();
     const { onCreated } = renderForm();

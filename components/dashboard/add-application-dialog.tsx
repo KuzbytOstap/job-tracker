@@ -22,6 +22,7 @@ export function AddApplicationDialog({ open, onOpenChange, currentStatusSlug }: 
       description="Track a new job application. It starts in Applied."
       isDirty={isDirty}
       isPending={isPending}
+      mobileFullScreen
     >
       <ApplicationCreateForm
         currentStatusSlug={currentStatusSlug}

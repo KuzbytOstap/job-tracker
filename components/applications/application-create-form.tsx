@@ -109,9 +109,7 @@ export function ApplicationCreateForm({
           onCoverLetterTextChange={setCoverLetterText}
         />
         <ApplicationFormFields showTestTaskCheckbox sectioned />
-        <div
-          className="sticky bottom-0 -mx-4 flex flex-col-reverse gap-2 border-t bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-0"
-        >
+        <div className="flex flex-col-reverse gap-2 border-t pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:border-0 sm:pt-0 sm:pb-0">
           <Button
             type="button"
             variant="outline"
