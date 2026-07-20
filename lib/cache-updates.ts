@@ -101,6 +101,8 @@ export function buildOptimisticApplication(
     effectiveStatus: Status.APPLIED,
     isAutoIgnored: false,
     statusChanges: [],
+    hrInterviewQuestions: null,
+    hrQuestionsGeneratedAt: null,
   };
 }
 

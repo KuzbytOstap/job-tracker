@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Status } from "@/app/generated/prisma/client";
 import { checkSession } from "@/lib/auth";
 import { updateApplicationSchema } from "@/lib/validation";
 import { resolveTestTaskFlags, toApplicationDTO, toApplicationWithMeta } from "@/lib/applications";
+import { maybeGenerateHrQuestionsOnTransition } from "@/lib/hr-questions-service";
 import {
   forbiddenResponse,
   jsonError,
@@ -100,7 +102,35 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       });
     });
 
-    return NextResponse.json(toApplicationDTO(toApplicationWithMeta(updated, now)));
+    let finalApplication = updated;
+
+    if (statusChanged && status === Status.HR_CALL) {
+      const hrResult = await maybeGenerateHrQuestionsOnTransition({
+        applicationId: id,
+        previousStatus: existing.status,
+        newStatus: status!,
+        existingHrInterviewQuestions: existing.hrInterviewQuestions,
+        context: {
+          company: updated.company,
+          position: updated.position,
+          platform: updated.platform,
+          salaryExpectation: updated.salaryExpectation,
+          notes: updated.notes,
+          jobPostingText: updated.jobPostingText,
+          coverLetterText: updated.coverLetterText,
+        },
+      });
+
+      if (hrResult) {
+        finalApplication = {
+          ...updated,
+          hrInterviewQuestions: hrResult.hrInterviewQuestions,
+          hrQuestionsGeneratedAt: hrResult.hrQuestionsGeneratedAt,
+        };
+      }
+    }
+
+    return NextResponse.json(toApplicationDTO(toApplicationWithMeta(finalApplication, now)));
   } catch (error) {
     console.error(error);
     return serverErrorResponse();

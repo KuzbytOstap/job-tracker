@@ -5,6 +5,7 @@ import type {
   Prisma,
 } from "@/app/generated/prisma/client";
 import { effectiveStatus } from "@/lib/status";
+import { parseStoredHrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 import type { SortOption } from "@/lib/validation";
 import type { ApplicationDTO } from "@/lib/api-types";
 
@@ -50,6 +51,10 @@ export function toApplicationDTO(application: ApplicationWithMeta): ApplicationD
     lastActivityAt: application.lastActivityAt.toISOString(),
     createdAt: application.createdAt.toISOString(),
     updatedAt: application.updatedAt.toISOString(),
+    hrInterviewQuestions: parseStoredHrInterviewQuestionSet(application.hrInterviewQuestions),
+    hrQuestionsGeneratedAt: application.hrQuestionsGeneratedAt
+      ? application.hrQuestionsGeneratedAt.toISOString()
+      : null,
     statusChanges: application.statusChanges.map((change) => ({
       ...change,
       changedAt: change.changedAt.toISOString(),

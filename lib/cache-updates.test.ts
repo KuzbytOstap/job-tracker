@@ -34,6 +34,8 @@ function makeApp(overrides: Partial<ApplicationDTO> = {}): ApplicationDTO {
     effectiveStatus: Status.APPLIED,
     isAutoIgnored: false,
     statusChanges: [],
+    hrInterviewQuestions: null,
+    hrQuestionsGeneratedAt: null,
     ...overrides,
   };
 }

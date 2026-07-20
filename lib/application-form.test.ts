@@ -101,6 +101,8 @@ describe("applicationFormValuesFromApplication", () => {
       effectiveStatus: Status.APPLIED,
       isAutoIgnored: false,
       statusChanges: [],
+      hrInterviewQuestions: null,
+      hrQuestionsGeneratedAt: null,
     };
 
     const result = applicationFormValuesFromApplication(application);

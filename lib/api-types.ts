@@ -1,16 +1,19 @@
 import type { JobApplication, StatusChange, Platform, Status } from "@/app/generated/prisma/client";
+import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 type WithStringDates<T, K extends keyof T> = Omit<T, K> & { [P in K]: string };
 
 export type StatusChangeDTO = WithStringDates<StatusChange, "changedAt">;
 
-export type ApplicationDTO = WithStringDates<
-  JobApplication,
-  "appliedAt" | "lastActivityAt" | "createdAt" | "updatedAt"
+export type ApplicationDTO = Omit<
+  WithStringDates<JobApplication, "appliedAt" | "lastActivityAt" | "createdAt" | "updatedAt">,
+  "hrInterviewQuestions" | "hrQuestionsGeneratedAt"
 > & {
   effectiveStatus: Status;
   isAutoIgnored: boolean;
   statusChanges: StatusChangeDTO[];
+  hrInterviewQuestions: HrInterviewQuestionSet | null;
+  hrQuestionsGeneratedAt: string | null;
 };
 
 export type ApplicationsListResponse = {

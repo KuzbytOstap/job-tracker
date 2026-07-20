@@ -29,6 +29,8 @@ function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDT
     effectiveStatus: Status.APPLIED,
     isAutoIgnored: false,
     statusChanges: [],
+    hrInterviewQuestions: null,
+    hrQuestionsGeneratedAt: null,
     ...overrides,
   };
 }

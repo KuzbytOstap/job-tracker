@@ -184,6 +184,22 @@ Add `AI_PROVIDER` and (in production) `OPENAI_API_KEY` as environment variables 
 - one **Analyze posting** click performs at most one OpenAI request; the button is disabled while a request is pending;
 - avoid switching your local `.env` to `AI_PROVIDER="openai"` for routine UI testing — use the mock provider instead, and only exercise the real provider for the specific manual checks you intend to pay for.
 
+## HR interview question preparation
+
+When an application transitions **for the first time** from any other status into the existing **HR call** status, the app automatically prepares a set of interview questions and stores it on the application:
+
+- a deterministic list of common HR questions (`HR_CORE_QUESTIONS` in `lib/hr-interview-questions.ts`) is always saved immediately, before any AI call;
+- if the application has meaningful context — a non-empty `jobPostingText`, `coverLetterText`, or `notes` — the AI provider is asked for up to six additional vacancy-specific questions, which are merged in after the core list;
+- with no meaningful context (or when company/position are the only known details), no AI request is made and the core-only set is saved;
+- the merged set is persisted on the application (`hrInterviewQuestions`, `hrQuestionsGeneratedAt`), so opening the application later never triggers another AI request;
+- moving out of HR call and back again does **not** regenerate questions — the stored set is left as-is;
+- if AI generation fails, times out, or returns invalid output, the status change still succeeds and the core questions are kept; no error is surfaced for the AI step;
+- there is at most one automatic AI request per application for this feature, enforced server-side by an atomic claim on `hrInterviewQuestions` (whichever concurrent status-change request flips it from unset to set is the only one that generates), independent of which UI (Kanban drag-and-drop, mobile pipeline, or the detail view) triggered the move.
+
+The generated questions are shown on the application's detail view once they exist, and remain visible even after the application moves to a later status. They are never shown on Kanban or mobile pipeline cards, and there's no UI to create, edit, or regenerate them — interview scheduling and reminders are a separate future feature.
+
+The AI step reuses the same `AI_PROVIDER` mock/OpenAI setup, pinned model, and cost-safety guarantees described above ([AI-assisted form filling](#ai-assisted-form-filling)) via a separate provider (`lib/ai/providers/openai-hr-questions-provider.ts` / `lib/ai/providers/mock-hr-questions-provider.ts`) — it does not modify the existing vacancy-extraction request or its behavior.
+
 ## Database commands
 
 - `npm run db:generate` — regenerate the Prisma Client from `prisma/schema.prisma`.
