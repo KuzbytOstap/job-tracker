@@ -18,7 +18,16 @@ describe("MockHrQuestionsProvider", () => {
     const result = await provider.generateAdditionalQuestions(BASE_INPUT);
 
     expect(result.additionalQuestions.length).toBeGreaterThan(0);
-    expect(result.additionalQuestions.length).toBeLessThanOrEqual(6);
+    expect(result.additionalQuestions.length).toBeLessThanOrEqual(4);
+  });
+
+  it("keeps every fixture question short and direct, within the 140-character limit", async () => {
+    const provider = new MockHrQuestionsProvider();
+    const result = await provider.generateAdditionalQuestions(BASE_INPUT);
+
+    for (const question of result.additionalQuestions) {
+      expect(question.length).toBeLessThanOrEqual(140);
+    }
   });
 
   it("produces the exact same output for repeated identical input", async () => {

@@ -12,7 +12,7 @@ export type HrQuestionsGenerationInput = {
 
 export const hrQuestionsGenerationResultSchema = z
   .object({
-    additionalQuestions: z.array(z.string().trim().min(1).max(300)).max(6),
+    additionalQuestions: z.array(z.string().trim().min(1).max(140)).max(4),
   })
   .strict();
 

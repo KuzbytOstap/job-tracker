@@ -9,12 +9,13 @@ import type {
 const ERROR_MARKER = "[mock:hr-error]";
 
 // Fixed fixture: deterministic per the mock provider's contract (same input
-// text never changes the outcome), and none of these duplicate a core
-// question.
+// text never changes the outcome), short and direct per the quality rules,
+// and none of these duplicate a core question.
 const FIXTURE_QUESTIONS: readonly string[] = [
-  "Why do you want to work with AI coding tools in this role?",
-  "How strong is your experience with the technologies mentioned in this vacancy?",
-  "Are you comfortable with the employment format and time zone described in the posting?",
+  "How do you use AI coding tools in your daily work?",
+  "How strong is your Node.js and Express experience?",
+  "Have you worked on B2B SaaS products?",
+  "Are you comfortable working in this time zone?",
 ];
 
 function haystack(input: HrQuestionsGenerationInput): string {

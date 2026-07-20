@@ -55,7 +55,7 @@ describe("OpenAIHrQuestionsProvider", () => {
     expect(body.store).toBe(false);
     expect(body.tools).toEqual([]);
     expect(body.stream).toBeUndefined();
-    expect(body.max_output_tokens).toBe(600);
+    expect(body.max_output_tokens).toBe(400);
     expect(body.text.format.type).toBe("json_schema");
     expect(body.text.format.strict).toBe(true);
   });
@@ -80,6 +80,18 @@ describe("OpenAIHrQuestionsProvider", () => {
     expect(body.instructions).toContain("Tell me about yourself.");
   });
 
+  it("includes the single-question and concise-wording rules in the instructions", async () => {
+    parseMock.mockResolvedValue(completedResponse({ additionalQuestions: [] }));
+
+    const provider = new OpenAIHrQuestionsProvider();
+    await provider.generateAdditionalQuestions(BASE_INPUT);
+
+    const body = parseMock.mock.calls[0][0];
+    expect(body.instructions).toContain("ask exactly one clear thing");
+    expect(body.instructions).toContain("never exceed 140 characters");
+    expect(body.instructions).toContain("zero to four additional questions");
+  });
+
   it("returns valid additional questions parsed from the response", async () => {
     parseMock.mockResolvedValue(
       completedResponse({ additionalQuestions: ["What is your Node.js experience?"] }),
@@ -91,10 +103,10 @@ describe("OpenAIHrQuestionsProvider", () => {
     expect(result.additionalQuestions).toEqual(["What is your Node.js experience?"]);
   });
 
-  it("rejects output with more than six questions", async () => {
+  it("rejects output with more than four questions", async () => {
     parseMock.mockResolvedValue(
       completedResponse({
-        additionalQuestions: Array.from({ length: 7 }, (_, i) => `Question ${i}?`),
+        additionalQuestions: Array.from({ length: 5 }, (_, i) => `Question ${i}?`),
       }),
     );
 
@@ -103,6 +115,28 @@ describe("OpenAIHrQuestionsProvider", () => {
     await expect(provider.generateAdditionalQuestions(BASE_INPUT)).rejects.toBeInstanceOf(
       HrQuestionsProviderError,
     );
+  });
+
+  it("rejects a question longer than 140 characters", async () => {
+    parseMock.mockResolvedValue(
+      completedResponse({ additionalQuestions: ["a".repeat(141)] }),
+    );
+
+    const provider = new OpenAIHrQuestionsProvider();
+
+    await expect(provider.generateAdditionalQuestions(BASE_INPUT)).rejects.toBeInstanceOf(
+      HrQuestionsProviderError,
+    );
+  });
+
+  it("accepts a question exactly 140 characters long", async () => {
+    const question = "a".repeat(140);
+    parseMock.mockResolvedValue(completedResponse({ additionalQuestions: [question] }));
+
+    const provider = new OpenAIHrQuestionsProvider();
+    const result = await provider.generateAdditionalQuestions(BASE_INPUT);
+
+    expect(result.additionalQuestions).toEqual([question]);
   });
 
   it("handles missing parsed output as a safe invalid-result error", async () => {

@@ -29,6 +29,18 @@ function hasMeaningfulContext(context: HrQuestionsTransitionContext): boolean {
   );
 }
 
+// Defense in depth: the provider's own Structured Output schema already
+// enforces this length, but a mock or future provider could still hand back
+// something out of bounds. Reject outright rather than silently truncating
+// or splitting a compound question.
+const MAX_ADDITIONAL_QUESTION_LENGTH = 140;
+
+function sanitizeAdditionalQuestions(questions: readonly string[]): string[] {
+  return questions
+    .map((question) => question.trim())
+    .filter((question) => question.length > 0 && question.length <= MAX_ADDITIONAL_QUESTION_LENGTH);
+}
+
 /**
  * Detects and handles the first transition of an application into HR Call:
  * persists the deterministic core question set immediately, then — outside
@@ -99,7 +111,7 @@ export async function maybeGenerateHrQuestionsOnTransition(params: {
       jobPostingText: context.jobPostingText,
       coverLetterText: context.coverLetterText,
     });
-    additionalQuestions = result.additionalQuestions;
+    additionalQuestions = sanitizeAdditionalQuestions(result.additionalQuestions);
     console.info("[hr-questions] provider enhancement succeeded", { applicationId, provider: provider.name });
   } catch (error) {
     const kind = error instanceof HrQuestionsProviderError ? error.kind : "unknown";

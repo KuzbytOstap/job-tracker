@@ -242,6 +242,86 @@ describe("maybeGenerateHrQuestionsOnTransition — core questions and AI enhance
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  it("drops an AI-generated question that exceeds 140 characters, keeping valid ones", async () => {
+    const tooLong = "a".repeat(141);
+    generateAdditionalQuestionsMock.mockResolvedValue({
+      additionalQuestions: [tooLong, "Have you worked on B2B SaaS products?"],
+    });
+
+    const result = await maybeGenerateHrQuestionsOnTransition({
+      applicationId: "app_1",
+      previousStatus: Status.APPLIED,
+      newStatus: Status.HR_CALL,
+      existingHrInterviewQuestions: null,
+      context: MEANINGFUL_CONTEXT,
+    });
+
+    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
+      (q) => q.category === "VACANCY_SPECIFIC",
+    );
+    expect(vacancyQuestions).toEqual([
+      { text: "Have you worked on B2B SaaS products?", category: "VACANCY_SPECIFIC" },
+    ]);
+  });
+
+  it("accepts an AI-generated question exactly 140 characters long", async () => {
+    const exactly140 = "a".repeat(140);
+    generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: [exactly140] });
+
+    const result = await maybeGenerateHrQuestionsOnTransition({
+      applicationId: "app_1",
+      previousStatus: Status.APPLIED,
+      newStatus: Status.HR_CALL,
+      existingHrInterviewQuestions: null,
+      context: MEANINGFUL_CONTEXT,
+    });
+
+    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
+      (q) => q.category === "VACANCY_SPECIFIC",
+    );
+    expect(vacancyQuestions).toEqual([{ text: exactly140, category: "VACANCY_SPECIFIC" }]);
+  });
+
+  it("drops an AI-generated question that duplicates a core question", async () => {
+    generateAdditionalQuestionsMock.mockResolvedValue({
+      additionalQuestions: ["Tell me about yourself.", "Have you worked on B2B SaaS products?"],
+    });
+
+    const result = await maybeGenerateHrQuestionsOnTransition({
+      applicationId: "app_1",
+      previousStatus: Status.APPLIED,
+      newStatus: Status.HR_CALL,
+      existingHrInterviewQuestions: null,
+      context: MEANINGFUL_CONTEXT,
+    });
+
+    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
+      (q) => q.category === "VACANCY_SPECIFIC",
+    );
+    expect(vacancyQuestions).toEqual([
+      { text: "Have you worked on B2B SaaS products?", category: "VACANCY_SPECIFIC" },
+    ]);
+  });
+
+  it("drops a duplicate among the AI-generated questions themselves", async () => {
+    generateAdditionalQuestionsMock.mockResolvedValue({
+      additionalQuestions: ["Are you available immediately?", "are you available immediately?"],
+    });
+
+    const result = await maybeGenerateHrQuestionsOnTransition({
+      applicationId: "app_1",
+      previousStatus: Status.APPLIED,
+      newStatus: Status.HR_CALL,
+      existingHrInterviewQuestions: null,
+      context: MEANINGFUL_CONTEXT,
+    });
+
+    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
+      (q) => q.category === "VACANCY_SPECIFIC",
+    );
+    expect(vacancyQuestions).toHaveLength(1);
+  });
+
   it("never throws even when the configured provider is missing, and still returns core questions", async () => {
     getHrQuestionsProviderMock.mockImplementation(() => {
       throw new Error("AI_PROVIDER not configured");
