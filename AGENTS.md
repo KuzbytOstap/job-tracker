@@ -1,18 +1,3 @@
-# Job Tracker development rules
-
-- Work only inside the existing repository.
-- Do not create another Next.js project or a nested job-tracker directory.
-- Do not commit or push changes. The user handles Git manually.
-- Use npm, not pnpm, yarn, or bun.
-- Prisma Client must use @prisma/adapter-pg.
-- Prisma runtime queries use DATABASE_URL.
-- Prisma CLI migrations use DIRECT_URL through prisma.config.ts.
-- Use the installed shadcn/ui components instead of inventing duplicate UI primitives.
-- Use Motion for React from "motion/react" for animations.
-- Use the current shadcn/ui Field components with React Hook Form and Zod. Do not expect a legacy components/ui/form.tsx file.
-- Build mobile-first and verify the UI at 360px width and desktop sizes.
-- Respect prefers-reduced-motion.
-
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

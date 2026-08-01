@@ -140,3 +140,44 @@ describe("updateApplicationSchema — source texts", () => {
     }
   });
 });
+
+describe("updateApplicationSchema — hrCallTranscript", () => {
+  it("accepts a transcript string", () => {
+    const result = updateApplicationSchema.safeParse({ hrCallTranscript: "Discussed comp." });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.hrCallTranscript).toBe("Discussed comp.");
+    }
+  });
+
+  it("accepts an explicit null to clear a previously stored transcript", () => {
+    const result = updateApplicationSchema.safeParse({ hrCallTranscript: null });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.hrCallTranscript).toBeNull();
+    }
+  });
+
+  it("leaves the field untouched (undefined) when omitted", () => {
+    const result = updateApplicationSchema.safeParse({ company: "Acme" });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.hrCallTranscript).toBeUndefined();
+    }
+  });
+
+  it("rejects an oversized transcript", () => {
+    const result = updateApplicationSchema.safeParse({ hrCallTranscript: "a".repeat(50_001) });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts a transcript at exactly the maximum length", () => {
+    const result = updateApplicationSchema.safeParse({ hrCallTranscript: "a".repeat(50_000) });
+
+    expect(result.success).toBe(true);
+  });
+});

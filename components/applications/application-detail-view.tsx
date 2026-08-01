@@ -147,6 +147,12 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
         </DetailRow>
       )}
 
+      {application.hrCallTranscript?.trim() && (
+        <DetailRow label="HR call transcript">
+          <p className="whitespace-pre-wrap text-sm">{application.hrCallTranscript}</p>
+        </DetailRow>
+      )}
+
       <SourceMaterialsSection
         jobPostingText={application.jobPostingText}
         coverLetterText={application.coverLetterText}

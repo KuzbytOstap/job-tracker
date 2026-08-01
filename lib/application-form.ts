@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { format } from "date-fns";
+import { Status } from "@/app/generated/prisma/enums";
 import { PLATFORM_VALUES } from "@/lib/validation";
 import type { ApplicationDTO, CreateApplicationPayload, UpdateApplicationPayload } from "@/lib/api-types";
 
@@ -93,6 +94,7 @@ export function normalizeSourceText(value: string): string | null {
 const applicationSourceTextFields = {
   jobPostingText: z.string().max(50_000, "Job posting text is too long"),
   coverLetterText: z.string().max(20_000, "Cover letter text is too long"),
+  hrCallTranscript: z.string().max(50_000, "HR call transcript is too long"),
 };
 
 export const applicationEditFormSchema = applicationFormSchema.extend(applicationSourceTextFields);
@@ -104,6 +106,7 @@ export function applicationEditFormValuesFromApplication(application: Applicatio
     ...applicationFormValuesFromApplication(application),
     jobPostingText: application.jobPostingText ?? "",
     coverLetterText: application.coverLetterText ?? "",
+    hrCallTranscript: application.hrCallTranscript ?? "",
   };
 }
 
@@ -114,5 +117,21 @@ export function applicationEditFormValuesToUpdatePayload(
     ...applicationFormValuesToUpdatePayload(values),
     jobPostingText: normalizeSourceText(values.jobPostingText),
     coverLetterText: normalizeSourceText(values.coverLetterText),
+    hrCallTranscript: normalizeSourceText(values.hrCallTranscript),
   };
+}
+
+export function hasReachedHrCall(
+  application: Pick<ApplicationDTO, "status" | "statusChanges">,
+): boolean {
+  return (
+    application.status === Status.HR_CALL ||
+    application.statusChanges.some(
+      (change) => change.toStatus === Status.HR_CALL || change.fromStatus === Status.HR_CALL,
+    )
+  );
+}
+
+export function shouldShowHrCallTranscriptField(application: ApplicationDTO): boolean {
+  return hasReachedHrCall(application) || Boolean(application.hrCallTranscript?.trim());
 }

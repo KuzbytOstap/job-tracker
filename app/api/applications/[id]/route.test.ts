@@ -197,6 +197,31 @@ describe("PATCH /api/applications/[id]", () => {
     expect(body.coverLetterText).toBeNull();
   });
 
+  it("sets and clears the HR call transcript", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const { updateManyMock } = mockPatchTransaction({
+      existing: fakeRow(),
+      fresh: fakeRow({ hrCallTranscript: "Discussed comp and start date" }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hrCallTranscript: "Discussed comp and start date" }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(200);
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ hrCallTranscript: "Discussed comp and start date" }),
+      }),
+    );
+    const body = await response.json();
+    expect(body.hrCallTranscript).toBe("Discussed comp and start date");
+  });
+
   it("returns 409 when the optimistic-concurrency token does not match the stored row", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const { statusChangeCreateMock } = mockPatchTransaction({

@@ -34,6 +34,7 @@ function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDT
     notes: null,
     jobPostingText: null,
     coverLetterText: null,
+    hrCallTranscript: null,
     appliedAt: "2026-07-10T00:00:00.000Z",
     lastActivityAt: "2026-07-10T00:00:00.000Z",
     createdAt: "2026-07-10T00:00:00.000Z",
@@ -145,5 +146,63 @@ describe("ApplicationEditForm — source materials", () => {
 
     await waitFor(() => expect(updateApplicationMock).toHaveBeenCalledTimes(1));
     expect(screen.getByLabelText("Job posting")).toHaveValue("Edited posting");
+  });
+});
+
+describe("ApplicationEditForm — HR call transcript", () => {
+  it("hides the field before the application has reached HR_CALL", () => {
+    const application = fakeApplication({ status: Status.APPLIED, statusChanges: [] });
+    renderForm(application);
+
+    expect(screen.queryByLabelText("HR call transcript")).not.toBeInTheDocument();
+  });
+
+  it("shows the field once the application is at HR_CALL", () => {
+    const application = fakeApplication({ status: Status.HR_CALL });
+    renderForm(application);
+
+    expect(screen.getByLabelText("HR call transcript")).toBeInTheDocument();
+  });
+
+  it("shows the field for later statuses that passed through HR_CALL", () => {
+    const application = fakeApplication({
+      status: Status.TECH_INTERVIEW,
+      statusChanges: [
+        {
+          id: "sc-1",
+          applicationId: "app-1",
+          fromStatus: Status.HR_CALL,
+          toStatus: Status.TECH_INTERVIEW,
+          changedAt: "2026-07-11T00:00:00.000Z",
+        },
+      ],
+    });
+    renderForm(application);
+
+    expect(screen.getByLabelText("HR call transcript")).toBeInTheDocument();
+  });
+
+  it("shows the field when a transcript is already stored, even before HR_CALL", () => {
+    const application = fakeApplication({ status: Status.APPLIED, hrCallTranscript: "Earlier notes" });
+    renderForm(application);
+
+    expect(screen.getByLabelText("HR call transcript")).toHaveValue("Earlier notes");
+  });
+
+  it("saves edited transcript text through the existing update mutation", async () => {
+    const user = userEvent.setup();
+    const application = fakeApplication({ status: Status.HR_CALL, hrCallTranscript: "Original notes" });
+    updateApplicationMock.mockResolvedValue(fakeApplication({ hrCallTranscript: "Edited notes" }));
+    const { onSaved } = renderForm(application);
+
+    const transcriptField = screen.getByLabelText("HR call transcript");
+    await user.clear(transcriptField);
+    await user.type(transcriptField, "Edited notes");
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => expect(updateApplicationMock).toHaveBeenCalledTimes(1));
+    const [, payload] = updateApplicationMock.mock.calls[0];
+    expect(payload.hrCallTranscript).toBe("Edited notes");
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
   });
 });

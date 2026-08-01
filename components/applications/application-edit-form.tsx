@@ -5,6 +5,8 @@ import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { ApplicationFormFields } from "@/components/applications/application-form-fields";
 import { ApplicationSourceMaterialsFields } from "@/components/applications/application-source-materials-fields";
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
@@ -13,6 +15,7 @@ import {
   applicationEditFormSchema,
   applicationEditFormValuesFromApplication,
   applicationEditFormValuesToUpdatePayload,
+  shouldShowHrCallTranscriptField,
   type ApplicationEditFormValues,
 } from "@/lib/application-form";
 import type { ApplicationDTO } from "@/lib/api-types";
@@ -34,6 +37,7 @@ export function ApplicationEditForm({
 }: ApplicationEditFormProps) {
   const mutation = useUpdateApplication(application.id);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const showHrCallTranscript = shouldShowHrCallTranscriptField(application);
   const form = useForm<ApplicationEditFormValues>({
     resolver: zodResolver(applicationEditFormSchema),
     defaultValues: applicationEditFormValuesFromApplication(application),
@@ -84,6 +88,19 @@ export function ApplicationEditForm({
       <form onSubmit={form.handleSubmit(onValid, onInvalid)} noValidate className="flex flex-col gap-4">
         <ApplicationFormFields />
         <ApplicationSourceMaterialsFields />
+        {showHrCallTranscript && (
+          <Field data-invalid={!!form.formState.errors.hrCallTranscript}>
+            <FieldLabel htmlFor="application-hr-call-transcript">HR call transcript</FieldLabel>
+            <Textarea
+              id="application-hr-call-transcript"
+              rows={6}
+              className="min-h-32"
+              aria-invalid={!!form.formState.errors.hrCallTranscript}
+              {...form.register("hrCallTranscript")}
+            />
+            <FieldError errors={[form.formState.errors.hrCallTranscript]} />
+          </Field>
+        )}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" onClick={handleCancelClick} disabled={mutation.isPending}>
             Cancel

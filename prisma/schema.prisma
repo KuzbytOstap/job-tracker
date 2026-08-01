@@ -45,6 +45,7 @@ model JobApplication {
   notes                  String?
   jobPostingText         String?
   coverLetterText        String?
+  hrCallTranscript       String?
   hrInterviewQuestions   Json?
   hrQuestionsGeneratedAt DateTime?
   appliedAt              DateTime   @default(now())
