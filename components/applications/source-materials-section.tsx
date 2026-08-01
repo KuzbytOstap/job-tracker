@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CopyButton } from "@/components/ui/copy-button";
 import { cn } from "@/lib/utils";
 
 type SourceMaterialsSectionProps = {
@@ -33,19 +34,22 @@ function SourceMaterialItem({ label, text }: { label: string; text: string }) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border p-3">
-      <CollapsibleTrigger className="flex min-h-9 w-full items-center justify-between gap-2 text-left text-sm font-medium">
-        {label}
-        <span className="flex items-center gap-1 text-xs font-normal text-muted-foreground">
-          {open ? "Hide" : "View"}
-          <ChevronDown
-            aria-hidden
-            className={cn(
-              "size-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
-              open && "rotate-180",
-            )}
-          />
-        </span>
-      </CollapsibleTrigger>
+      <div className="flex min-h-9 items-center justify-between gap-2">
+        <CollapsibleTrigger className="flex min-h-9 flex-1 items-center justify-between gap-2 text-left text-sm font-medium">
+          {label}
+          <span className="flex items-center gap-1 text-xs font-normal text-muted-foreground">
+            {open ? "Hide" : "View"}
+            <ChevronDown
+              aria-hidden
+              className={cn(
+                "size-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
+                open && "rotate-180",
+              )}
+            />
+          </span>
+        </CollapsibleTrigger>
+        <CopyButton text={text} label={`Copy ${label.toLowerCase()}`} />
+      </div>
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none data-[ending-style]:h-0 data-[starting-style]:h-0">
         <p className="mt-2 text-sm whitespace-pre-wrap break-words">{text}</p>
       </CollapsibleContent>

@@ -16,6 +16,7 @@ import { StatusHistory } from "@/components/applications/status-history";
 import { SourceMaterialsSection } from "@/components/applications/source-materials-section";
 import { ApplicationLinksSection } from "@/components/applications/application-links-section";
 import { HrInterviewQuestionsSection } from "@/components/applications/hr-interview-questions-section";
+import { CopyButton } from "@/components/ui/copy-button";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
 import { useReactivateApplication } from "@/hooks/use-reactivate-application";
@@ -30,10 +31,21 @@ type ApplicationDetailViewProps = {
   onDeleted: () => void;
 };
 
-function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+function DetailRow({
+  label,
+  action,
+  children,
+}: {
+  label: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <div className="flex items-center gap-1">
+        <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+        {action}
+      </div>
       <dd className="text-sm break-words">{children}</dd>
     </div>
   );
@@ -119,15 +131,18 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
       <dl className="grid grid-cols-2 gap-3">
         {application.link && (
           <DetailRow label="Vacancy link">
-            <a
-              href={application.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
-            >
-              Open link
-              <ExternalLink className="size-3.5" />
-            </a>
+            <span className="inline-flex items-center gap-1">
+              <a
+                href={application.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
+              >
+                Open link
+                <ExternalLink className="size-3.5" />
+              </a>
+              <CopyButton text={application.link} label="Copy vacancy link" />
+            </span>
           </DetailRow>
         )}
         {application.salaryExpectation && (
@@ -143,13 +158,16 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
       </dl>
 
       {application.notes && (
-        <DetailRow label="Notes">
+        <DetailRow label="Notes" action={<CopyButton text={application.notes} label="Copy notes" />}>
           <p className="whitespace-pre-wrap text-sm">{application.notes}</p>
         </DetailRow>
       )}
 
       {application.hrCallTranscript?.trim() && (
-        <DetailRow label="HR call transcript">
+        <DetailRow
+          label="HR call transcript"
+          action={<CopyButton text={application.hrCallTranscript} label="Copy HR call transcript" />}
+        >
           <p className="whitespace-pre-wrap text-sm">{application.hrCallTranscript}</p>
         </DetailRow>
       )}

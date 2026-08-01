@@ -1,3 +1,4 @@
+import { CopyButton } from "@/components/ui/copy-button";
 import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 type HrInterviewQuestionsSectionProps = {
@@ -14,11 +15,23 @@ export function HrInterviewQuestionsSection({ questions }: HrInterviewQuestionsS
     (question) => question.category === "VACANCY_SPECIFIC",
   );
 
+  const allQuestionsText = [
+    coreQuestions.length > 0 && "Common questions",
+    ...coreQuestions.map((question) => question.text),
+    vacancyQuestions.length > 0 && "For this vacancy",
+    ...vacancyQuestions.map((question) => question.text),
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join("\n");
+
   return (
     <div>
-      <h3 className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        HR interview questions
-      </h3>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          HR interview questions
+        </h3>
+        <CopyButton text={allQuestionsText} label="Copy all questions" />
+      </div>
       <div className="flex flex-col gap-4">
         {coreQuestions.length > 0 && (
           <div>
