@@ -3,6 +3,7 @@ import { Platform } from "@/app/generated/prisma/enums";
 import {
   applicationExtractionInputSchema,
   applicationExtractionProviderNameSchema,
+  applicationExtractionResponseSchema,
   applicationExtractionResultSchema,
 } from "@/lib/application-extraction";
 
@@ -136,6 +137,42 @@ describe("applicationExtractionInputSchema", () => {
 
   it("accepts a valid minimal request", () => {
     const parsed = applicationExtractionInputSchema.safeParse({ jobPostingText: "Valid posting" });
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe("applicationExtractionResponseSchema", () => {
+  it("accepts a response carrying deterministically extracted sourceUrls", () => {
+    const parsed = applicationExtractionResponseSchema.safeParse({
+      result: {
+        company: null,
+        position: null,
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      },
+      sourceUrls: ["https://example.com/jobs/1", "https://jobs.dou.ua/companies/acme/vacancies/1/"],
+      meta: { provider: "mock" },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts an empty sourceUrls array", () => {
+    const parsed = applicationExtractionResponseSchema.safeParse({
+      result: {
+        company: null,
+        position: null,
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      },
+      sourceUrls: [],
+      meta: { provider: "openai" },
+    });
+
     expect(parsed.success).toBe(true);
   });
 });

@@ -197,6 +197,81 @@ describe("PATCH /api/applications/[id]", () => {
     expect(body.coverLetterText).toBeNull();
   });
 
+  it("recomputes sourceUrls when jobPostingText is updated", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const { updateManyMock } = mockPatchTransaction({
+      existing: fakeRow(),
+      fresh: fakeRow({
+        jobPostingText: "Apply at https://example.com/jobs/1.",
+        sourceUrls: ["https://example.com/jobs/1"],
+      }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobPostingText: "Apply at https://example.com/jobs/1." }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(200);
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ sourceUrls: ["https://example.com/jobs/1"] }),
+      }),
+    );
+    const body = await response.json();
+    expect(body.sourceUrls).toEqual(["https://example.com/jobs/1"]);
+  });
+
+  it("clears sourceUrls when jobPostingText is cleared", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const { updateManyMock } = mockPatchTransaction({
+      existing: fakeRow({
+        jobPostingText: "Apply at https://example.com/jobs/1.",
+        sourceUrls: ["https://example.com/jobs/1"],
+      }),
+      fresh: fakeRow({ jobPostingText: null, sourceUrls: [] }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobPostingText: null }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(200);
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ sourceUrls: [] }) }),
+    );
+  });
+
+  it("does not touch sourceUrls when jobPostingText is omitted from the update", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const { updateManyMock } = mockPatchTransaction({
+      existing: fakeRow({
+        jobPostingText: "Apply at https://example.com/jobs/1.",
+        sourceUrls: ["https://example.com/jobs/1"],
+      }),
+      fresh: fakeRow({ hrCallTranscript: "Discussed comp" }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hrCallTranscript: "Discussed comp" }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(200);
+    const updateCallData = updateManyMock.mock.calls[0][0].data;
+    expect(updateCallData.sourceUrls).toBeUndefined();
+  });
+
   it("sets and clears the HR call transcript", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const { updateManyMock } = mockPatchTransaction({

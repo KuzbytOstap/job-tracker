@@ -31,7 +31,6 @@ Rules:
 - Do not refactor or format unrelated code.
 - Do not update documentation unless explicitly requested.
 - Do not run the full test suite, full lint, or production build.
-- After implementation, use the focused-test-runner subagent.
 - Stop after the requested task.
 
 Return only:

@@ -14,6 +14,7 @@ import { TerminalStatusActions } from "@/components/applications/terminal-status
 import { TestTaskControls } from "@/components/applications/test-task-controls";
 import { StatusHistory } from "@/components/applications/status-history";
 import { SourceMaterialsSection } from "@/components/applications/source-materials-section";
+import { ApplicationLinksSection } from "@/components/applications/application-links-section";
 import { HrInterviewQuestionsSection } from "@/components/applications/hr-interview-questions-section";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
@@ -152,6 +153,8 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
           <p className="whitespace-pre-wrap text-sm">{application.hrCallTranscript}</p>
         </DetailRow>
       )}
+
+      <ApplicationLinksSection urls={application.sourceUrls} />
 
       <SourceMaterialsSection
         jobPostingText={application.jobPostingText}

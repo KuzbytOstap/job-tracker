@@ -24,6 +24,7 @@ import {
   zodErrorResponse,
 } from "@/lib/api-response";
 import type { ApplicationsListResponse } from "@/lib/api-types";
+import { extractUrls } from "@/lib/url-extraction";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
         testTaskDone,
         status: Status.APPLIED,
         lastActivityAt: now,
+        sourceUrls: extractUrls(parsed.data.jobPostingText),
       },
       include: { statusChanges: { orderBy: { changedAt: "desc" } } },
     });

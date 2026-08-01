@@ -44,6 +44,7 @@ model JobApplication {
   salaryExpectation      String?
   notes                  String?
   jobPostingText         String?
+  sourceUrls             String[]   @default([])
   coverLetterText        String?
   hrCallTranscript       String?
   hrInterviewQuestions   Json?

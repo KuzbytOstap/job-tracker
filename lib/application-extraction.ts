@@ -71,6 +71,7 @@ export const applicationExtractionProviderNameSchema = z.enum(["mock", "openai"]
 export const applicationExtractionResponseSchema = z
   .object({
     result: applicationExtractionResultSchema,
+    sourceUrls: z.array(z.string()),
     meta: z
       .object({
         provider: applicationExtractionProviderNameSchema,

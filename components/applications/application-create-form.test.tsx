@@ -40,6 +40,7 @@ function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDT
     salaryExpectation: null,
     notes: null,
     jobPostingText: null,
+    sourceUrls: [],
     coverLetterText: null,
     hrCallTranscript: null,
     appliedAt: "2026-07-10T00:00:00.000Z",
@@ -94,6 +95,7 @@ function fakeExtractionResponse(
       notes: null,
       ...overrides,
     },
+    sourceUrls: [],
     meta: { provider: "mock" },
   };
 }

@@ -14,6 +14,7 @@ import {
 } from "@/lib/application-extraction";
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 import { getApplicationExtractionProvider } from "@/lib/ai/get-application-extraction-provider";
+import { extractUrls } from "@/lib/url-extraction";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
 
   const body: ApplicationExtractionResponse = {
     result: parsedResult.data,
+    sourceUrls: extractUrls(parsedInput.data.jobPostingText),
     meta: { provider: parsedProviderName.data },
   };
 

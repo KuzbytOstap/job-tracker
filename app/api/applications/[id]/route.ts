@@ -5,6 +5,7 @@ import { checkSession } from "@/lib/auth";
 import { updateApplicationSchema } from "@/lib/validation";
 import { resolveTestTaskFlags, toApplicationDTO, toApplicationWithMeta } from "@/lib/applications";
 import { ensureCoreHrQuestionsForTransition } from "@/lib/hr-questions-service";
+import { extractUrls } from "@/lib/url-extraction";
 import {
   conflictResponse,
   forbiddenResponse,
@@ -95,6 +96,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           hasTestTask,
           testTaskDone,
           ...(status !== undefined ? { status } : {}),
+          ...(rest.jobPostingText !== undefined
+            ? { sourceUrls: extractUrls(rest.jobPostingText) }
+            : {}),
           lastActivityAt: now,
         },
       });

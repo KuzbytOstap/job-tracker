@@ -169,8 +169,40 @@ describe("POST /api/applications", () => {
     const createCallData = createMock.mock.calls[0][0].data;
     expect(createCallData.jobPostingText).toBeUndefined();
     expect(createCallData.coverLetterText).toBeUndefined();
+    expect(createCallData.sourceUrls).toEqual([]);
     const body = await response.json();
     expect(body.jobPostingText).toBeNull();
     expect(body.coverLetterText).toBeNull();
+  });
+
+  it("derives sourceUrls deterministically from the submitted jobPostingText", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    createMock.mockResolvedValue(
+      fakeCreatedRow({
+        jobPostingText: "Apply at https://example.com/jobs/1.",
+        sourceUrls: ["https://example.com/jobs/1"],
+      }),
+    );
+    const request = new NextRequest("http://localhost:3000/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company: "Acme",
+        position: "Engineer",
+        platform: "DIRECT",
+        jobPostingText: "Apply at https://example.com/jobs/1.",
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    expect(createMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ sourceUrls: ["https://example.com/jobs/1"] }),
+      }),
+    );
+    const body = await response.json();
+    expect(body.sourceUrls).toEqual(["https://example.com/jobs/1"]);
   });
 });

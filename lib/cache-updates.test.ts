@@ -26,6 +26,7 @@ function makeApp(overrides: Partial<ApplicationDTO> = {}): ApplicationDTO {
     salaryExpectation: null,
     notes: null,
     jobPostingText: null,
+    sourceUrls: [],
     coverLetterText: null,
     hrCallTranscript: null,
     appliedAt: "2026-07-10T12:00:00.000Z",

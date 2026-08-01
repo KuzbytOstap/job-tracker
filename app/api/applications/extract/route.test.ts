@@ -143,10 +143,57 @@ describe("POST /api/applications/extract", () => {
         salaryExpectation: null,
         notes: null,
       },
+      sourceUrls: [],
       meta: { provider: "mock" },
     });
     expect(prismaFindManyMock).not.toHaveBeenCalled();
     expect(prismaCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("extracts sourceUrls deterministically from the original job posting text for the mock provider", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    getProviderMock.mockReturnValue({
+      name: "mock",
+      extractApplication: vi.fn().mockResolvedValue({
+        company: "Acme",
+        position: "Engineer",
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      }),
+    });
+
+    const response = await POST(
+      makeRequest({
+        jobPostingText: "Apply at https://example.com/jobs/1, or see https://example.com/jobs/1 again.",
+      }),
+    );
+
+    const body = await response.json();
+    expect(body.sourceUrls).toEqual(["https://example.com/jobs/1"]);
+  });
+
+  it("extracts sourceUrls deterministically from the original job posting text for the openai provider", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    getProviderMock.mockReturnValue({
+      name: "openai",
+      extractApplication: vi.fn().mockResolvedValue({
+        company: "Acme",
+        position: "Engineer",
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      }),
+    });
+
+    const response = await POST(
+      makeRequest({ jobPostingText: "Posting: https://jobs.dou.ua/companies/acme/vacancies/1/" }),
+    );
+
+    const body = await response.json();
+    expect(body.sourceUrls).toEqual(["https://jobs.dou.ua/companies/acme/vacancies/1/"]);
   });
 
   it("returns 200 with provider metadata 'openai' for a successful mocked OpenAI result", async () => {
