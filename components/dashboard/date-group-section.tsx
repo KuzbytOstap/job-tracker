@@ -3,12 +3,12 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ApplicationCard } from "@/components/dashboard/application-card";
 import { DraggableApplicationCard } from "@/components/board/draggable-application-card";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { DateGroup } from "@/lib/date-grouping";
 
 type DateGroupSectionProps = {
-  group: DateGroup<ApplicationDTO>;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  group: DateGroup<ApplicationListItemDTO>;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
   enableDrag?: boolean;
 };
 

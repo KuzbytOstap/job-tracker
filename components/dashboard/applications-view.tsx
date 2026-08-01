@@ -11,7 +11,7 @@ import {
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import type { SortOption, StatusFilter } from "@/lib/validation";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 
 type ApplicationsViewProps = {
   status: StatusFilter;
@@ -20,7 +20,7 @@ type ApplicationsViewProps = {
   search: string;
   onSearchChange: (value: string) => void;
   debouncedSearch: string;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
   onAddClick: () => void;
 };
 

@@ -2,15 +2,15 @@ import { KanbanColumnHeader } from "@/components/board/kanban-column-header";
 import { KanbanColumnContent } from "@/components/board/kanban-column-content";
 import { BOARD_COLUMNS_BY_STATUS } from "@/lib/board-columns";
 import { cn } from "@/lib/utils";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
 import type { Status } from "@/app/generated/prisma/enums";
 
 type KanbanColumnProps = {
   status: Status;
-  applications: ApplicationDTO[];
+  applications: ApplicationListItemDTO[];
   sort: SortOption;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
   dropRef?: (node: HTMLElement | null) => void;
   isDropTarget?: boolean;
   isDragSource?: boolean;

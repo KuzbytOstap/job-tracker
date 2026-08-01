@@ -5,14 +5,14 @@ import { DateGroupSection } from "@/components/dashboard/date-group-section";
 import { BoardColumnEmptyState } from "@/components/board/board-column-empty-state";
 import { groupApplicationsByAppliedDate } from "@/lib/date-grouping";
 import type { BoardColumnConfig } from "@/lib/board-columns";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
 
 type KanbanColumnContentProps = {
   column: BoardColumnConfig;
-  applications: ApplicationDTO[];
+  applications: ApplicationListItemDTO[];
   sort: SortOption;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
 };
 
 export function KanbanColumnContent({

@@ -21,7 +21,7 @@ import { useApplicationDragAndDrop } from "@/hooks/use-application-drag-and-drop
 import { ApplicationDragOverlay } from "@/components/board/application-drag-overlay";
 import { PendingDropConfirmation } from "@/components/board/pending-drop-confirmation";
 import { BOARD_COLUMNS_BY_STATUS } from "@/lib/board-columns";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { Status } from "@/app/generated/prisma/enums";
 
 const collisionDetection: CollisionDetection = (args) => {
@@ -30,7 +30,7 @@ const collisionDetection: CollisionDetection = (args) => {
 };
 
 function describeActive(active: Active): string {
-  const application = active.data.current?.application as ApplicationDTO | undefined;
+  const application = active.data.current?.application as ApplicationListItemDTO | undefined;
   return application ? `${application.company} — ${application.position}` : "the application";
 }
 

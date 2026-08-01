@@ -186,15 +186,14 @@ Add `AI_PROVIDER` and (in production) `OPENAI_API_KEY` as environment variables 
 
 ## HR interview question preparation
 
-When an application transitions **for the first time** from any other status into the existing **HR call** status, the app automatically prepares a set of interview questions and stores it on the application:
+When an application transitions **for the first time** from any other status into the existing **HR call** status, the app automatically prepares a set of interview questions and stores it on the application. The work is split into two steps so the status update itself is never held up by a slow or unavailable AI request:
 
-- a deterministic list of common HR questions (`HR_CORE_QUESTIONS` in `lib/hr-interview-questions.ts`) is always saved immediately, before any AI call;
-- if the application has meaningful context — a non-empty `jobPostingText`, `coverLetterText`, or `notes` — the AI provider is asked for up to six additional vacancy-specific questions, which are merged in after the core list;
-- with no meaningful context (or when company/position are the only known details), no AI request is made and the core-only set is saved;
-- the merged set is persisted on the application (`hrInterviewQuestions`, `hrQuestionsGeneratedAt`), so opening the application later never triggers another AI request;
-- moving out of HR call and back again does **not** regenerate questions — the stored set is left as-is;
-- if AI generation fails, times out, or returns invalid output, the status change still succeeds and the core questions are kept; no error is surfaced for the AI step;
-- there is at most one automatic AI request per application for this feature, enforced server-side by an atomic claim on `hrInterviewQuestions` (whichever concurrent status-change request flips it from unset to set is the only one that generates), independent of which UI (Kanban drag-and-drop, mobile pipeline, or the detail view) triggered the move.
+- **Synchronous, in the status update:** a deterministic list of common HR questions (`HR_CORE_QUESTIONS` in `lib/hr-interview-questions.ts`) is saved immediately as part of the `PATCH` that changes the status (`ensureCoreHrQuestionsForTransition` in `lib/hr-questions-service.ts`). The status-change response returns as soon as this fast, AI-free write completes — it never waits on OpenAI.
+- **Asynchronous follow-up:** after a successful move into HR call, the client fires a separate request, `POST /api/applications/[id]/hr-questions` (`useGenerateHrQuestions`), which asks the AI provider for a few additional vacancy-specific questions and merges them in (`generateVacancySpecificHrQuestions`). React Query receives the enriched set when that request completes, so an open detail view updates without a page reload.
+- the follow-up only calls the provider when the application has meaningful context — a non-empty `jobPostingText`, `coverLetterText`, or `notes`; otherwise the core-only set is left as is;
+- the set is persisted on the application (`hrInterviewQuestions`, `hrQuestionsGeneratedAt`); moving out of HR call and back again does **not** re-run the core claim, and the follow-up is idempotent — a set that already contains vacancy-specific questions is returned unchanged with no AI call, and merging always rebuilds a deduplicated set so nothing is duplicated;
+- if AI generation fails, times out, or returns invalid output, the already-saved status change and core questions are untouched and no error is surfaced for the AI step;
+- the initial core claim is an atomic update on `hrInterviewQuestions` (whichever concurrent status-change request flips it from unset to set wins), independent of which UI (Kanban drag-and-drop, mobile pipeline, or the detail view) triggered the move.
 
 The generated questions are shown on the application's detail view once they exist, and remain visible even after the application moves to a later status. They are never shown on Kanban or mobile pipeline cards, and there's no UI to create, edit, or regenerate them — interview scheduling and reminders are a separate future feature.
 

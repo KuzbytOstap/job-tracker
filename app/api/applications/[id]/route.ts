@@ -4,8 +4,9 @@ import { Status } from "@/app/generated/prisma/client";
 import { checkSession } from "@/lib/auth";
 import { updateApplicationSchema } from "@/lib/validation";
 import { resolveTestTaskFlags, toApplicationDTO, toApplicationWithMeta } from "@/lib/applications";
-import { maybeGenerateHrQuestionsOnTransition } from "@/lib/hr-questions-service";
+import { ensureCoreHrQuestionsForTransition } from "@/lib/hr-questions-service";
 import {
+  conflictResponse,
   forbiddenResponse,
   jsonError,
   notFoundResponse,
@@ -62,20 +63,33 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return zodErrorResponse(parsed.error);
   }
 
+  const now = new Date();
+  const { status, expectedUpdatedAt, ...rest } = parsed.data;
+
   try {
-    const existing = await prisma.jobApplication.findUnique({ where: { id } });
-    if (!existing) {
-      return notFoundResponse();
-    }
+    // Everything that reads the current row and derives the status change is
+    // done inside one interactive transaction. When the client sends an
+    // optimistic-concurrency token (expectedUpdatedAt), the write is guarded on
+    // that exact updatedAt so two concurrent PATCHes can't silently overwrite
+    // each other or produce a StatusChange from a stale fromStatus.
+    const outcome = await prisma.$transaction(async (tx) => {
+      const existing = await tx.jobApplication.findUnique({ where: { id } });
+      if (!existing) {
+        return { kind: "not_found" as const };
+      }
 
-    const now = new Date();
-    const { status, ...rest } = parsed.data;
-    const { hasTestTask, testTaskDone } = resolveTestTaskFlags(parsed.data, existing);
-    const statusChanged = status !== undefined && status !== existing.status;
+      if (expectedUpdatedAt && existing.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+        return { kind: "conflict" as const };
+      }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      await tx.jobApplication.update({
-        where: { id },
+      const { hasTestTask, testTaskDone } = resolveTestTaskFlags(parsed.data, existing);
+      const statusChanged = status !== undefined && status !== existing.status;
+
+      const updateResult = await tx.jobApplication.updateMany({
+        where: {
+          id,
+          ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}),
+        },
         data: {
           ...rest,
           hasTestTask,
@@ -84,6 +98,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           lastActivityAt: now,
         },
       });
+
+      // The row moved between our read and our guarded write: lost the race.
+      if (updateResult.count === 0) {
+        return { kind: "conflict" as const };
+      }
 
       if (statusChanged) {
         await tx.statusChange.create({
@@ -96,36 +115,47 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         });
       }
 
-      return tx.jobApplication.findUniqueOrThrow({
+      const application = await tx.jobApplication.findUniqueOrThrow({
         where: { id },
         include: { statusChanges: { orderBy: { changedAt: "desc" } } },
       });
+
+      return {
+        kind: "ok" as const,
+        application,
+        previousStatus: existing.status,
+        statusChanged,
+        existingHrInterviewQuestions: existing.hrInterviewQuestions,
+      };
     });
 
-    let finalApplication = updated;
+    if (outcome.kind === "not_found") {
+      return notFoundResponse();
+    }
+    if (outcome.kind === "conflict") {
+      return conflictResponse();
+    }
 
-    if (statusChanged && status === Status.HR_CALL) {
-      const hrResult = await maybeGenerateHrQuestionsOnTransition({
+    let finalApplication = outcome.application;
+
+    // Persist the deterministic core HR questions immediately (fast, no AI) so
+    // the status change and its base questions are saved reliably. The slower
+    // vacancy-specific enhancement is triggered separately by the client via
+    // POST /api/applications/[id]/hr-questions, so this response is never
+    // delayed by the AI request.
+    if (outcome.statusChanged && status === Status.HR_CALL) {
+      const coreResult = await ensureCoreHrQuestionsForTransition({
         applicationId: id,
-        previousStatus: existing.status,
-        newStatus: status!,
-        existingHrInterviewQuestions: existing.hrInterviewQuestions,
-        context: {
-          company: updated.company,
-          position: updated.position,
-          platform: updated.platform,
-          salaryExpectation: updated.salaryExpectation,
-          notes: updated.notes,
-          jobPostingText: updated.jobPostingText,
-          coverLetterText: updated.coverLetterText,
-        },
+        previousStatus: outcome.previousStatus,
+        newStatus: status,
+        existingHrInterviewQuestions: outcome.existingHrInterviewQuestions,
       });
 
-      if (hrResult) {
+      if (coreResult) {
         finalApplication = {
-          ...updated,
-          hrInterviewQuestions: hrResult.hrInterviewQuestions,
-          hrQuestionsGeneratedAt: hrResult.hrQuestionsGeneratedAt,
+          ...outcome.application,
+          hrInterviewQuestions: coreResult.hrInterviewQuestions,
+          hrQuestionsGeneratedAt: coreResult.hrQuestionsGeneratedAt,
         };
       }
     }

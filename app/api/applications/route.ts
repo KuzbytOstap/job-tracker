@@ -7,10 +7,13 @@ import {
   listApplicationsQuerySchema,
 } from "@/lib/validation";
 import {
+  APPLICATION_LIST_ITEM_SELECT,
   buildApplicationsWhere,
   resolveTestTaskFlags,
   sortApplications,
   toApplicationDTO,
+  toApplicationListItemDTO,
+  toApplicationListItemWithMeta,
   toApplicationWithMeta,
 } from "@/lib/applications";
 import {
@@ -43,13 +46,13 @@ export async function GET(request: NextRequest) {
   try {
     const { status, sort, q } = parsedQuery.data;
 
-    const applications = await prisma.jobApplication.findMany({
+    const rows = await prisma.jobApplication.findMany({
       where: buildApplicationsWhere(q),
-      include: { statusChanges: { orderBy: { changedAt: "desc" } } },
+      select: APPLICATION_LIST_ITEM_SELECT,
     });
 
     const now = new Date();
-    const withMeta = applications.map((application) => toApplicationWithMeta(application, now));
+    const withMeta = rows.map((row) => toApplicationListItemWithMeta(row, now));
 
     const filtered =
       status === "ALL"
@@ -59,7 +62,7 @@ export async function GET(request: NextRequest) {
     const sorted = sortApplications(filtered, sort);
 
     const body: ApplicationsListResponse = {
-      applications: sorted.map(toApplicationDTO),
+      applications: sorted.map(toApplicationListItemDTO),
       total: sorted.length,
     };
 

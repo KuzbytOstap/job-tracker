@@ -10,7 +10,7 @@ import {
 import { inferPlatformFromLink } from "@/lib/platform-inference";
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 import type { ApplicationExtractionProvider } from "@/lib/ai/application-extraction-provider";
-import { getOpenAIClient } from "@/lib/ai/openai-client";
+import { getOpenAIClient, OpenAIConfigurationError } from "@/lib/ai/openai-client";
 
 // Pinned deliberately: switching models must be a conscious code change, not
 // an environment-variable typo that silently starts billing a pricier model.
@@ -69,6 +69,15 @@ function mapOpenAIError(error: unknown): never {
     throw error;
   }
 
+  // Shared client-configuration failure (e.g. missing API key), re-mapped into
+  // this feature's own error type.
+  if (error instanceof OpenAIConfigurationError) {
+    throw new ApplicationExtractionProviderError(
+      "AI extraction is not configured correctly.",
+      "configuration",
+    );
+  }
+
   // Timeout is a subclass of APIConnectionError, so it must be checked first.
   if (error instanceof OpenAI.APIConnectionTimeoutError) {
     throw new ApplicationExtractionProviderError(
@@ -113,10 +122,9 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
   async extractApplication(
     input: ApplicationExtractionInput,
   ): Promise<ApplicationExtractionResult> {
-    const client = getOpenAIClient();
-
     let response;
     try {
+      const client = getOpenAIClient();
       response = await client.responses.parse({
         model: OPENAI_EXTRACTION_MODEL,
         instructions: EXTRACTION_INSTRUCTIONS,

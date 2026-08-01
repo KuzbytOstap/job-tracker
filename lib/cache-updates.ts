@@ -1,13 +1,42 @@
 import { Status } from "@/app/generated/prisma/enums";
-import type { ApplicationDTO, ApplicationsListResponse, CreateApplicationPayload } from "@/lib/api-types";
+import type {
+  ApplicationDTO,
+  ApplicationListItemDTO,
+  ApplicationsListResponse,
+  CreateApplicationPayload,
+} from "@/lib/api-types";
 import type { ApplicationsListParams } from "@/lib/query-keys";
 import type { SortOption } from "@/lib/validation";
 
-function matchesStatus(application: ApplicationDTO, status: ApplicationsListParams["status"]): boolean {
+/**
+ * Projects a full application DTO down to the lightweight list-item shape used
+ * in the list caches. Mutations return full ApplicationDTOs; this keeps the
+ * list caches consistent with what the list endpoint would return.
+ */
+export function toApplicationListItem(application: ApplicationDTO): ApplicationListItemDTO {
+  return {
+    id: application.id,
+    company: application.company,
+    position: application.position,
+    platform: application.platform,
+    link: application.link,
+    status: application.status,
+    effectiveStatus: application.effectiveStatus,
+    isAutoIgnored: application.isAutoIgnored,
+    hasTestTask: application.hasTestTask,
+    testTaskDone: application.testTaskDone,
+    salaryExpectation: application.salaryExpectation,
+    appliedAt: application.appliedAt,
+    lastActivityAt: application.lastActivityAt,
+    updatedAt: application.updatedAt,
+  };
+}
+
+function matchesStatus(application: ApplicationListItemDTO, status: ApplicationsListParams["status"]): boolean {
   return status === "ALL" || application.effectiveStatus === status;
 }
 
-function matchesSearch(application: ApplicationDTO, q: string): boolean {
+function matchesSearch(application: ApplicationListItemDTO, q: string): boolean {
   const needle = q.trim().toLowerCase();
   if (!needle) return true;
   return (
@@ -17,13 +46,17 @@ function matchesSearch(application: ApplicationDTO, q: string): boolean {
 }
 
 export function applicationMatchesListParams(
-  application: ApplicationDTO,
+  application: ApplicationListItemDTO,
   params: ApplicationsListParams,
 ): boolean {
   return matchesStatus(application, params.status) && matchesSearch(application, params.q);
 }
 
-function compareApplications(a: ApplicationDTO, b: ApplicationDTO, sort: SortOption): number {
+function compareApplications(
+  a: ApplicationListItemDTO,
+  b: ApplicationListItemDTO,
+  sort: SortOption,
+): number {
   switch (sort) {
     case "newest":
       return new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime();
@@ -36,7 +69,10 @@ function compareApplications(a: ApplicationDTO, b: ApplicationDTO, sort: SortOpt
   }
 }
 
-export function sortApplicationDTOs(applications: ApplicationDTO[], sort: SortOption): ApplicationDTO[] {
+export function sortApplicationDTOs(
+  applications: ApplicationListItemDTO[],
+  sort: SortOption,
+): ApplicationListItemDTO[] {
   return [...applications].sort((a, b) => compareApplications(a, b, sort));
 }
 
@@ -47,7 +83,7 @@ export function sortApplicationDTOs(applications: ApplicationDTO[], sort: SortOp
  */
 export function upsertApplicationInList(
   listResponse: ApplicationsListResponse,
-  application: ApplicationDTO,
+  application: ApplicationListItemDTO,
   params: ApplicationsListParams,
 ): ApplicationsListResponse {
   const withoutExisting = listResponse.applications.filter((item) => item.id !== application.id);
@@ -75,11 +111,11 @@ export function removeApplicationFromList(
   return { applications: nextApplications, total: nextApplications.length };
 }
 
-export function buildOptimisticApplication(
+export function buildOptimisticListItem(
   input: CreateApplicationPayload,
   id: string,
   now: Date,
-): ApplicationDTO {
+): ApplicationListItemDTO {
   const nowIso = now.toISOString();
   return {
     id,
@@ -91,18 +127,11 @@ export function buildOptimisticApplication(
     hasTestTask: input.hasTestTask ?? false,
     testTaskDone: input.testTaskDone ?? false,
     salaryExpectation: input.salaryExpectation ?? null,
-    notes: input.notes ?? null,
-    jobPostingText: input.jobPostingText ?? null,
-    coverLetterText: input.coverLetterText ?? null,
     appliedAt: input.appliedAt ?? nowIso,
     lastActivityAt: nowIso,
-    createdAt: nowIso,
     updatedAt: nowIso,
     effectiveStatus: Status.APPLIED,
     isAutoIgnored: false,
-    statusChanges: [],
-    hrInterviewQuestions: null,
-    hrQuestionsGeneratedAt: null,
   };
 }
 

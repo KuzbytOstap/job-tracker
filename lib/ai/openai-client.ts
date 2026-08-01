@@ -1,11 +1,24 @@
 import OpenAI from "openai";
-import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 
 // Requests are single-shot (one Analyze click = at most one call), so a
 // generous-but-finite timeout is safe and automatic retries would risk
 // duplicate paid requests.
 const OPENAI_TIMEOUT_MS = 30_000;
 const OPENAI_MAX_RETRIES = 0;
+
+/**
+ * Raised when the shared OpenAI client cannot be constructed — today only a
+ * missing OPENAI_API_KEY. It is intentionally provider-agnostic: extraction
+ * and HR-question code each catch it and re-map it into their own
+ * domain-specific error, so no consumer ever receives another feature's error
+ * type.
+ */
+export class OpenAIConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OpenAIConfigurationError";
+  }
+}
 
 let cachedClient: OpenAI | null = null;
 
@@ -18,9 +31,8 @@ export function getOpenAIClient(): OpenAI {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new ApplicationExtractionProviderError(
+    throw new OpenAIConfigurationError(
       "OPENAI_API_KEY is not configured. Set it to enable AI_PROVIDER=openai.",
-      "configuration",
     );
   }
 

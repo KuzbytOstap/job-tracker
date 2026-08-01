@@ -3,7 +3,7 @@
 import { AnimatePresence } from "motion/react";
 import { ApplicationCard } from "@/components/dashboard/application-card";
 import { cn } from "@/lib/utils";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 
 type MobileApplicationListHeading = {
   label: string;
@@ -12,8 +12,8 @@ type MobileApplicationListHeading = {
 };
 
 type MobileApplicationListProps = {
-  applications: ApplicationDTO[];
-  onSelectApplication: (application: ApplicationDTO) => void;
+  applications: ApplicationListItemDTO[];
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
   heading?: MobileApplicationListHeading;
 };
 

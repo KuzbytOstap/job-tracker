@@ -5,11 +5,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { ApplicationCard } from "@/components/dashboard/application-card";
 import { ApplicationDragHandle } from "@/components/board/application-drag-handle";
 import { cn } from "@/lib/utils";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 
 type DraggableApplicationCardProps = {
-  application: ApplicationDTO;
-  onSelect: (application: ApplicationDTO) => void;
+  application: ApplicationListItemDTO;
+  onSelect: (application: ApplicationListItemDTO) => void;
 };
 
 export function DraggableApplicationCard({ application, onSelect }: DraggableApplicationCardProps) {

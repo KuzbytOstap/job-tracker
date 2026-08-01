@@ -95,6 +95,16 @@ export function deleteApplication(id: string): Promise<DeleteResponse> {
   return request<DeleteResponse>(`/api/applications/${id}`, { method: "DELETE" });
 }
 
+/**
+ * Follow-up request that asks the server to enrich an application's HR
+ * interview questions with vacancy-specific ones. Runs after the status change
+ * that moves the application into HR_CALL so that the (possibly slow) AI call
+ * never delays the status update itself. Idempotent and safe to retry.
+ */
+export function generateHrQuestions(id: string): Promise<ApplicationDTO> {
+  return request<ApplicationDTO>(`/api/applications/${id}/hr-questions`, { method: "POST" });
+}
+
 export function getStats(): Promise<StatsResponse> {
   return request<StatsResponse>("/api/stats");
 }

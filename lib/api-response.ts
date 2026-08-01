@@ -18,6 +18,12 @@ export function notFoundResponse(resource = "Application") {
   return jsonError(404, `${resource} not found`);
 }
 
+export function conflictResponse(
+  message = "This application was updated elsewhere. Refresh and try again.",
+) {
+  return jsonError(409, message);
+}
+
 export function unauthorizedResponse() {
   return jsonError(401, "Unauthorized");
 }

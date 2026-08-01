@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodTextFormat } from "openai/helpers/zod";
 import OpenAI from "openai";
-import { getOpenAIClient } from "@/lib/ai/openai-client";
+import { getOpenAIClient, OpenAIConfigurationError } from "@/lib/ai/openai-client";
 import {
   HrQuestionsProviderError,
   hrQuestionsGenerationResultSchema,
@@ -85,6 +85,16 @@ function mapOpenAIError(error: unknown): never {
     throw error;
   }
 
+  // Shared client-configuration failure (e.g. missing API key), re-mapped into
+  // this feature's own error type so HR-question code never sees another
+  // feature's error.
+  if (error instanceof OpenAIConfigurationError) {
+    throw new HrQuestionsProviderError(
+      "HR question generation is not configured correctly.",
+      "configuration",
+    );
+  }
+
   // Timeout is a subclass of APIConnectionError, so it must be checked first.
   if (error instanceof OpenAI.APIConnectionTimeoutError) {
     throw new HrQuestionsProviderError("HR question generation timed out.", "timeout");
@@ -114,8 +124,6 @@ export class OpenAIHrQuestionsProvider implements HrQuestionsProvider {
   async generateAdditionalQuestions(
     input: HrQuestionsGenerationInput,
   ): Promise<HrQuestionsGenerationResult> {
-    const client = getOpenAIClient();
-
     const truncatedInput: HrQuestionsGenerationInput = {
       ...input,
       notes: truncateOrNull(input.notes, 4_000),
@@ -125,6 +133,7 @@ export class OpenAIHrQuestionsProvider implements HrQuestionsProvider {
 
     let response;
     try {
+      const client = getOpenAIClient();
       response = await client.responses.parse({
         model: OPENAI_HR_QUESTIONS_MODEL,
         instructions: HR_QUESTIONS_INSTRUCTIONS,

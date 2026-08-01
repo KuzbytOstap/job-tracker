@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const updateManyMock = vi.fn();
 const updateMock = vi.fn();
+const findUniqueMock = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobApplication: {
       updateMany: (...args: unknown[]) => updateManyMock(...args),
       update: (...args: unknown[]) => updateMock(...args),
+      findUnique: (...args: unknown[]) => findUniqueMock(...args),
     },
   },
 }));
@@ -21,67 +23,66 @@ vi.mock("@/lib/ai/get-hr-questions-provider", () => ({
 }));
 
 import { Status } from "@/app/generated/prisma/client";
-import { maybeGenerateHrQuestionsOnTransition } from "@/lib/hr-questions-service";
+import {
+  ensureCoreHrQuestionsForTransition,
+  generateVacancySpecificHrQuestions,
+} from "@/lib/hr-questions-service";
+import type { HrInterviewQuestion } from "@/lib/hr-interview-questions";
 
-const EMPTY_CONTEXT = {
-  company: "Acme",
-  position: "Engineer",
-  platform: "DIRECT",
-  salaryExpectation: null,
-  notes: null,
-  jobPostingText: null,
-  coverLetterText: null,
+const CORE_ONLY_SET = {
+  version: 1 as const,
+  questions: [{ text: "Tell me about yourself.", category: "CORE" as const }],
 };
 
-const MEANINGFUL_CONTEXT = {
-  ...EMPTY_CONTEXT,
-  jobPostingText: "We are hiring a React engineer with Node.js experience.",
-};
+function fakeApplication(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "app_1",
+    company: "Acme",
+    position: "Engineer",
+    platform: "DIRECT",
+    salaryExpectation: null,
+    notes: null,
+    jobPostingText: null,
+    coverLetterText: null,
+    hrInterviewQuestions: CORE_ONLY_SET,
+    hrQuestionsGeneratedAt: new Date("2026-07-20T12:00:00.000Z"),
+    ...overrides,
+  };
+}
+
+function vacancyQuestions(questions: HrInterviewQuestion[] | undefined) {
+  return (questions ?? []).filter((q) => q.category === "VACANCY_SPECIFIC");
+}
 
 beforeEach(() => {
   updateManyMock.mockReset();
   updateMock.mockReset();
+  findUniqueMock.mockReset();
   generateAdditionalQuestionsMock.mockReset();
   getHrQuestionsProviderMock.mockClear();
   updateManyMock.mockResolvedValue({ count: 1 });
   updateMock.mockResolvedValue({});
 });
 
-describe("maybeGenerateHrQuestionsOnTransition — trigger gating", () => {
+describe("ensureCoreHrQuestionsForTransition — gating and atomic claim", () => {
   it("does nothing when the new status is not HR_CALL", async () => {
-    const result = await maybeGenerateHrQuestionsOnTransition({
+    const result = await ensureCoreHrQuestionsForTransition({
       applicationId: "app_1",
       previousStatus: Status.APPLIED,
       newStatus: Status.HR_REPLIED,
       existingHrInterviewQuestions: null,
-      context: EMPTY_CONTEXT,
     });
 
     expect(result).toBeNull();
     expect(updateManyMock).not.toHaveBeenCalled();
-    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
   });
 
   it("does nothing when moving from HR_CALL to another status", async () => {
-    const result = await maybeGenerateHrQuestionsOnTransition({
+    const result = await ensureCoreHrQuestionsForTransition({
       applicationId: "app_1",
       previousStatus: Status.HR_CALL,
       newStatus: Status.TECH_INTERVIEW,
       existingHrInterviewQuestions: null,
-      context: EMPTY_CONTEXT,
-    });
-
-    expect(result).toBeNull();
-    expect(updateManyMock).not.toHaveBeenCalled();
-  });
-
-  it("does nothing when already in HR_CALL and staying in HR_CALL", async () => {
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.HR_CALL,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: EMPTY_CONTEXT,
     });
 
     expect(result).toBeNull();
@@ -89,253 +90,190 @@ describe("maybeGenerateHrQuestionsOnTransition — trigger gating", () => {
   });
 
   it("does nothing when a question set already exists (return to HR_CALL)", async () => {
-    const existing = { version: 1, questions: [{ text: "Tell me about yourself.", category: "CORE" }] };
-
-    const result = await maybeGenerateHrQuestionsOnTransition({
+    const result = await ensureCoreHrQuestionsForTransition({
       applicationId: "app_1",
       previousStatus: Status.TECH_INTERVIEW,
       newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: existing,
-      context: EMPTY_CONTEXT,
+      existingHrInterviewQuestions: CORE_ONLY_SET,
     });
 
     expect(result).toBeNull();
     expect(updateManyMock).not.toHaveBeenCalled();
-    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
   });
 
-  it("never throws when the atomic claim query itself fails, and reports no questions", async () => {
-    updateManyMock.mockRejectedValue(new Error("connection reset"));
-
-    const result = await maybeGenerateHrQuestionsOnTransition({
+  it("claims and returns the deterministic core set on a genuine first transition, without any AI call", async () => {
+    const result = await ensureCoreHrQuestionsForTransition({
       applicationId: "app_1",
       previousStatus: Status.APPLIED,
       newStatus: Status.HR_CALL,
       existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
-
-    expect(result).toBeNull();
-    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
-  });
-
-  it("does nothing when the atomic claim loses the race (concurrent transition)", async () => {
-    updateManyMock.mockResolvedValue({ count: 0 });
-
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
-
-    expect(result).toBeNull();
-    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("maybeGenerateHrQuestionsOnTransition — core questions and AI enhancement", () => {
-  it("claims and persists the core question set on a genuine first transition", async () => {
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: EMPTY_CONTEXT,
     });
 
     expect(updateManyMock).toHaveBeenCalledTimes(1);
     expect(result).not.toBeNull();
     expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
+    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
+    expect(generateAdditionalQuestionsMock).not.toHaveBeenCalled();
+  });
+
+  it("never throws when the claim query fails, and reports no questions", async () => {
+    updateManyMock.mockRejectedValue(new Error("connection reset"));
+
+    const result = await ensureCoreHrQuestionsForTransition({
+      applicationId: "app_1",
+      previousStatus: Status.APPLIED,
+      newStatus: Status.HR_CALL,
+      existingHrInterviewQuestions: null,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null when the atomic claim loses the race (concurrent transition)", async () => {
+    updateManyMock.mockResolvedValue({ count: 0 });
+
+    const result = await ensureCoreHrQuestionsForTransition({
+      applicationId: "app_1",
+      previousStatus: Status.APPLIED,
+      newStatus: Status.HR_CALL,
+      existingHrInterviewQuestions: null,
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
+describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", () => {
+  it("returns null when the application does not exist", async () => {
+    findUniqueMock.mockResolvedValue(null);
+
+    const result = await generateVacancySpecificHrQuestions("app_1");
+
+    expect(result).toBeNull();
+    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
+  });
+
+  it("returns null when no core question set has been stored yet", async () => {
+    findUniqueMock.mockResolvedValue(fakeApplication({ hrInterviewQuestions: null }));
+
+    const result = await generateVacancySpecificHrQuestions("app_1");
+
+    expect(result).toBeNull();
+    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
+  });
+
+  it("is idempotent: a set that already has vacancy-specific questions is returned unchanged with no AI call", async () => {
+    const enhanced = {
+      version: 1,
+      questions: [
+        { text: "Tell me about yourself.", category: "CORE" },
+        { text: "What is your Node.js experience?", category: "VACANCY_SPECIFIC" },
+      ],
+    };
+    findUniqueMock.mockResolvedValue(
+      fakeApplication({ hrInterviewQuestions: enhanced, jobPostingText: "React/Node role." }),
+    );
+
+    const result = await generateVacancySpecificHrQuestions("app_1");
+
+    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toHaveLength(1);
   });
 
   it("does not invoke the provider when there is no meaningful context", async () => {
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: EMPTY_CONTEXT,
-    });
+    findUniqueMock.mockResolvedValue(fakeApplication());
+
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
     expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
     expect(updateMock).not.toHaveBeenCalled();
-    expect(result?.hrInterviewQuestions.questions.some((q) => q.category === "VACANCY_SPECIFIC")).toBe(
-      false,
-    );
+    expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toHaveLength(0);
   });
 
   it("does not treat whitespace-only context as meaningful", async () => {
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: { ...EMPTY_CONTEXT, notes: "   \n  " },
-    });
+    findUniqueMock.mockResolvedValue(fakeApplication({ notes: "   \n  " }));
+
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
     expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
     expect(result).not.toBeNull();
   });
 
-  it("invokes the provider exactly once when meaningful context exists", async () => {
-    generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: ["Custom question?"] });
-
-    await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
+  it("invokes the provider once and persists merged vacancy-specific questions on success", async () => {
+    findUniqueMock.mockResolvedValue(
+      fakeApplication({ jobPostingText: "We need a React/Node.js engineer." }),
+    );
+    generateAdditionalQuestionsMock.mockResolvedValue({
+      additionalQuestions: ["What is your Node.js experience?"],
     });
+
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
     expect(generateAdditionalQuestionsMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("merges vacancy-specific questions on provider success and persists them", async () => {
-    generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: ["Custom question?"] });
-
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
-
     expect(updateMock).toHaveBeenCalledTimes(1);
-    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
-      (q) => q.category === "VACANCY_SPECIFIC",
-    );
-    expect(vacancyQuestions).toEqual([{ text: "Custom question?", category: "VACANCY_SPECIFIC" }]);
+    expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toEqual([
+      { text: "What is your Node.js experience?", category: "VACANCY_SPECIFIC" },
+    ]);
   });
 
-  it("keeps only core questions and returns success when the provider throws", async () => {
+  it("keeps only the core set and does not persist when the provider throws", async () => {
+    findUniqueMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     generateAdditionalQuestionsMock.mockRejectedValue(new Error("boom"));
 
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
     expect(result).not.toBeNull();
     expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
     expect(updateMock).not.toHaveBeenCalled();
   });
 
-  it("keeps only core questions when the provider returns zero questions", async () => {
+  it("keeps only the core set when the provider returns zero questions", async () => {
+    findUniqueMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: [] });
 
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
-    expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
+    expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toHaveLength(0);
     expect(updateMock).not.toHaveBeenCalled();
   });
 
   it("drops an AI-generated question that exceeds 140 characters, keeping valid ones", async () => {
-    const tooLong = "a".repeat(141);
+    findUniqueMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     generateAdditionalQuestionsMock.mockResolvedValue({
-      additionalQuestions: [tooLong, "Have you worked on B2B SaaS products?"],
+      additionalQuestions: ["a".repeat(141), "Have you worked on B2B SaaS products?"],
     });
 
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
-    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
-      (q) => q.category === "VACANCY_SPECIFIC",
-    );
-    expect(vacancyQuestions).toEqual([
+    expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toEqual([
       { text: "Have you worked on B2B SaaS products?", category: "VACANCY_SPECIFIC" },
     ]);
   });
 
-  it("accepts an AI-generated question exactly 140 characters long", async () => {
-    const exactly140 = "a".repeat(140);
-    generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: [exactly140] });
-
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
-
-    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
-      (q) => q.category === "VACANCY_SPECIFIC",
-    );
-    expect(vacancyQuestions).toEqual([{ text: exactly140, category: "VACANCY_SPECIFIC" }]);
-  });
-
   it("drops an AI-generated question that duplicates a core question", async () => {
+    findUniqueMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     generateAdditionalQuestionsMock.mockResolvedValue({
       additionalQuestions: ["Tell me about yourself.", "Have you worked on B2B SaaS products?"],
     });
 
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
-    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
-      (q) => q.category === "VACANCY_SPECIFIC",
-    );
-    expect(vacancyQuestions).toEqual([
+    expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toEqual([
       { text: "Have you worked on B2B SaaS products?", category: "VACANCY_SPECIFIC" },
     ]);
   });
 
-  it("drops a duplicate among the AI-generated questions themselves", async () => {
-    generateAdditionalQuestionsMock.mockResolvedValue({
-      additionalQuestions: ["Are you available immediately?", "are you available immediately?"],
-    });
-
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
-
-    const vacancyQuestions = result?.hrInterviewQuestions.questions.filter(
-      (q) => q.category === "VACANCY_SPECIFIC",
-    );
-    expect(vacancyQuestions).toHaveLength(1);
-  });
-
-  it("never throws even when the configured provider is missing, and still returns core questions", async () => {
+  it("never throws when the configured provider is missing, and keeps the core set", async () => {
+    findUniqueMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     getHrQuestionsProviderMock.mockImplementation(() => {
       throw new Error("AI_PROVIDER not configured");
     });
 
-    const result = await maybeGenerateHrQuestionsOnTransition({
-      applicationId: "app_1",
-      previousStatus: Status.APPLIED,
-      newStatus: Status.HR_CALL,
-      existingHrInterviewQuestions: null,
-      context: MEANINGFUL_CONTEXT,
-    });
+    const result = await generateVacancySpecificHrQuestions("app_1");
 
     expect(result).not.toBeNull();
     expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
+    expect(updateMock).not.toHaveBeenCalled();
   });
 });

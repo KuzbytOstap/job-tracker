@@ -2,13 +2,13 @@
 
 import { DroppableKanbanColumn } from "@/components/board/droppable-kanban-column";
 import { distributeApplicationsIntoColumns } from "@/lib/board-columns";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
 
 type KanbanBoardProps = {
-  applications: ApplicationDTO[];
+  applications: ApplicationListItemDTO[];
   sort: SortOption;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
 };
 
 export function KanbanBoard({ applications, sort, onSelectApplication }: KanbanBoardProps) {

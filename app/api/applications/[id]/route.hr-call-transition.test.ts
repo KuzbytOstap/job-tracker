@@ -7,20 +7,16 @@ vi.mock("@/lib/auth", () => ({
   checkSession: () => checkSessionMock(),
 }));
 
-const findUniqueMock = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    jobApplication: {
-      findUnique: (...args: unknown[]) => findUniqueMock(...args),
-    },
     $transaction: vi.fn(),
   },
 }));
 
-const maybeGenerateHrQuestionsOnTransitionMock = vi.fn();
+const ensureCoreHrQuestionsForTransitionMock = vi.fn();
 vi.mock("@/lib/hr-questions-service", () => ({
-  maybeGenerateHrQuestionsOnTransition: (...args: unknown[]) =>
-    maybeGenerateHrQuestionsOnTransitionMock(...args),
+  ensureCoreHrQuestionsForTransition: (...args: unknown[]) =>
+    ensureCoreHrQuestionsForTransitionMock(...args),
 }));
 
 import { prisma } from "@/lib/prisma";
@@ -59,12 +55,18 @@ function fakeRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function mockTransaction(existing: ReturnType<typeof fakeRow>, updatedOverrides: Record<string, unknown>) {
+function mockTransaction(
+  existing: ReturnType<typeof fakeRow> | null,
+  updatedOverrides: Record<string, unknown> = {},
+) {
   vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
     (callback as (tx: unknown) => unknown)({
       jobApplication: {
-        update: vi.fn(),
-        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeRow({ ...existing, ...updatedOverrides })),
+        findUnique: vi.fn().mockResolvedValue(existing),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi
+          .fn()
+          .mockResolvedValue(existing ? fakeRow({ ...existing, ...updatedOverrides }) : null),
       },
       statusChange: { create: vi.fn() },
     }),
@@ -81,23 +83,22 @@ function patchRequest(body: unknown) {
 
 beforeEach(() => {
   checkSessionMock.mockReset();
-  findUniqueMock.mockReset();
-  maybeGenerateHrQuestionsOnTransitionMock.mockReset();
-  maybeGenerateHrQuestionsOnTransitionMock.mockResolvedValue(null);
+  vi.mocked(prisma.$transaction).mockReset();
+  ensureCoreHrQuestionsForTransitionMock.mockReset();
+  ensureCoreHrQuestionsForTransitionMock.mockResolvedValue(null);
 });
 
 describe("PATCH /api/applications/[id] — HR Call question generation trigger", () => {
   it("invokes the HR question service on a genuine first transition into HR_CALL", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const existing = fakeRow({ status: "APPLIED" });
-    findUniqueMock.mockResolvedValue(existing);
     mockTransaction(existing, { status: "HR_CALL" });
 
     const response = await PATCH(patchRequest({ status: "HR_CALL" }), { params });
 
     expect(response.status).toBe(200);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).toHaveBeenCalledTimes(1);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).toHaveBeenCalledWith(
+    expect(ensureCoreHrQuestionsForTransitionMock).toHaveBeenCalledTimes(1);
+    expect(ensureCoreHrQuestionsForTransitionMock).toHaveBeenCalledWith(
       expect.objectContaining({
         applicationId: "app_1",
         previousStatus: "APPLIED",
@@ -110,37 +111,34 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
   it("does not invoke the HR question service when the status field is unchanged", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const existing = fakeRow({ status: "APPLIED" });
-    findUniqueMock.mockResolvedValue(existing);
     mockTransaction(existing, { notes: "Updated notes" });
 
     const response = await PATCH(patchRequest({ notes: "Updated notes" }), { params });
 
     expect(response.status).toBe(200);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("does not invoke the HR question service when moving from HR_CALL to another status", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const existing = fakeRow({ status: "HR_CALL" });
-    findUniqueMock.mockResolvedValue(existing);
     mockTransaction(existing, { status: "TECH_INTERVIEW" });
 
     const response = await PATCH(patchRequest({ status: "TECH_INTERVIEW" }), { params });
 
     expect(response.status).toBe(200);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("does not invoke the HR question service for a non-status update", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const existing = fakeRow({ status: "HR_CALL" });
-    findUniqueMock.mockResolvedValue(existing);
     mockTransaction(existing, { company: "New Co" });
 
     const response = await PATCH(patchRequest({ company: "New Co" }), { params });
 
     expect(response.status).toBe(200);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 before touching Prisma or the HR question service when unauthenticated", async () => {
@@ -149,8 +147,8 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
     const response = await PATCH(patchRequest({ status: "HR_CALL" }), { params });
 
     expect(response.status).toBe(401);
-    expect(findUniqueMock).not.toHaveBeenCalled();
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("returns 403 before touching Prisma or the HR question service when forbidden", async () => {
@@ -159,8 +157,8 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
     const response = await PATCH(patchRequest({ status: "HR_CALL" }), { params });
 
     expect(response.status).toBe(403);
-    expect(findUniqueMock).not.toHaveBeenCalled();
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 and invokes no HR question service call for an invalid payload", async () => {
@@ -169,43 +167,40 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
     const response = await PATCH(patchRequest({ status: "NOT_A_REAL_STATUS" }), { params });
 
     expect(response.status).toBe(400);
-    expect(findUniqueMock).not.toHaveBeenCalled();
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("invokes no HR question service call when the application does not exist", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
-    findUniqueMock.mockResolvedValue(null);
+    mockTransaction(null);
 
     const response = await PATCH(patchRequest({ status: "HR_CALL" }), { params });
 
     expect(response.status).toBe(404);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
   it("invokes no HR question service call when the Prisma update transaction fails", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
-    const existing = fakeRow({ status: "APPLIED" });
-    findUniqueMock.mockResolvedValue(existing);
     vi.mocked(prisma.$transaction).mockRejectedValue(new Error("db exploded"));
 
     const response = await PATCH(patchRequest({ status: "HR_CALL" }), { params });
 
     expect(response.status).toBe(500);
-    expect(maybeGenerateHrQuestionsOnTransitionMock).not.toHaveBeenCalled();
+    expect(ensureCoreHrQuestionsForTransitionMock).not.toHaveBeenCalled();
   });
 
-  it("returns a successful response with the AI failure fallback core-only set from the service", async () => {
+  it("merges the core-only set returned by the core-questions service into the response DTO", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const existing = fakeRow({ status: "APPLIED" });
-    findUniqueMock.mockResolvedValue(existing);
     mockTransaction(existing, { status: "HR_CALL" });
 
     const coreOnly = {
       version: 1,
       questions: [{ text: "Tell me about yourself.", category: "CORE" }],
     };
-    maybeGenerateHrQuestionsOnTransitionMock.mockResolvedValue({
+    ensureCoreHrQuestionsForTransitionMock.mockResolvedValue({
       hrInterviewQuestions: coreOnly,
       hrQuestionsGeneratedAt: new Date("2026-07-20T12:05:00.000Z"),
     });
@@ -219,10 +214,9 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
     expect(body.hrQuestionsGeneratedAt).toBe("2026-07-20T12:05:00.000Z");
   });
 
-  it("merges the stored question set and generation timestamp into the final DTO on AI success", async () => {
+  it("merges an enriched question set and generation timestamp returned by the service into the DTO", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     const existing = fakeRow({ status: "APPLIED" });
-    findUniqueMock.mockResolvedValue(existing);
     mockTransaction(existing, { status: "HR_CALL" });
 
     const merged = {
@@ -232,7 +226,7 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
         { text: "What is your Node.js experience?", category: "VACANCY_SPECIFIC" },
       ],
     };
-    maybeGenerateHrQuestionsOnTransitionMock.mockResolvedValue({
+    ensureCoreHrQuestionsForTransitionMock.mockResolvedValue({
       hrInterviewQuestions: merged,
       hrQuestionsGeneratedAt: new Date("2026-07-20T12:05:00.000Z"),
     });

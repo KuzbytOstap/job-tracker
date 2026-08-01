@@ -7,7 +7,7 @@ import type {
 import { effectiveStatus } from "@/lib/status";
 import { parseStoredHrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 import type { SortOption } from "@/lib/validation";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationDTO, ApplicationListItemDTO } from "@/lib/api-types";
 
 export type ApplicationWithHistory = JobApplication & {
   statusChanges: StatusChange[];
@@ -17,6 +17,56 @@ export type ApplicationWithMeta = ApplicationWithHistory & {
   effectiveStatus: Status;
   isAutoIgnored: boolean;
 };
+
+// Columns required to build an ApplicationListItemDTO — deliberately excludes
+// the heavy detail fields (jobPostingText, coverLetterText, notes,
+// hrInterviewQuestions, statusChanges). effectiveStatus/isAutoIgnored are
+// derived from status + lastActivityAt, both of which are selected here.
+export const APPLICATION_LIST_ITEM_SELECT = {
+  id: true,
+  company: true,
+  position: true,
+  platform: true,
+  link: true,
+  status: true,
+  hasTestTask: true,
+  testTaskDone: true,
+  salaryExpectation: true,
+  appliedAt: true,
+  lastActivityAt: true,
+  updatedAt: true,
+} satisfies Prisma.JobApplicationSelect;
+
+export type ApplicationListItemRow = Prisma.JobApplicationGetPayload<{
+  select: typeof APPLICATION_LIST_ITEM_SELECT;
+}>;
+
+export type ApplicationListItemWithMeta = ApplicationListItemRow & {
+  effectiveStatus: Status;
+  isAutoIgnored: boolean;
+};
+
+export function toApplicationListItemWithMeta(
+  row: ApplicationListItemRow,
+  now: Date,
+): ApplicationListItemWithMeta {
+  const computedStatus = effectiveStatus(row, now);
+
+  return {
+    ...row,
+    effectiveStatus: computedStatus,
+    isAutoIgnored: row.status !== Status.IGNORED && computedStatus === Status.IGNORED,
+  };
+}
+
+export function toApplicationListItemDTO(item: ApplicationListItemWithMeta): ApplicationListItemDTO {
+  return {
+    ...item,
+    appliedAt: item.appliedAt.toISOString(),
+    lastActivityAt: item.lastActivityAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  };
+}
 
 export function buildApplicationsWhere(q: string): Prisma.JobApplicationWhereInput {
   if (!q) {
@@ -81,10 +131,9 @@ export function resolveTestTaskFlags(
   return { hasTestTask, testTaskDone };
 }
 
-export function sortApplications<T extends ApplicationWithHistory>(
-  applications: T[],
-  sort: SortOption,
-): T[] {
+export function sortApplications<
+  T extends { appliedAt: Date; lastActivityAt: Date; company: string },
+>(applications: T[], sort: SortOption): T[] {
   const sorted = [...applications];
 
   switch (sort) {

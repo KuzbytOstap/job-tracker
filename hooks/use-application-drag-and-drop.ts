@@ -6,7 +6,7 @@ import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { useMoveApplicationToStatus } from "@/hooks/use-move-application-to-status";
 import { decideDropTransition } from "@/lib/drag-drop-transitions";
 import { STATUS_LABELS } from "@/lib/labels";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { Status } from "@/app/generated/prisma/enums";
 
 export type PendingDrop = {
@@ -16,8 +16,8 @@ export type PendingDrop = {
   targetStatus: Status;
 };
 
-function readApplication(data: Record<string, unknown> | undefined): ApplicationDTO | undefined {
-  return data?.application as ApplicationDTO | undefined;
+function readApplication(data: Record<string, unknown> | undefined): ApplicationListItemDTO | undefined {
+  return data?.application as ApplicationListItemDTO | undefined;
 }
 
 function readColumnStatus(data: Record<string, unknown> | undefined): Status | undefined {
@@ -32,7 +32,7 @@ function readColumnStatus(data: Record<string, unknown> | undefined): Status | u
  */
 export function useApplicationDragAndDrop() {
   const moveMutation = useMoveApplicationToStatus();
-  const [activeApplication, setActiveApplication] = useState<ApplicationDTO | null>(null);
+  const [activeApplication, setActiveApplication] = useState<ApplicationListItemDTO | null>(null);
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {

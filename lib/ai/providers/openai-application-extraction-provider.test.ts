@@ -4,10 +4,13 @@ import { Platform } from "@/app/generated/prisma/enums";
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 
 const parseMock = vi.fn();
-vi.mock("@/lib/ai/openai-client", () => ({
-  getOpenAIClient: () => ({ responses: { parse: parseMock } }),
-}));
+const getOpenAIClientMock = vi.fn(() => ({ responses: { parse: parseMock } }));
+vi.mock("@/lib/ai/openai-client", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ai/openai-client")>("@/lib/ai/openai-client");
+  return { ...actual, getOpenAIClient: () => getOpenAIClientMock() };
+});
 
+import { OpenAIConfigurationError } from "@/lib/ai/openai-client";
 import { OpenAIApplicationExtractionProvider } from "@/lib/ai/providers/openai-application-extraction-provider";
 
 function completedResponse(outputParsed: unknown) {
@@ -27,6 +30,8 @@ function fullyNullResult() {
 
 beforeEach(() => {
   parseMock.mockReset();
+  getOpenAIClientMock.mockReset();
+  getOpenAIClientMock.mockReturnValue({ responses: { parse: parseMock } });
 });
 
 afterEach(() => {
@@ -154,6 +159,20 @@ describe("OpenAIApplicationExtractionProvider", () => {
     await expect(
       provider.extractApplication({ jobPostingText: "Some posting" }),
     ).rejects.toMatchObject({ kind: "invalid_result" });
+  });
+
+  it("maps a shared OpenAI client-configuration failure to its own configuration error", async () => {
+    getOpenAIClientMock.mockImplementation(() => {
+      throw new OpenAIConfigurationError("OPENAI_API_KEY is not configured.");
+    });
+
+    const provider = new OpenAIApplicationExtractionProvider();
+
+    const error = await provider
+      .extractApplication({ jobPostingText: "Some posting" })
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(ApplicationExtractionProviderError);
+    expect(error).toMatchObject({ kind: "configuration" });
   });
 
   it("maps an authentication failure to a safe configuration error", async () => {

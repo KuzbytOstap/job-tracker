@@ -16,8 +16,30 @@ export type ApplicationDTO = Omit<
   hrQuestionsGeneratedAt: string | null;
 };
 
+// Lightweight projection returned by the list endpoint. It carries only what
+// Kanban cards, mobile lists, filters, sorting, drag-and-drop, and optimistic
+// cache updates need — never the heavy detail fields (job posting, cover
+// letter, HR questions, notes, status history). Full detail is fetched
+// separately through the single-application endpoint as an ApplicationDTO.
+export type ApplicationListItemDTO = {
+  id: string;
+  company: string;
+  position: string;
+  platform: Platform;
+  link: string | null;
+  status: Status;
+  effectiveStatus: Status;
+  isAutoIgnored: boolean;
+  hasTestTask: boolean;
+  testTaskDone: boolean;
+  salaryExpectation: string | null;
+  appliedAt: string;
+  lastActivityAt: string;
+  updatedAt: string;
+};
+
 export type ApplicationsListResponse = {
-  applications: ApplicationDTO[];
+  applications: ApplicationListItemDTO[];
   total: number;
 };
 
@@ -66,4 +88,8 @@ export type CreateApplicationPayload = {
 
 export type UpdateApplicationPayload = Partial<CreateApplicationPayload> & {
   status?: Status;
+  // Optimistic-concurrency token: the `updatedAt` the client last saw. When
+  // present, the server only applies the update if the stored row still
+  // matches, otherwise it responds 409 Conflict.
+  expectedUpdatedAt?: string;
 };

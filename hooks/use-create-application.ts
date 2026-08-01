@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError, createApplication } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
-import { buildOptimisticApplication, upsertApplicationInList } from "@/lib/cache-updates";
+import { buildOptimisticListItem, upsertApplicationInList } from "@/lib/cache-updates";
 import { applyApplicationToCaches, parseApplicationsListQueryKey } from "@/lib/sync-application-caches";
 import type { ApplicationDTO, ApplicationsListResponse, CreateApplicationPayload } from "@/lib/api-types";
 
@@ -22,7 +22,7 @@ export function useCreateApplication() {
       await queryClient.cancelQueries({ queryKey: queryKeys.applications.lists() });
 
       const optimisticId = `optimistic-${crypto.randomUUID()}`;
-      const optimisticApplication = buildOptimisticApplication(input, optimisticId, new Date());
+      const optimisticApplication = buildOptimisticListItem(input, optimisticId, new Date());
 
       const previousLists = queryClient.getQueriesData<ApplicationsListResponse>({
         queryKey: queryKeys.applications.lists(),

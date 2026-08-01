@@ -3,13 +3,13 @@
 import { AnimatePresence } from "motion/react";
 import { DateGroupSection } from "@/components/dashboard/date-group-section";
 import { groupApplicationsByAppliedDate } from "@/lib/date-grouping";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
 
 type ApplicationListProps = {
-  applications: ApplicationDTO[];
+  applications: ApplicationListItemDTO[];
   sort: SortOption;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
 };
 
 export function ApplicationList({ applications, sort, onSelectApplication }: ApplicationListProps) {

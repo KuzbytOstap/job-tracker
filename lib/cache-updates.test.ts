@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applicationMatchesListParams,
-  buildOptimisticApplication,
+  buildOptimisticListItem,
   removeApplicationFromList,
   sortApplicationDTOs,
   upsertApplicationInList,
@@ -267,10 +267,10 @@ describe("sortApplicationDTOs", () => {
   });
 });
 
-describe("buildOptimisticApplication", () => {
-  it("creates an APPLIED application with sane defaults from a minimal create payload", () => {
+describe("buildOptimisticListItem", () => {
+  it("creates an APPLIED list item with sane defaults from a minimal create payload", () => {
     const now = new Date("2026-07-14T12:00:00.000Z");
-    const optimistic = buildOptimisticApplication(
+    const optimistic = buildOptimisticListItem(
       { company: "Acme", position: "Engineer", platform: "DIRECT" },
       "optimistic-1",
       now,
@@ -281,12 +281,12 @@ describe("buildOptimisticApplication", () => {
     expect(optimistic.isAutoIgnored).toBe(false);
     expect(optimistic.link).toBeNull();
     expect(optimistic.appliedAt).toBe(now.toISOString());
-    expect(optimistic.statusChanges).toEqual([]);
+    expect(optimistic.updatedAt).toBe(now.toISOString());
   });
 
   it("respects an explicitly provided appliedAt", () => {
     const now = new Date("2026-07-14T12:00:00.000Z");
-    const optimistic = buildOptimisticApplication(
+    const optimistic = buildOptimisticListItem(
       { company: "Acme", position: "Engineer", platform: "DIRECT", appliedAt: "2026-07-01T00:00:00.000Z" },
       "optimistic-1",
       now,

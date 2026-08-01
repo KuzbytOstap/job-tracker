@@ -8,17 +8,19 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 const findUniqueMock = vi.fn();
-const updateMock = vi.fn();
 const deleteMock = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobApplication: {
       findUnique: (...args: unknown[]) => findUniqueMock(...args),
-      update: (...args: unknown[]) => updateMock(...args),
       delete: (...args: unknown[]) => deleteMock(...args),
     },
     $transaction: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/hr-questions-service", () => ({
+  ensureCoreHrQuestionsForTransition: vi.fn().mockResolvedValue(null),
 }));
 
 import { prisma } from "@/lib/prisma";
@@ -58,9 +60,32 @@ function fakeRow(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   checkSessionMock.mockReset();
   findUniqueMock.mockReset();
-  updateMock.mockReset();
   deleteMock.mockReset();
+  vi.mocked(prisma.$transaction).mockReset();
 });
+
+// Builds a tx double matching the concurrency-safe PATCH flow: it reads the
+// current row (findUnique), applies a guarded conditional write (updateMany),
+// records history (statusChange.create), then re-reads the fresh row.
+function mockPatchTransaction(options: {
+  existing: Record<string, unknown> | null;
+  updateCount?: number;
+  fresh?: Record<string, unknown>;
+}) {
+  const updateManyMock = vi.fn().mockResolvedValue({ count: options.updateCount ?? 1 });
+  const statusChangeCreateMock = vi.fn();
+  vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
+    (callback as (tx: unknown) => unknown)({
+      jobApplication: {
+        findUnique: vi.fn().mockResolvedValue(options.existing),
+        updateMany: updateManyMock,
+        findUniqueOrThrow: vi.fn().mockResolvedValue(options.fresh ?? options.existing),
+      },
+      statusChange: { create: statusChangeCreateMock },
+    }),
+  );
+  return { updateManyMock, statusChangeCreateMock };
+}
 
 describe("GET /api/applications/[id]", () => {
   it("returns 401 before touching Prisma when unauthenticated", async () => {
@@ -119,17 +144,10 @@ describe("PATCH /api/applications/[id]", () => {
 
   it("updates both source text fields", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
-    findUniqueMock.mockResolvedValue(fakeRow());
-    const txUpdateMock = vi.fn();
-    const txFindUniqueOrThrowMock = vi.fn().mockResolvedValue(
-      fakeRow({ jobPostingText: "Updated posting", coverLetterText: "Updated cover letter" }),
-    );
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
-      (callback as (tx: unknown) => unknown)({
-        jobApplication: { update: txUpdateMock, findUniqueOrThrow: txFindUniqueOrThrowMock },
-        statusChange: { create: vi.fn() },
-      }),
-    );
+    const { updateManyMock } = mockPatchTransaction({
+      existing: fakeRow(),
+      fresh: fakeRow({ jobPostingText: "Updated posting", coverLetterText: "Updated cover letter" }),
+    });
 
     const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
       method: "PATCH",
@@ -140,7 +158,7 @@ describe("PATCH /api/applications/[id]", () => {
     const response = await PATCH(request, { params });
 
     expect(response.status).toBe(200);
-    expect(txUpdateMock).toHaveBeenCalledWith(
+    expect(updateManyMock).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           jobPostingText: "Updated posting",
@@ -155,17 +173,10 @@ describe("PATCH /api/applications/[id]", () => {
 
   it("clears both source text fields to null", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
-    findUniqueMock.mockResolvedValue(
-      fakeRow({ jobPostingText: "Old posting", coverLetterText: "Old cover letter" }),
-    );
-    const txUpdateMock = vi.fn();
-    const txFindUniqueOrThrowMock = vi.fn().mockResolvedValue(fakeRow());
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
-      (callback as (tx: unknown) => unknown)({
-        jobApplication: { update: txUpdateMock, findUniqueOrThrow: txFindUniqueOrThrowMock },
-        statusChange: { create: vi.fn() },
-      }),
-    );
+    const { updateManyMock } = mockPatchTransaction({
+      existing: fakeRow({ jobPostingText: "Old posting", coverLetterText: "Old cover letter" }),
+      fresh: fakeRow(),
+    });
 
     const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
       method: "PATCH",
@@ -176,7 +187,7 @@ describe("PATCH /api/applications/[id]", () => {
     const response = await PATCH(request, { params });
 
     expect(response.status).toBe(200);
-    expect(txUpdateMock).toHaveBeenCalledWith(
+    expect(updateManyMock).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ jobPostingText: null, coverLetterText: null }),
       }),
@@ -184,6 +195,52 @@ describe("PATCH /api/applications/[id]", () => {
     const body = await response.json();
     expect(body.jobPostingText).toBeNull();
     expect(body.coverLetterText).toBeNull();
+  });
+
+  it("returns 409 when the optimistic-concurrency token does not match the stored row", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const { statusChangeCreateMock } = mockPatchTransaction({
+      existing: fakeRow({ status: "APPLIED", updatedAt: new Date("2026-07-18T12:00:00.000Z") }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "HR_REPLIED",
+        expectedUpdatedAt: "2026-07-18T09:00:00.000Z",
+      }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(409);
+    // A stale write must not create a StatusChange history entry.
+    expect(statusChangeCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("records a StatusChange with the fresh fromStatus read inside the transaction", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const existing = fakeRow({ status: "APPLIED" });
+    const { statusChangeCreateMock } = mockPatchTransaction({
+      existing,
+      fresh: fakeRow({ status: "HR_REPLIED" }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "HR_REPLIED" }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(200);
+    expect(statusChangeCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ fromStatus: "APPLIED", toStatus: "HR_REPLIED" }),
+      }),
+    );
   });
 });
 

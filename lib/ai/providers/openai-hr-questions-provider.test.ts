@@ -3,10 +3,13 @@ import OpenAI from "openai";
 import { HrQuestionsProviderError } from "@/lib/ai/hr-questions-provider";
 
 const parseMock = vi.fn();
-vi.mock("@/lib/ai/openai-client", () => ({
-  getOpenAIClient: () => ({ responses: { parse: parseMock } }),
-}));
+const getOpenAIClientMock = vi.fn(() => ({ responses: { parse: parseMock } }));
+vi.mock("@/lib/ai/openai-client", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ai/openai-client")>("@/lib/ai/openai-client");
+  return { ...actual, getOpenAIClient: () => getOpenAIClientMock() };
+});
 
+import { OpenAIConfigurationError } from "@/lib/ai/openai-client";
 import { OpenAIHrQuestionsProvider } from "@/lib/ai/providers/openai-hr-questions-provider";
 
 const BASE_INPUT = {
@@ -25,6 +28,8 @@ function completedResponse(outputParsed: unknown) {
 
 beforeEach(() => {
   parseMock.mockReset();
+  getOpenAIClientMock.mockReset();
+  getOpenAIClientMock.mockReturnValue({ responses: { parse: parseMock } });
 });
 
 afterEach(() => {
@@ -157,6 +162,18 @@ describe("OpenAIHrQuestionsProvider", () => {
     await expect(
       provider.generateAdditionalQuestions(BASE_INPUT),
     ).rejects.toMatchObject({ kind: "invalid_result" });
+  });
+
+  it("maps a shared OpenAI client-configuration failure to its own configuration error", async () => {
+    getOpenAIClientMock.mockImplementation(() => {
+      throw new OpenAIConfigurationError("OPENAI_API_KEY is not configured.");
+    });
+
+    const provider = new OpenAIHrQuestionsProvider();
+
+    const error = await provider.generateAdditionalQuestions(BASE_INPUT).catch((e) => e);
+    expect(error).toBeInstanceOf(HrQuestionsProviderError);
+    expect(error).toMatchObject({ kind: "configuration" });
   });
 
   it("maps an authentication failure to a safe configuration error", async () => {

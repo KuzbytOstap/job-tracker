@@ -9,14 +9,14 @@ import {
   getMobileStatusCounts,
   getMobileStatusGroups,
 } from "@/lib/mobile-pipeline";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
 import type { Status } from "@/app/generated/prisma/enums";
 
 type MobilePipelineViewProps = {
-  applications: ApplicationDTO[];
+  applications: ApplicationListItemDTO[];
   sort: SortOption;
-  onSelectApplication: (application: ApplicationDTO) => void;
+  onSelectApplication: (application: ApplicationListItemDTO) => void;
 };
 
 export function MobilePipelineView({

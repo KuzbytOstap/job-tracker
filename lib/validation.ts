@@ -98,6 +98,10 @@ export const updateApplicationSchema = z
     position: baseApplicationFields.position.optional(),
     platform: platformSchema.optional(),
     status: statusSchema.optional(),
+    // Optimistic-concurrency token (not a stored column): the `updatedAt` the
+    // client last saw. Stripped from the write and used only to guard against
+    // stale updates.
+    expectedUpdatedAt: z.coerce.date().optional(),
   })
   .strict();
 

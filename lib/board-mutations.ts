@@ -6,6 +6,10 @@ import type { Status } from "@/app/generated/prisma/enums";
 export function moveApplicationToStatus(
   applicationId: string,
   targetStatus: Status,
+  expectedUpdatedAt?: string,
 ): Promise<ApplicationDTO> {
-  return updateApplication(applicationId, resolveMoveStatusPayload(targetStatus));
+  return updateApplication(applicationId, {
+    ...resolveMoveStatusPayload(targetStatus),
+    expectedUpdatedAt,
+  });
 }

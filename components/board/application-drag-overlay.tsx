@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DragOverlay, defaultDropAnimation } from "@dnd-kit/core";
 import { StatusBadge } from "@/components/dashboard/status-badge";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 
 function usePrefersReducedMotion(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -20,7 +20,7 @@ function usePrefersReducedMotion(): boolean {
 }
 
 type ApplicationDragOverlayProps = {
-  application: ApplicationDTO | null;
+  application: ApplicationListItemDTO | null;
 };
 
 export function ApplicationDragOverlay({ application }: ApplicationDragOverlayProps) {

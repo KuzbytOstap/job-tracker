@@ -92,6 +92,10 @@ export function buildHrInterviewQuestionSet(additionalQuestionTexts: readonly st
   return { version: 1, questions: normalizeAndDedupeQuestions([...core, ...additional]) };
 }
 
+export function hasVacancySpecificQuestions(set: HrInterviewQuestionSet | null): boolean {
+  return set !== null && set.questions.some((question) => question.category === "VACANCY_SPECIFIC");
+}
+
 export function parseStoredHrInterviewQuestionSet(value: unknown): HrInterviewQuestionSet | null {
   if (value === null || value === undefined) return null;
   const result = hrInterviewQuestionSetSchema.safeParse(value);

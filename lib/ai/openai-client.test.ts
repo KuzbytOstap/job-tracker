@@ -28,14 +28,20 @@ describe("getOpenAIClient", () => {
     expect(OpenAIConstructorMock).not.toHaveBeenCalled();
   });
 
-  it("throws a typed configuration error when OPENAI_API_KEY is missing", async () => {
+  it("throws a shared, feature-agnostic configuration error when OPENAI_API_KEY is missing", async () => {
+    const { getOpenAIClient, OpenAIConfigurationError } = await import("@/lib/ai/openai-client");
+
+    expect(() => getOpenAIClient()).toThrow(OpenAIConfigurationError);
+    expect(OpenAIConstructorMock).not.toHaveBeenCalled();
+  });
+
+  it("does not throw an extraction-specific error from the shared client", async () => {
     const { getOpenAIClient } = await import("@/lib/ai/openai-client");
     const { ApplicationExtractionProviderError } = await import(
       "@/lib/ai/application-extraction-provider"
     );
 
-    expect(() => getOpenAIClient()).toThrow(ApplicationExtractionProviderError);
-    expect(OpenAIConstructorMock).not.toHaveBeenCalled();
+    expect(() => getOpenAIClient()).not.toThrow(ApplicationExtractionProviderError);
   });
 
   it("creates the client with maxRetries: 0 once requested", async () => {

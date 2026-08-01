@@ -9,11 +9,11 @@ import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { cn } from "@/lib/utils";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
-import type { ApplicationDTO } from "@/lib/api-types";
+import type { ApplicationListItemDTO } from "@/lib/api-types";
 
 type ApplicationCardProps = {
-  application: ApplicationDTO;
-  onSelect: (application: ApplicationDTO) => void;
+  application: ApplicationListItemDTO;
+  onSelect: (application: ApplicationListItemDTO) => void;
   dragHandle?: ReactNode;
 };
 

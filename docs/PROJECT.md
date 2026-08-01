@@ -138,13 +138,46 @@ app.
   in every API handler). The deployment is only actually private once real
   `AUTH_SECRET`/`AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`/`ALLOWED_EMAIL` values
   are configured, both locally and on Vercel.
-- The AI-assisted "paste a job posting, auto-fill the form" feature
-  discussed earlier is deliberately parked, to be re-planned with a
-  provider-agnostic extraction interface (`AI_PROVIDER=mock` for dev/tests,
-  `AI_PROVIDER=openai` with GPT-5 nano for production) rather than the
-  Claude-API-specific design originally sketched.
-- Drag-and-drop board interactions were mid-implementation as of this
-  writing (`hooks/use-application-drag-and-drop.ts`,
-  `lib/drag-drop-transitions.ts`, and related board components) — check
-  `git status` / `git log` for the current state rather than treating this
-  document as a snapshot of completion.
+- The AI-assisted "paste a job posting, auto-fill the form" feature is
+  **implemented**, behind a provider-agnostic extraction interface
+  (`AI_PROVIDER=mock` for dev/tests, `AI_PROVIDER=openai` with GPT-5 nano for
+  production) — see `README.md`'s "AI-assisted form filling" section.
+- Drag-and-drop board interactions are **implemented**
+  (`hooks/use-application-drag-and-drop.ts`, `lib/drag-drop-transitions.ts`,
+  and the `components/board/` components), including confirmation for backward
+  moves and moves into `REJECTED`/`IGNORED`.
+
+## Architecture notes
+
+A few cross-cutting decisions worth knowing before touching the data flow:
+
+- **Lightweight list vs. full detail.** The list endpoint
+  (`GET /api/applications`) returns a slim `ApplicationListItemDTO`
+  (`lib/api-types.ts`) — only the columns the Kanban cards, mobile lists,
+  filters, sorting, and drag-and-drop need, via a Prisma `select`
+  (`APPLICATION_LIST_ITEM_SELECT` in `lib/applications.ts`). The heavy fields
+  (job posting, cover letter, notes, HR questions, status history) are fetched
+  only when a card is opened, through `GET /api/applications/[id]`, which
+  returns the full `ApplicationDTO`. React Query caches the two shapes under
+  separate keys (`lib/query-keys.ts`); mutations return the full DTO and are
+  projected back down to list items for the list caches
+  (`toApplicationListItem` in `lib/cache-updates.ts`).
+- **Concurrency-safe updates.** `PATCH /api/applications/[id]` reads the
+  current row *inside* the transaction and applies a conditional write, so a
+  `StatusChange` is never derived from a stale read. Clients send the
+  last-seen `updatedAt` as an optimistic-concurrency token
+  (`expectedUpdatedAt`); a mismatch returns **409 Conflict**, and the update /
+  move hooks recover by invalidating and refetching the affected application
+  instead of keeping stale optimistic state.
+- **HR_CALL question flow, split for latency.** The status change into
+  `HR_CALL` saves the deterministic core question set synchronously
+  (`ensureCoreHrQuestionsForTransition`) so the response is never delayed by
+  OpenAI. The slower, best-effort vacancy-specific enhancement runs as a
+  separate follow-up request (`POST /api/applications/[id]/hr-questions` →
+  `generateVacancySpecificHrQuestions`), triggered by the client after the
+  move; it is idempotent and an OpenAI failure never rolls back the saved
+  status change.
+- **Shared OpenAI client error.** `getOpenAIClient()` throws a feature-neutral
+  `OpenAIConfigurationError` (`lib/ai/openai-client.ts`); the extraction and
+  HR-question providers each re-map it into their own domain error, so neither
+  feature ever receives the other's error type.
