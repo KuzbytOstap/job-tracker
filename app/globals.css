@@ -144,4 +144,178 @@
   --gh-accent-secondary: oklch(0.58 0.11 30);
   --gh-accent-soft: oklch(0.93 0.05 60);
   --gh-shadow: 0 1px 2px oklch(0.24 0.02 50 / 0.06), 0 8px 20px -12px oklch(0.24 0.02 50 / 0.18);
+
+  --gh-lane-surface: oklch(0.975 0.006 68 / 0.55);
+  --gh-lane-surface-rich: oklch(0.96 0.02 55 / 0.6);
+  --gh-lane-border: oklch(0.89 0.012 65 / 0.65);
+  --gh-lane-border-rich: oklch(0.8 0.055 50 / 0.55);
+  --gh-lane-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4);
+  --gh-lane-drop-bg: oklch(0.93 0.06 60 / 0.5);
+  --gh-lane-drop-border: oklch(0.68 0.14 50);
+  --gh-lane-drop-shadow: inset 0 0 0 1px oklch(0.68 0.14 50 / 0.35), 0 0 0 4px oklch(0.93 0.08 55 / 0.35);
+  --gh-lane-source-surface: oklch(0.96 0.005 65 / 0.4);
+
+  --gh-card-surface: var(--gh-surface);
+  --gh-card-border: oklch(0.885 0.014 60);
+  --gh-card-shadow: 0 1px 2px oklch(0.3 0.03 45 / 0.07), 0 6px 14px -10px oklch(0.3 0.03 45 / 0.2);
+  --gh-card-shadow-hover: 0 2px 6px oklch(0.3 0.03 45 / 0.1), 0 16px 28px -16px oklch(0.3 0.03 45 / 0.32);
+  --gh-drag-elevation-shadow: 0 12px 32px -10px oklch(0.24 0.06 45 / 0.4), 0 3px 10px oklch(0.24 0.06 45 / 0.22);
+
+  --gh-status-applied: oklch(0.62 0.03 240);
+  --gh-status-hr-replied: oklch(0.63 0.1 230);
+  --gh-status-hr-call: oklch(0.6 0.13 275);
+  --gh-status-tech-interview: oklch(0.58 0.14 305);
+  --gh-status-test-task: oklch(0.68 0.13 75);
+  --gh-status-offer: oklch(0.63 0.15 150);
+  --gh-status-offer-glow: oklch(0.85 0.09 145 / 0.45);
+  --gh-status-rejected: oklch(0.58 0.15 25);
+  --gh-status-ignored: oklch(0.6 0.008 60);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane {
+  background: var(--gh-lane-surface);
+  border: 1px solid var(--gh-lane-border);
+  box-shadow: var(--gh-lane-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-lane-tier="rich"] {
+  background: var(--gh-lane-surface-rich);
+  border-color: var(--gh-lane-border-rich);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-lane-tier="quiet"] {
+  background: var(--gh-lane-source-surface);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-drop-target="true"] {
+  background: var(--gh-lane-drop-bg);
+  border-color: var(--gh-lane-drop-border);
+  box-shadow: var(--gh-lane-drop-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-drag-source="true"] {
+  background: var(--gh-lane-source-surface);
+  border-color: var(--gh-lane-border);
+  opacity: 0.85;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-content {
+  padding: 0 0.625rem 0.75rem;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-header {
+  color: var(--gh-text);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-header:hover {
+  background: oklch(1 0 0 / 0.5);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-count {
+  background: oklch(1 0 0 / 0.6);
+  color: var(--gh-text-secondary);
+  font-weight: 600;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-header:hover .kanban-lane-count {
+  background: var(--gh-surface);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-date-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-date-group-count {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-date-group-heading {
+  margin-bottom: -0.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card {
+  background: var(--gh-card-surface);
+  border-color: var(--gh-card-border);
+  box-shadow: var(--gh-card-shadow);
+  border-left-width: 3px;
+  border-left-color: var(--gh-status-rail, var(--gh-card-border));
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card:hover {
+  box-shadow: var(--gh-card-shadow-hover);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card-content {
+  padding: 0.75rem 0.875rem;
+  gap: 0.5rem;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card-monogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: var(--gh-surface-subtle);
+  border: 1px solid var(--gh-border);
+  color: var(--gh-text-secondary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="APPLIED"] { --gh-status-rail: var(--gh-status-applied); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="HR_REPLIED"] { --gh-status-rail: var(--gh-status-hr-replied); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="HR_CALL"] { --gh-status-rail: var(--gh-status-hr-call); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="TECH_INTERVIEW"] { --gh-status-rail: var(--gh-status-tech-interview); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="TEST_TASK"] { --gh-status-rail: var(--gh-status-test-task); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="OFFER"] {
+  --gh-status-rail: var(--gh-status-offer);
+  box-shadow: var(--gh-card-shadow), 0 0 0 1px var(--gh-status-offer-glow);
+}
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="OFFER"]:hover {
+  box-shadow: var(--gh-card-shadow-hover), 0 0 0 1px var(--gh-status-offer-glow);
+}
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="REJECTED"] {
+  --gh-status-rail: var(--gh-status-rejected);
+  background: oklch(0.97 0.012 30 / 0.7);
+}
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="IGNORED"] {
+  --gh-status-rail: var(--gh-status-ignored);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-drag-source {
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-drag-overlay {
+  background: var(--gh-card-surface);
+  border-color: var(--gh-card-border);
+  box-shadow: var(--gh-drag-elevation-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-empty-state {
+  background: oklch(1 0 0 / 0.35);
+  border-color: var(--gh-border);
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-skeleton {
+  background: var(--gh-lane-surface);
+  border: 1px solid var(--gh-lane-border);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-job-tracker-theme="game-hub"] .kanban-card,
+  [data-job-tracker-theme="game-hub"] .kanban-drag-source {
+    transition: none;
+  }
 }

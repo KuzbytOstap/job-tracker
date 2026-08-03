@@ -15,10 +15,24 @@ type ApplicationCardProps = {
   application: ApplicationListItemDTO;
   onSelect: (application: ApplicationListItemDTO) => void;
   dragHandle?: ReactNode;
+  visualVariant?: "default" | "gameHub";
 };
 
-export function ApplicationCard({ application, onSelect, dragHandle }: ApplicationCardProps) {
+function getCompanyMonogram(company: string): string {
+  const words = company.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+export function ApplicationCard({
+  application,
+  onSelect,
+  dragHandle,
+  visualVariant = "default",
+}: ApplicationCardProps) {
   const isIgnored = application.effectiveStatus === "IGNORED";
+  const isGameHub = visualVariant === "gameHub";
 
   return (
     <motion.div
@@ -33,6 +47,8 @@ export function ApplicationCard({ application, onSelect, dragHandle }: Applicati
       <Card
         role="button"
         tabIndex={0}
+        data-status={isGameHub ? application.effectiveStatus : undefined}
+        data-auto-ignored={isGameHub && application.isAutoIgnored ? "true" : undefined}
         onClick={() => onSelect(application)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -43,16 +59,24 @@ export function ApplicationCard({ application, onSelect, dragHandle }: Applicati
         className={cn(
           "cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           isIgnored && "opacity-60",
+          isGameHub && "kanban-card",
         )}
       >
-        <CardContent className="flex flex-col gap-2.5">
+        <CardContent className={cn("flex flex-col gap-2.5", isGameHub && "kanban-card-content")}>
           <div className="flex items-start justify-between gap-2">
             {dragHandle}
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-heading text-base leading-tight font-semibold">
-                {application.company}
-              </p>
-              <p className="truncate text-sm text-muted-foreground">{application.position}</p>
+            <div className="flex min-w-0 flex-1 items-start gap-2.5">
+              {isGameHub && (
+                <span className="kanban-card-monogram" aria-hidden>
+                  {getCompanyMonogram(application.company)}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-heading text-base leading-tight font-semibold">
+                  {application.company}
+                </p>
+                <p className="truncate text-sm text-muted-foreground">{application.position}</p>
+              </div>
             </div>
             <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground/50" />
           </div>

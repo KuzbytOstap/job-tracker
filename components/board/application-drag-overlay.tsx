@@ -29,7 +29,7 @@ export function ApplicationDragOverlay({ application }: ApplicationDragOverlayPr
   return (
     <DragOverlay dropAnimation={prefersReducedMotion ? null : defaultDropAnimation}>
       {application ? (
-        <div className="w-[260px] scale-[1.03] rounded-xl border border-border bg-card p-3 shadow-lg shadow-black/10 motion-reduce:scale-100 dark:shadow-black/40">
+        <div className="kanban-drag-overlay w-[260px] scale-[1.02] rounded-xl border border-border bg-card p-3 shadow-lg shadow-black/10 motion-reduce:scale-100 dark:shadow-black/40">
           <p className="truncate font-heading text-sm font-semibold text-foreground">
             {application.company}
           </p>

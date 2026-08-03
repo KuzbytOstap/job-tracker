@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ApplicationCard } from "@/components/dashboard/application-card";
 import { DraggableApplicationCard } from "@/components/board/draggable-application-card";
+import { cn } from "@/lib/utils";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { DateGroup } from "@/lib/date-grouping";
 
@@ -22,9 +23,13 @@ export function DateGroupSection({ group, onSelectApplication, enableDrag = fals
       transition={{ duration: 0.2, ease: "easeOut" }}
       className="flex flex-col gap-2.5"
     >
-      <div className="flex items-baseline gap-2 px-0.5">
-        <h2 className="text-sm font-semibold text-foreground">{group.label}</h2>
-        <span className="text-xs text-muted-foreground">{group.count}</span>
+      <div className={cn("flex items-baseline gap-2 px-0.5", enableDrag && "kanban-date-group-heading")}>
+        <h2 className={cn("text-sm font-semibold text-foreground", enableDrag && "kanban-date-group-label")}>
+          {group.label}
+        </h2>
+        <span className={cn("text-xs text-muted-foreground", enableDrag && "kanban-date-group-count")}>
+          {group.count}
+        </span>
       </div>
       <div className="flex flex-col gap-2.5">
         <AnimatePresence initial={false}>
