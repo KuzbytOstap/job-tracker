@@ -32,6 +32,11 @@ type ResponsiveApplicationOverlayProps = {
    * single scroll area) instead of the default bottom sheet. Desktop is unaffected.
    */
   mobileFullScreen?: boolean;
+  /**
+   * On desktop, "side-panel" presents a right-aligned Game Hub workspace instead of the
+   * centered dialog. Mobile presentation is unaffected either way.
+   */
+  desktopPresentation?: "dialog" | "side-panel";
 };
 
 /**
@@ -50,6 +55,7 @@ export function ResponsiveApplicationOverlay({
   children,
   contentClassName,
   mobileFullScreen = false,
+  desktopPresentation = "dialog",
 }: ResponsiveApplicationOverlayProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
@@ -78,7 +84,32 @@ export function ResponsiveApplicationOverlay({
 
   return (
     <>
-      {isDesktop ? (
+      {isDesktop && desktopPresentation === "side-panel" ? (
+        <Dialog open={open} onOpenChange={handlePrimitiveOpenChange}>
+          <DialogContent
+            showCloseButton={false}
+            className={cn(
+              "top-0 right-0 left-auto flex flex-col h-[100dvh] max-h-[100dvh] w-[clamp(560px,88vw,720px)] max-w-none sm:max-w-none translate-x-0 translate-y-0 gap-0 rounded-none p-0 ring-0 duration-200 data-open:slide-in-from-right-[100%] data-open:zoom-in-100 data-closed:slide-out-to-right-[100%] data-closed:zoom-out-100 motion-reduce:animate-none",
+              contentClassName,
+            )}
+          >
+            <div
+              data-job-tracker-theme="game-hub"
+              className="flex h-full min-h-0 flex-col border-l border-[var(--gh-border-strong)] bg-[var(--gh-surface)] text-[var(--gh-text)] shadow-[0_16px_44px_-18px_oklch(0.24_0.06_45_/_0.45)]"
+            >
+              <div className="flex shrink-0 items-center justify-end border-b border-[var(--gh-border)] px-3 py-2">
+                <DialogTitle className="sr-only">{title}</DialogTitle>
+                {description && <DialogDescription className="sr-only">{description}</DialogDescription>}
+                <DialogClose render={<Button type="button" variant="ghost" size="icon-sm" />}>
+                  <XIcon />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : isDesktop ? (
         <Dialog open={open} onOpenChange={handlePrimitiveOpenChange}>
           <DialogContent className={cn("max-h-[85vh] overflow-y-auto sm:max-w-lg", contentClassName)}>
             <DialogHeader>

@@ -40,8 +40,10 @@ export function ApplicationDetail({
 
   if (query.isError || !query.data) {
     return (
-      <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <p className="text-sm text-muted-foreground">Couldn&apos;t load this application.</p>
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 py-10 text-center">
+        <p className="text-sm text-[var(--gh-text-muted,var(--muted-foreground))]">
+          Couldn&apos;t load this application.
+        </p>
         <Button type="button" variant="outline" size="sm" onClick={() => query.refetch()}>
           Retry
         </Button>

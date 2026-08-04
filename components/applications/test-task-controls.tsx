@@ -28,7 +28,7 @@ export function TestTaskControls({ application }: TestTaskControlsProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2 rounded-lg border border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 p-2.5">
       <Field orientation="horizontal">
         <Checkbox
           id="has-test-task"

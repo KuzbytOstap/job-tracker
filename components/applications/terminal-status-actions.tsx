@@ -77,7 +77,7 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
   const activeCopy = confirmKind ? dialogCopy[confirmKind] : null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 rounded-lg border border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 p-2.5">
       {isStoredRejected ? (
         <Button type="button" variant="outline" size="sm" onClick={() => setConfirmKind("restore-rejected")}>
           Restore application

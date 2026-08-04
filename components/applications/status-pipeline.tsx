@@ -64,7 +64,7 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
 
           return (
             <li key={step} className={cn("flex items-center", !isLast && "flex-1")}>
-              <div className="flex flex-col items-center gap-1.5">
+              <div className="flex flex-col items-center gap-1">
                 <button
                   type="button"
                   aria-current={isCurrent ? "step" : undefined}
@@ -73,19 +73,26 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
                   tabIndex={interactive ? 0 : -1}
                   onClick={() => handleStepActivate(step)}
                   className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default",
-                    isCurrent && "border-primary bg-primary text-primary-foreground",
-                    isPast && !isCurrent && "border-primary/40 bg-primary/10 text-primary",
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default",
+                    isCurrent &&
+                      "border-[var(--gh-accent,var(--primary))] bg-[var(--gh-accent,var(--primary))] text-primary-foreground",
+                    isPast &&
+                      !isCurrent &&
+                      "border-[var(--gh-accent,var(--primary))]/40 bg-[var(--gh-accent,var(--primary))]/10 text-[var(--gh-accent,var(--primary))]",
                     !isCurrent && !isPast && "border-border bg-background text-muted-foreground",
-                    interactive && !moveMutation.isPending && "cursor-pointer hover:border-primary/60",
+                    interactive &&
+                      !moveMutation.isPending &&
+                      "cursor-pointer hover:border-[var(--gh-accent,var(--primary))]/60",
                   )}
                 >
-                  {isPast && !isCurrent ? <Check className="size-3.5" /> : index + 1}
+                  {isPast && !isCurrent ? <Check className="size-3" /> : index + 1}
                 </button>
                 <span
                   className={cn(
-                    "max-w-16 text-center text-[0.7rem] leading-tight",
-                    isCurrent ? "font-medium text-foreground" : "text-muted-foreground",
+                    "max-w-14 text-center text-[0.65rem] leading-tight",
+                    isCurrent
+                      ? "font-medium text-[var(--gh-text,var(--foreground))]"
+                      : "text-[var(--gh-text-muted,var(--muted-foreground))]",
                   )}
                 >
                   {STATUS_LABELS[step]}
@@ -94,7 +101,10 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
               {!isLast && (
                 <span
                   aria-hidden
-                  className={cn("mx-1 h-px flex-1 self-start mt-3.5", isPast ? "bg-primary/40" : "bg-border")}
+                  className={cn(
+                    "mx-1 h-px flex-1 self-start mt-3",
+                    isPast ? "bg-[var(--gh-accent,var(--primary))]/40" : "bg-border",
+                  )}
                 />
               )}
             </li>
