@@ -20,7 +20,7 @@ export function DateGroupSection({ group, onSelectApplication, enableDrag = fals
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+      transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1], layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }}
       className="flex flex-col gap-2.5"
     >
       <div className={cn("flex items-baseline gap-2 px-0.5", enableDrag && "kanban-date-group-heading")}>

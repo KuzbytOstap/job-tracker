@@ -37,12 +37,16 @@ export function ApplicationCard({
   return (
     <motion.div
       layoutId={application.id}
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.99 }}
+      exit={{ opacity: 0, y: -4 }}
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.985, y: -1 }}
+      transition={{
+        opacity: { duration: 0.18, ease: [0.4, 0, 0.2, 1] },
+        y: { duration: 0.18, ease: [0.4, 0, 0.2, 1] },
+        scale: { duration: 0.11, ease: [0.4, 0, 0.2, 1] },
+      }}
     >
       <Card
         role="button"
@@ -57,9 +61,11 @@ export function ApplicationCard({
           }
         }}
         className={cn(
-          "cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           isIgnored && "opacity-60",
-          isGameHub && "kanban-card",
+          isGameHub
+            ? "kanban-card focus-visible:ring-[var(--gh-accent)] focus-visible:ring-offset-[var(--gh-surface)]"
+            : "transition-shadow hover:shadow-md",
         )}
       >
         <CardContent className={cn("flex flex-col gap-2.5", isGameHub && "kanban-card-content")}>

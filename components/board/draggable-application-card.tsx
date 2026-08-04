@@ -23,7 +23,7 @@ export function DraggableApplicationCard({ application, onSelect }: DraggableApp
       ref={setNodeRef}
       style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
       data-dragging={isDragging ? "true" : undefined}
-      className={cn("kanban-drag-source relative", isDragging && "z-10 scale-[0.97] opacity-40")}
+      className={cn("kanban-drag-source relative", isDragging && "z-10 scale-[0.97] opacity-55")}
     >
       <ApplicationCard
         application={application}

@@ -89,7 +89,7 @@ export function ResponsiveApplicationOverlay({
           <DialogContent
             showCloseButton={false}
             className={cn(
-              "top-0 right-0 left-auto flex flex-col h-[100dvh] max-h-[100dvh] w-[clamp(560px,88vw,720px)] max-w-none sm:max-w-none translate-x-0 translate-y-0 gap-0 rounded-none p-0 ring-0 duration-200 data-open:slide-in-from-right-[100%] data-open:zoom-in-100 data-closed:slide-out-to-right-[100%] data-closed:zoom-out-100 motion-reduce:animate-none",
+              "top-0 right-0 left-auto flex flex-col h-[100dvh] max-h-[100dvh] w-[clamp(560px,88vw,720px)] max-w-none sm:max-w-none translate-x-0 translate-y-0 gap-0 rounded-none p-0 ring-0 data-open:duration-[240ms] data-open:ease-out data-open:slide-in-from-right-[100%] data-open:zoom-in-100 data-closed:duration-[180ms] data-closed:ease-in data-closed:slide-out-to-right-[100%] data-closed:zoom-out-100 motion-reduce:animate-none",
               contentClassName,
             )}
           >

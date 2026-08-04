@@ -346,10 +346,9 @@ export function CareerCore({
         }
       >
         <div
-          className="absolute inset-[6%] rounded-full"
+          className="gh-core-glow absolute inset-[6%] rounded-full"
           style={{
             background: "radial-gradient(circle, var(--gh-core-glow) 0%, transparent 72%)",
-            filter: "blur(18px)",
             transform: "translate3d(0, 0, -70px) scale(2.1)",
           }}
         />

@@ -26,14 +26,28 @@ export function GameHubHero({
       )
     : [];
 
+  const heroVariants = {
+    hidden: {},
+    visible: {
+      transition: reducedMotion ? undefined : { staggerChildren: 0.05, delayChildren: 0.02 },
+    },
+  };
+  const heroItemVariants = {
+    hidden: reducedMotion ? {} : { opacity: 0, y: -6 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const } },
+  };
+
   return (
-    <section
+    <motion.section
       aria-label="Workspace overview"
-      className="relative hidden overflow-hidden border-b border-[var(--gh-border)] bg-[var(--gh-bg-secondary)] sm:block"
+      className="gh-hero relative hidden overflow-hidden border-b border-[var(--gh-border)] bg-[var(--gh-bg-secondary)] sm:block"
+      variants={heroVariants}
+      initial="hidden"
+      animate="visible"
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[58%] lg:block"
+        className="gh-hero-bloom pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[58%] lg:block"
         style={{
           background: "radial-gradient(58% 85% at 84% 50%, var(--gh-hero-bloom), transparent 72%)",
         }}
@@ -66,7 +80,7 @@ export function GameHubHero({
       ) : null}
 
       <div className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-6 px-4 py-5 sm:px-6 sm:min-h-[130px]">
-        <div className="min-w-0 flex-1">
+        <motion.div className="min-w-0 flex-1" variants={heroItemVariants}>
           <p className="text-xs font-medium tracking-wide text-[var(--gh-accent-secondary)] uppercase">
             Your pipeline
           </p>
@@ -76,13 +90,13 @@ export function GameHubHero({
           <p className="mt-1 max-w-md text-sm text-[var(--gh-text-secondary)]">
             Track momentum across every stage without losing the thread.
           </p>
-        </div>
+        </motion.div>
 
         {cards.length > 0 && (
           <div className="flex shrink-0 items-stretch gap-2">
             {cards.map((card) => {
               const blockClassName = cn(
-                "flex min-w-[84px] flex-col justify-center gap-0.5 rounded-lg border border-[var(--gh-border)] bg-[var(--gh-surface)] px-3 py-2 shadow-[var(--gh-shadow)] transition-colors",
+                "flex min-w-[84px] flex-col justify-center gap-0.5 rounded-lg border border-[var(--gh-border)] bg-[var(--gh-surface)] px-3 py-2 shadow-[var(--gh-shadow)] transition-colors duration-200",
                 card.href &&
                   "hover:border-[var(--gh-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               );
@@ -98,9 +112,9 @@ export function GameHubHero({
 
               if (!card.href) {
                 return (
-                  <div key={card.key} className={blockClassName}>
+                  <motion.div key={card.key} variants={heroItemVariants} className={blockClassName}>
                     {content}
-                  </div>
+                  </motion.div>
                 );
               }
 
@@ -108,10 +122,21 @@ export function GameHubHero({
                 <Link
                   key={card.key}
                   href={card.href}
-                  className={blockClassName}
+                  className="block"
                   aria-label={`${card.label}: ${card.value} application${card.value === 1 ? "" : "s"}. View list.`}
                 >
-                  {content}
+                  <motion.div
+                    variants={heroItemVariants}
+                    whileHover={reducedMotion ? undefined : { y: -2 }}
+                    whileTap={reducedMotion ? undefined : { scale: 0.97 }}
+                    transition={{
+                      y: { duration: 0.16, ease: [0.4, 0, 0.2, 1] },
+                      scale: { duration: 0.11, ease: [0.4, 0, 0.2, 1] },
+                    }}
+                    className={blockClassName}
+                  >
+                    {content}
+                  </motion.div>
                 </Link>
               );
             })}
@@ -126,6 +151,6 @@ export function GameHubHero({
           />
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

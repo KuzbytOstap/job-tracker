@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { GameHubHero } from "@/components/dashboard/game-hub-hero";
 import { DashboardControls } from "@/components/dashboard/dashboard-controls";
@@ -22,18 +23,31 @@ import { useApplicationDetailState } from "@/hooks/use-application-detail";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { SortOption } from "@/lib/validation";
 
+const ENTRANCE_EASE = [0.16, 1, 0.3, 1] as const;
+
 export function BoardShell() {
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 640px)");
+  const reducedMotion = useReducedMotion();
 
   const detail = useApplicationDetailState();
 
   const statsQuery = useStatsQuery();
   const applicationsQuery = useApplicationsQuery({ status: "ALL", sort, q: debouncedSearch });
   const applications = applicationsQuery.data?.applications ?? [];
+
+  const hasPlayedBoardEntranceRef = useRef(false);
+  const boardEntranceEligible = !hasPlayedBoardEntranceRef.current;
+  useEffect(() => {
+    if (!applicationsQuery.isPending && applications.length > 0) {
+      hasPlayedBoardEntranceRef.current = true;
+    }
+  }, [applicationsQuery.isPending, applications.length]);
+
+  const entranceInitial = reducedMotion ? false : { opacity: 0, y: -10 };
 
   return (
     <div
@@ -45,23 +59,39 @@ export function BoardShell() {
         className="pointer-events-none fixed top-[-160px] left-1/2 -z-10 h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl sm:hidden"
       />
 
-      <AppHeader total={statsQuery.data?.total} onAddClick={() => setAddDialogOpen(true)} />
-
-      <GameHubHero
-        applications={applications.map((application) => ({
-          id: application.id,
-          status: application.status,
-        }))}
+      <AppHeader
+        total={statsQuery.data?.total}
+        onAddClick={() => setAddDialogOpen(true)}
+        playEntrance={!reducedMotion}
       />
 
-      <div className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 sm:rounded-xl sm:border sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:py-3 sm:mt-4 sm:shadow-[var(--gh-shadow)]">
+      <motion.div
+        initial={entranceInitial}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.24, ease: ENTRANCE_EASE, delay: reducedMotion ? 0 : 0.04 }}
+      >
+        <GameHubHero
+          applications={applications.map((application) => ({
+            id: application.id,
+            status: application.status,
+          }))}
+          isLoading={applicationsQuery.isPending}
+        />
+      </motion.div>
+
+      <motion.div
+        initial={entranceInitial}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: ENTRANCE_EASE, delay: reducedMotion ? 0 : 0.1 }}
+        className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 sm:rounded-xl sm:border sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:py-3 sm:mt-4 sm:shadow-[var(--gh-shadow)]"
+      >
         <DashboardControls
           search={search}
           onSearchChange={setSearch}
           sort={sort}
           onSortChange={setSort}
         />
-      </div>
+      </motion.div>
 
       <div className="sm:hidden">
         <BoardStats />
@@ -90,6 +120,7 @@ export function BoardShell() {
                   applications={applications}
                   sort={sort}
                   onSelectApplication={(application) => detail.openDetail(application.id)}
+                  playEntrance={boardEntranceEligible}
                 />
               </KanbanDndContext>
             </div>

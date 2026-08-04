@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronsLeft, ChevronsRight, History, Target, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 
 type StatusValue = ApplicationListItemDTO["status"];
@@ -132,14 +133,15 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
   }
 
   const panelWidth = 320;
-  const transition = { duration: shouldReduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] as const };
+  const transition = { duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
     <div
       ref={rootRef}
-      className={`hidden shrink-0 self-start lg:sticky lg:top-4 lg:flex lg:items-start ${
-        detailOpen ? "pointer-events-none opacity-0 transition-opacity duration-200" : ""
-      }`}
+      className={cn(
+        "hidden shrink-0 self-start transition-opacity duration-200 ease-out lg:sticky lg:top-4 lg:flex lg:items-start",
+        detailOpen ? "pointer-events-none opacity-0" : "opacity-100",
+      )}
     >
       <AnimatePresence initial={false}>
         {expanded && (
