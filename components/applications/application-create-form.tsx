@@ -106,7 +106,7 @@ export function ApplicationCreateForm({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onValid, onInvalid)} noValidate className="flex flex-col gap-4">
+      <form onSubmit={form.handleSubmit(onValid, onInvalid)} noValidate className="gh-app-form flex flex-col gap-5">
         <ApplicationExtractionPanel
           jobPostingText={jobPostingText}
           coverLetterText={coverLetterText}
@@ -114,7 +114,7 @@ export function ApplicationCreateForm({
           onCoverLetterTextChange={setCoverLetterText}
         />
         <ApplicationFormFields showTestTaskCheckbox sectioned />
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:border-0 sm:pt-0 sm:pb-0">
+        <div className="flex flex-col-reverse gap-2 border-t pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:sticky sm:bottom-0 sm:-mx-5 sm:-mb-4 sm:border-t sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:px-5 sm:py-4 sm:shadow-[0_-10px_20px_-16px_oklch(0.24_0.02_50_/_0.16)]">
           <Button
             type="button"
             variant="outline"

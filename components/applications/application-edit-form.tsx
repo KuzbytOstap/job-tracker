@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { ApplicationFormFields } from "@/components/applications/application-form-fields";
+import { ApplicationFormFields, SectionHeading } from "@/components/applications/application-form-fields";
 import { ApplicationSourceMaterialsFields } from "@/components/applications/application-source-materials-fields";
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
 import { useUpdateApplication } from "@/hooks/use-update-application";
@@ -85,23 +85,28 @@ export function ApplicationEditForm({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onValid, onInvalid)} noValidate className="flex flex-col gap-4">
-        <ApplicationFormFields />
+      <form onSubmit={form.handleSubmit(onValid, onInvalid)} noValidate className="gh-app-form flex flex-col gap-5">
+        <ApplicationFormFields sectioned />
         <ApplicationSourceMaterialsFields />
         {showHrCallTranscript && (
-          <Field data-invalid={!!form.formState.errors.hrCallTranscript}>
-            <FieldLabel htmlFor="application-hr-call-transcript">HR call transcript</FieldLabel>
-            <Textarea
-              id="application-hr-call-transcript"
-              rows={6}
-              className="min-h-32"
-              aria-invalid={!!form.formState.errors.hrCallTranscript}
-              {...form.register("hrCallTranscript")}
-            />
-            <FieldError errors={[form.formState.errors.hrCallTranscript]} />
-          </Field>
+          <div className="gh-form-surface flex flex-col gap-3">
+            <SectionHeading>HR call transcript</SectionHeading>
+            <Field data-invalid={!!form.formState.errors.hrCallTranscript}>
+              <FieldLabel htmlFor="application-hr-call-transcript" className="sr-only">
+                HR call transcript
+              </FieldLabel>
+              <Textarea
+                id="application-hr-call-transcript"
+                rows={6}
+                className="min-h-32"
+                aria-invalid={!!form.formState.errors.hrCallTranscript}
+                {...form.register("hrCallTranscript")}
+              />
+              <FieldError errors={[form.formState.errors.hrCallTranscript]} />
+            </Field>
+          </div>
         )}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:sticky sm:bottom-0 sm:-mx-5 sm:-mb-4 sm:border-t sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:px-5 sm:py-4 sm:shadow-[0_-10px_20px_-16px_oklch(0.24_0.02_50_/_0.16)]">
           <Button type="button" variant="outline" onClick={handleCancelClick} disabled={mutation.isPending}>
             Cancel
           </Button>

@@ -21,7 +21,7 @@ export function ApplicationSourceMaterialsFields() {
   );
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border p-3">
+    <Collapsible open={open} onOpenChange={setOpen} className="gh-source-panel rounded-lg border p-3">
       <CollapsibleTrigger
         className="flex min-h-9 w-full items-center justify-between gap-2 text-left text-sm font-medium"
       >

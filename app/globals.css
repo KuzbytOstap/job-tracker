@@ -433,6 +433,99 @@
   color: var(--gh-dock-badge-text);
 }
 
+[data-job-tracker-theme="game-hub"] .gh-form-surface {
+  border-radius: 1rem;
+  border: 1px solid var(--gh-border);
+  background: var(--gh-surface-secondary);
+  padding: 1.25rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-section-heading {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="field-label"] {
+  color: var(--gh-text-secondary);
+  font-weight: 500;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"] {
+  background: var(--gh-surface);
+  border-color: var(--gh-border);
+  color: var(--gh-text);
+  transition:
+    border-color var(--gh-duration-fast) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"]::placeholder,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"]::placeholder {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"]:hover,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"]:hover,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"]:hover {
+  border-color: var(--gh-border-strong);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"]:focus-visible,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"]:focus-visible,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"]:focus-visible {
+  border-color: var(--gh-accent);
+  box-shadow: 0 0 0 3px oklch(0.62 0.17 45 / 0.16);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"][aria-invalid="true"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"][aria-invalid="true"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"][aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="checkbox"] {
+  border-color: var(--gh-border-strong);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="checkbox"][data-checked] {
+  background: var(--gh-accent);
+  border-color: var(--gh-accent);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-panel {
+  border-color: var(--gh-border-strong);
+  background: var(--gh-accent-soft);
+  border-radius: 1rem;
+  padding: 1.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-icon {
+  background: var(--gh-surface);
+  color: var(--gh-accent-secondary);
+  border-radius: 0.625rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-subtitle {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-panel [data-slot="button"] {
+  background: var(--gh-accent);
+  color: oklch(0.99 0.01 85);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-panel [data-slot="button"]:hover {
+  background: var(--gh-accent-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-source-panel {
+  border-color: var(--gh-border);
+  background: var(--gh-surface-secondary);
+  border-radius: 1rem;
+  padding: 1.125rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-job-tracker-theme="game-hub"] .kanban-card,
   [data-job-tracker-theme="game-hub"] .kanban-lane,

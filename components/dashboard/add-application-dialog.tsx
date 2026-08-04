@@ -23,6 +23,7 @@ export function AddApplicationDialog({ open, onOpenChange, currentStatusSlug }: 
       isDirty={isDirty}
       isPending={isPending}
       mobileFullScreen
+      desktopPresentation="workspace-dialog"
     >
       <ApplicationCreateForm
         currentStatusSlug={currentStatusSlug}

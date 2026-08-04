@@ -13,13 +13,12 @@ import type { ApplicationFormValues } from "@/lib/application-form";
 
 type ApplicationFormFieldsProps = {
   showTestTaskCheckbox?: boolean;
-  /** Interspersed section headings for the mobile-first create flow. Edit form omits this to stay unchanged. */
   sectioned?: boolean;
 };
 
-function SectionHeading({ children, className }: { children: ReactNode; className?: string }) {
+export function SectionHeading({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={`text-xs font-medium tracking-wide text-muted-foreground uppercase ${className ?? ""}`}>
+    <p className={`gh-section-heading text-xs font-medium tracking-wide text-muted-foreground uppercase ${className ?? ""}`}>
       {children}
     </p>
   );
@@ -34,94 +33,102 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
     formState: { errors },
   } = useFormContext<ApplicationFormValues>();
 
+  const groupClassName = sectioned ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "contents";
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className={sectioned ? "gh-form-surface flex flex-col gap-4" : "flex flex-col gap-4"}>
       {sectioned && <SectionHeading>Main information</SectionHeading>}
 
-      <Field data-invalid={!!errors.company}>
-        <FieldLabel htmlFor="application-company">Company</FieldLabel>
-        <Input
-          id="application-company"
-          autoFocus
-          aria-invalid={!!errors.company}
-          className={fieldInputClassName}
-          {...register("company")}
-        />
-        <FieldError errors={[errors.company]} />
-      </Field>
+      <div className={groupClassName}>
+        <Field data-invalid={!!errors.company}>
+          <FieldLabel htmlFor="application-company">Company</FieldLabel>
+          <Input
+            id="application-company"
+            autoFocus
+            aria-invalid={!!errors.company}
+            className={fieldInputClassName}
+            {...register("company")}
+          />
+          <FieldError errors={[errors.company]} />
+        </Field>
 
-      <Field data-invalid={!!errors.position}>
-        <FieldLabel htmlFor="application-position">Position</FieldLabel>
-        <Input
-          id="application-position"
-          aria-invalid={!!errors.position}
-          className={fieldInputClassName}
-          {...register("position")}
-        />
-        <FieldError errors={[errors.position]} />
-      </Field>
+        <Field data-invalid={!!errors.position}>
+          <FieldLabel htmlFor="application-position">Position</FieldLabel>
+          <Input
+            id="application-position"
+            aria-invalid={!!errors.position}
+            className={fieldInputClassName}
+            {...register("position")}
+          />
+          <FieldError errors={[errors.position]} />
+        </Field>
+      </div>
 
-      <Field data-invalid={!!errors.platform}>
-        <FieldLabel htmlFor="application-platform">Platform</FieldLabel>
-        <Controller
-          control={control}
-          name="platform"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="application-platform" aria-invalid={!!errors.platform} className="w-full">
-                <SelectValue placeholder="Select a platform" />
-              </SelectTrigger>
-              <SelectContent>
-                {PLATFORM_VALUES.map((platform) => (
-                  <SelectItem key={platform} value={platform}>
-                    {PLATFORM_LABELS[platform]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        <FieldError errors={[errors.platform]} />
-      </Field>
+      <div className={groupClassName}>
+        <Field data-invalid={!!errors.platform}>
+          <FieldLabel htmlFor="application-platform">Platform</FieldLabel>
+          <Controller
+            control={control}
+            name="platform"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="application-platform" aria-invalid={!!errors.platform} className="w-full">
+                  <SelectValue placeholder="Select a platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORM_VALUES.map((platform) => (
+                    <SelectItem key={platform} value={platform}>
+                      {PLATFORM_LABELS[platform]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          <FieldError errors={[errors.platform]} />
+        </Field>
 
-      <Field data-invalid={!!errors.link}>
-        <FieldLabel htmlFor="application-link">Vacancy link</FieldLabel>
-        <Input
-          id="application-link"
-          type="url"
-          inputMode="url"
-          placeholder="https://…"
-          aria-invalid={!!errors.link}
-          className={fieldInputClassName}
-          {...register("link")}
-        />
-        <FieldError errors={[errors.link]} />
-      </Field>
+        <Field data-invalid={!!errors.link}>
+          <FieldLabel htmlFor="application-link">Vacancy link</FieldLabel>
+          <Input
+            id="application-link"
+            type="url"
+            inputMode="url"
+            placeholder="https://…"
+            aria-invalid={!!errors.link}
+            className={fieldInputClassName}
+            {...register("link")}
+          />
+          <FieldError errors={[errors.link]} />
+        </Field>
+      </div>
 
       {sectioned && <SectionHeading className="mt-2">Application details</SectionHeading>}
 
-      <Field>
-        <FieldLabel htmlFor="application-salary">Salary expectation</FieldLabel>
-        <Input
-          id="application-salary"
-          placeholder="e.g. $4000–5000"
-          defaultValue={3000}
-          className={fieldInputClassName}
-          {...register("salaryExpectation")}
-        />
-      </Field>
+      <div className={groupClassName}>
+        <Field>
+          <FieldLabel htmlFor="application-salary">Salary expectation</FieldLabel>
+          <Input
+            id="application-salary"
+            placeholder="e.g. $4000–5000"
+            defaultValue={3000}
+            className={fieldInputClassName}
+            {...register("salaryExpectation")}
+          />
+        </Field>
 
-      <Field data-invalid={!!errors.appliedAt}>
-        <FieldLabel htmlFor="application-applied-at">Applied on</FieldLabel>
-        <Input
-          id="application-applied-at"
-          type="date"
-          aria-invalid={!!errors.appliedAt}
-          className={fieldInputClassName}
-          {...register("appliedAt")}
-        />
-        <FieldError errors={[errors.appliedAt]} />
-      </Field>
+        <Field data-invalid={!!errors.appliedAt}>
+          <FieldLabel htmlFor="application-applied-at">Applied on</FieldLabel>
+          <Input
+            id="application-applied-at"
+            type="date"
+            aria-invalid={!!errors.appliedAt}
+            className={fieldInputClassName}
+            {...register("appliedAt")}
+          />
+          <FieldError errors={[errors.appliedAt]} />
+        </Field>
+      </div>
 
       {showTestTaskCheckbox && (
         <Field orientation="horizontal">
