@@ -10,9 +10,15 @@ type ApplicationListProps = {
   applications: ApplicationListItemDTO[];
   sort: SortOption;
   onSelectApplication: (application: ApplicationListItemDTO) => void;
+  visualVariant?: "default" | "gameHub";
 };
 
-export function ApplicationList({ applications, sort, onSelectApplication }: ApplicationListProps) {
+export function ApplicationList({
+  applications,
+  sort,
+  onSelectApplication,
+  visualVariant = "default",
+}: ApplicationListProps) {
   const groups = groupApplicationsByAppliedDate(applications, sort);
 
   return (
@@ -23,6 +29,7 @@ export function ApplicationList({ applications, sort, onSelectApplication }: App
             key={group.key}
             group={group}
             onSelectApplication={onSelectApplication}
+            visualVariant={visualVariant}
           />
         ))}
       </AnimatePresence>

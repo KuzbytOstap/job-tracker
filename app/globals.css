@@ -526,6 +526,120 @@
   padding: 1.125rem;
 }
 
+[data-job-tracker-theme="game-hub"] .gh-stage-header {
+  --gh-stage-accent: var(--gh-accent);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="APPLIED"] { --gh-stage-accent: var(--gh-status-applied); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="HR_REPLIED"] { --gh-stage-accent: var(--gh-status-hr-replied); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="HR_CALL"] { --gh-stage-accent: var(--gh-status-hr-call); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="TECH_INTERVIEW"] { --gh-stage-accent: var(--gh-status-tech-interview); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="TEST_TASK"] { --gh-stage-accent: var(--gh-status-test-task); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="OFFER"] { --gh-stage-accent: var(--gh-status-offer); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="REJECTED"] { --gh-stage-accent: var(--gh-status-rejected); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="IGNORED"] { --gh-stage-accent: var(--gh-status-ignored); }
+
+@media (min-width: 640px) {
+  [data-job-tracker-theme="game-hub"] .gh-stage-header {
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid var(--gh-border);
+    border-left: 3px solid var(--gh-stage-accent);
+    background: var(--gh-surface-secondary);
+    box-shadow: var(--gh-shadow);
+    padding: 1rem 1.5rem;
+  }
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input {
+  background: var(--gh-surface);
+  border-color: var(--gh-border);
+  color: var(--gh-text);
+  transition:
+    border-color var(--gh-duration-fast) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input::placeholder {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input:hover {
+  border-color: var(--gh-border-strong);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input:focus-visible {
+  border-color: var(--gh-accent);
+  box-shadow: 0 0 0 3px oklch(0.62 0.17 45 / 0.16);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-date-heading {
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--gh-border);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-date-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gh-text-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-date-count {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-skeleton-card {
+  background: var(--gh-card-surface);
+  border-color: var(--gh-card-border);
+  box-shadow: var(--gh-card-shadow);
+  border-left-width: 3px;
+  border-left-color: var(--gh-border);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-skeleton-heading {
+  background: var(--gh-border);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-quiet-state {
+  border-style: solid;
+  border-color: var(--gh-border);
+  background: var(--gh-surface-secondary);
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-quiet-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: var(--gh-surface);
+  border: 1px solid var(--gh-border);
+  color: var(--gh-accent-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-error-state {
+  border-style: solid;
+  border-color: var(--gh-border);
+  background: var(--gh-surface-secondary);
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: oklch(0.94 0.03 30 / 0.6);
+  border: 1px solid oklch(0.75 0.08 30 / 0.5);
+  color: var(--destructive);
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-job-tracker-theme="game-hub"] .kanban-card,
   [data-job-tracker-theme="game-hub"] .kanban-lane,
@@ -533,6 +647,7 @@
   [data-job-tracker-theme="game-hub"] .kanban-lane-count,
   [data-job-tracker-theme="game-hub"] .kanban-empty-state,
   [data-job-tracker-theme="game-hub"] .kanban-drag-source,
+  [data-job-tracker-theme="game-hub"] .gh-list-control-input,
   [data-job-tracker-theme="game-hub"] .gh-hero,
   [data-job-tracker-theme="game-hub"] .gh-hero-bloom,
   [data-job-tracker-theme="game-hub"] .gh-core-glow,

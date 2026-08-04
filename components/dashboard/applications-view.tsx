@@ -22,6 +22,7 @@ type ApplicationsViewProps = {
   debouncedSearch: string;
   onSelectApplication: (application: ApplicationListItemDTO) => void;
   onAddClick: () => void;
+  visualVariant?: "default" | "gameHub";
 };
 
 export function ApplicationsView({
@@ -33,6 +34,7 @@ export function ApplicationsView({
   debouncedSearch,
   onSelectApplication,
   onAddClick,
+  visualVariant = "default",
 }: ApplicationsViewProps) {
   const applicationsQuery = useApplicationsQuery({ status, sort, q: debouncedSearch });
 
@@ -54,23 +56,26 @@ export function ApplicationsView({
         onSearchChange={onSearchChange}
         sort={sort}
         onSortChange={onSortChange}
+        visualVariant={visualVariant}
       />
 
       {applicationsQuery.isError ? (
-        <DashboardErrorState onRetry={() => applicationsQuery.refetch()} />
+        <DashboardErrorState onRetry={() => applicationsQuery.refetch()} visualVariant={visualVariant} />
       ) : applicationsQuery.isPending ? (
-        <DashboardSkeleton />
+        <DashboardSkeleton visualVariant={visualVariant} />
       ) : applications.length === 0 ? (
         <DashboardEmptyState
           variant={emptyVariant}
           searchQuery={debouncedSearch}
           onAddClick={onAddClick}
+          visualVariant={visualVariant}
         />
       ) : (
         <ApplicationList
           applications={applications}
           sort={sort}
           onSelectApplication={onSelectApplication}
+          visualVariant={visualVariant}
         />
       )}
     </div>
