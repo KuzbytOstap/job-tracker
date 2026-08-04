@@ -119,6 +119,7 @@ export function ApplicationEditForm({
         open={confirmDiscardOpen}
         onOpenChange={setConfirmDiscardOpen}
         onConfirmDiscard={handleConfirmDiscard}
+        visualVariant="gameHub"
       />
     </FormProvider>
   );

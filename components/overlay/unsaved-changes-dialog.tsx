@@ -6,9 +6,15 @@ type UnsavedChangesDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirmDiscard: () => void;
+  visualVariant?: "default" | "gameHub";
 };
 
-export function UnsavedChangesDialog({ open, onOpenChange, onConfirmDiscard }: UnsavedChangesDialogProps) {
+export function UnsavedChangesDialog({
+  open,
+  onOpenChange,
+  onConfirmDiscard,
+  visualVariant = "default",
+}: UnsavedChangesDialogProps) {
   return (
     <ConfirmActionDialog
       open={open}
@@ -18,6 +24,8 @@ export function UnsavedChangesDialog({ open, onOpenChange, onConfirmDiscard }: U
       confirmLabel="Discard changes"
       cancelLabel="Keep editing"
       destructive
+      visualVariant={visualVariant}
+      intent="warning"
       onConfirm={onConfirmDiscard}
     />
   );

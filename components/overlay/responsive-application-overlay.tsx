@@ -207,6 +207,7 @@ export function ResponsiveApplicationOverlay({
         open={confirmDiscardOpen}
         onOpenChange={setConfirmDiscardOpen}
         onConfirmDiscard={handleConfirmDiscard}
+        visualVariant={desktopPresentation === "dialog" ? "default" : "gameHub"}
       />
     </>
   );

@@ -125,6 +125,8 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
             : ""
         }
         confirmLabel="Move back"
+        visualVariant="gameHub"
+        intent="warning"
         pending={moveMutation.isPending}
         onConfirm={() => pendingStep && commitMove(pendingStep)}
       />

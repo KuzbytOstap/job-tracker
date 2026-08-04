@@ -20,6 +20,7 @@ export function PendingDropConfirmation({
 }: PendingDropConfirmationProps) {
   const label = pendingDrop ? STATUS_LABELS[pendingDrop.targetStatus] : "";
   const subject = pendingDrop ? `${pendingDrop.company} — ${pendingDrop.position}` : "";
+  const isReject = pendingDrop?.targetStatus === Status.REJECTED;
 
   return (
     <ConfirmActionDialog
@@ -28,7 +29,9 @@ export function PendingDropConfirmation({
       title={`Move to ${label}?`}
       description={`${subject} will be moved to ${label}.`}
       confirmLabel="Move"
-      destructive={pendingDrop?.targetStatus === Status.REJECTED}
+      destructive={isReject}
+      visualVariant="gameHub"
+      intent={isReject ? "warning" : "neutral"}
       pending={pending}
       onConfirm={onConfirm}
     />
