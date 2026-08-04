@@ -1,12 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { buildStatSummaryCards } from "@/lib/stats";
 import { cn } from "@/lib/utils";
+import { CareerCore, type CareerCoreApplication } from "@/components/dashboard/career-core";
 
-export function GameHubHero() {
+export function GameHubHero({
+  applications,
+  isLoading = false,
+}: {
+  applications: CareerCoreApplication[];
+  isLoading?: boolean;
+}) {
   const statsQuery = useStatsQuery();
+  const reducedMotion = useReducedMotion();
+  const [flarePulse, setFlarePulse] = useState(0);
   const cards = statsQuery.data
     ? buildStatSummaryCards(statsQuery.data).filter((card) =>
         (["total", "interviews", "offers"] as const).includes(
@@ -18,9 +29,43 @@ export function GameHubHero() {
   return (
     <section
       aria-label="Workspace overview"
-      className="hidden border-b border-[var(--gh-border)] bg-[var(--gh-bg-secondary)] sm:block"
+      className="relative hidden overflow-hidden border-b border-[var(--gh-border)] bg-[var(--gh-bg-secondary)] sm:block"
     >
-      <div className="mx-auto flex max-w-[1600px] items-center gap-6 px-4 py-5 sm:px-6 sm:min-h-[130px]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[58%] lg:block"
+        style={{
+          background: "radial-gradient(58% 85% at 84% 50%, var(--gh-hero-bloom), transparent 72%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-[28%] right-[18%] z-0 hidden lg:block"
+        style={{
+          background: "linear-gradient(90deg, transparent, var(--gh-hero-reflected) 65%, transparent)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-20 lg:block"
+        style={{ background: "linear-gradient(90deg, transparent, var(--gh-hero-falloff))" }}
+      />
+      {flarePulse > 0 && !reducedMotion ? (
+        <motion.div
+          key={flarePulse}
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[58%] lg:block"
+          style={{
+            background:
+              "radial-gradient(58% 85% at 84% 50%, var(--gh-hero-bloom-strong), transparent 72%)",
+          }}
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
+        />
+      ) : null}
+
+      <div className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-6 px-4 py-5 sm:px-6 sm:min-h-[130px]">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium tracking-wide text-[var(--gh-accent-secondary)] uppercase">
             Your pipeline
@@ -73,10 +118,12 @@ export function GameHubHero() {
           </div>
         )}
 
-        <div aria-hidden className="relative hidden h-20 w-20 shrink-0 lg:block">
-          <div className="absolute inset-0 rounded-full border-2 border-[var(--gh-border-strong)]" />
-          <div className="absolute inset-3 rounded-full border border-[var(--gh-accent-soft)]" />
-          <div className="absolute inset-[26px] rounded-full bg-gradient-to-br from-[var(--gh-accent)] to-[var(--gh-accent-secondary)]" />
+        <div className="relative hidden h-24 w-32 shrink-0 lg:block">
+          <CareerCore
+            applications={applications}
+            isLoading={isLoading}
+            onFlare={() => setFlarePulse((count) => count + 1)}
+          />
         </div>
       </div>
     </section>

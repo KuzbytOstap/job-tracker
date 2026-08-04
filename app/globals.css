@@ -170,6 +170,31 @@
   --gh-status-offer-glow: oklch(0.85 0.09 145 / 0.45);
   --gh-status-rejected: oklch(0.58 0.15 25);
   --gh-status-ignored: oklch(0.6 0.008 60);
+
+  --gh-core-glow: oklch(0.74 0.14 55 / 0.55);
+  --gh-core-highlight: oklch(0.97 0.05 85 / 0.9);
+  --gh-orbit-front: oklch(0.78 0.08 55 / 0.65);
+  --gh-orbit-rear: oklch(0.6 0.05 50 / 0.3);
+  --gh-node-early: oklch(0.68 0.09 60);
+  --gh-node-interview: oklch(0.68 0.15 48);
+  --gh-node-advanced: oklch(0.64 0.19 32);
+  --gh-milestone-flare: oklch(0.88 0.12 70);
+  --gh-ambient-shadow: oklch(0.2 0.02 50 / 0.28);
+
+  --gh-core-facet-front: oklch(0.82 0.1 68 / 0.95);
+  --gh-core-facet-front-dim: oklch(0.7 0.12 52 / 0.9);
+  --gh-core-facet-rear: oklch(0.4 0.07 40 / 0.9);
+  --gh-core-facet-rear-dim: oklch(0.32 0.05 35 / 0.78);
+  --gh-core-edge-highlight: oklch(0.96 0.04 82 / 0.95);
+  --gh-core-rear-glint: oklch(0.55 0.06 50 / 0.5);
+  --gh-core-energy-core: oklch(0.98 0.03 85);
+  --gh-ring-front-glow: oklch(0.78 0.1 55 / 0.55);
+  --gh-ring-mid: oklch(0.68 0.09 48 / 0.6);
+  --gh-particle: oklch(0.8 0.1 60 / 0.55);
+  --gh-hero-bloom: oklch(0.82 0.07 58 / 0.32);
+  --gh-hero-bloom-strong: oklch(0.88 0.09 62 / 0.5);
+  --gh-hero-falloff: oklch(0.3 0.02 50 / 0.14);
+  --gh-hero-reflected: oklch(0.85 0.06 55 / 0.16);
 }
 
 [data-job-tracker-theme="game-hub"] .kanban-lane {

@@ -46,7 +46,12 @@ export function BoardShell() {
 
       <AppHeader total={statsQuery.data?.total} onAddClick={() => setAddDialogOpen(true)} />
 
-      <GameHubHero />
+      <GameHubHero
+        applications={applications.map((application) => ({
+          id: application.id,
+          status: application.status,
+        }))}
+      />
 
       <div className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 sm:rounded-xl sm:border sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:py-3 sm:mt-4 sm:shadow-[var(--gh-shadow)]">
         <DashboardControls
