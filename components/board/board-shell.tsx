@@ -14,6 +14,7 @@ import { KanbanDndContext } from "@/components/board/kanban-dnd-context";
 import { MobilePipelineView } from "@/components/board/mobile-pipeline-view";
 import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { BoardStats } from "@/components/board/board-stats";
+import { FocusDock } from "@/components/dashboard/focus-dock";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -82,13 +83,23 @@ export function BoardShell() {
             />
           </div>
         ) : isDesktop ? (
-          <KanbanDndContext>
-            <KanbanBoard
+          <div className="flex items-start">
+            <div className="min-w-0 flex-1">
+              <KanbanDndContext>
+                <KanbanBoard
+                  applications={applications}
+                  sort={sort}
+                  onSelectApplication={(application) => detail.openDetail(application.id)}
+                />
+              </KanbanDndContext>
+            </div>
+            <FocusDock
               applications={applications}
-              sort={sort}
-              onSelectApplication={(application) => detail.openDetail(application.id)}
+              isLoading={applicationsQuery.isPending}
+              detailOpen={detail.open}
+              onSelectApplication={(id) => detail.openDetail(id)}
             />
-          </KanbanDndContext>
+          </div>
         ) : (
           <div className="mx-auto w-full max-w-[760px] px-4">
             <MobilePipelineView
