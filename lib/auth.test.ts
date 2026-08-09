@@ -49,19 +49,22 @@ describe("evaluateSession", () => {
 
   it("returns forbidden when the session email doesn't match ALLOWED_EMAIL", () => {
     vi.stubEnv("ALLOWED_EMAIL", "me@example.com");
-    const session: Session = { user: { email: "someone-else@example.com" }, expires: EXPIRES };
+    const session: Session = {
+      user: { id: "test-user-id", email: "someone-else@example.com" },
+      expires: EXPIRES,
+    };
     expect(evaluateSession(session)).toEqual({ status: "forbidden" });
   });
 
   it("returns forbidden when the session has no user email", () => {
     vi.stubEnv("ALLOWED_EMAIL", "me@example.com");
-    const session: Session = { user: {}, expires: EXPIRES };
+    const session: Session = { user: { id: "test-user-id" }, expires: EXPIRES };
     expect(evaluateSession(session)).toEqual({ status: "forbidden" });
   });
 
   it("returns authorized when the session email matches ALLOWED_EMAIL", () => {
     vi.stubEnv("ALLOWED_EMAIL", "me@example.com");
-    const session: Session = { user: { email: "me@example.com" }, expires: EXPIRES };
+    const session: Session = { user: { id: "test-user-id", email: "me@example.com" }, expires: EXPIRES };
     expect(evaluateSession(session)).toEqual({ status: "authorized", session });
   });
 });

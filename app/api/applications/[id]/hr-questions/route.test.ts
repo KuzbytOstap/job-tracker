@@ -28,7 +28,7 @@ const params = Promise.resolve({ id: "app_1" });
 
 const AUTHORIZED: SessionCheck = {
   status: "authorized",
-  session: { user: { email: "me@example.com" }, expires: new Date().toISOString() },
+  session: { user: { id: "test-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
 };
 
 function fakeRow(overrides: Record<string, unknown> = {}) {

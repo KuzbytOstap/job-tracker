@@ -95,8 +95,12 @@ export function toApplicationWithMeta(
 }
 
 export function toApplicationDTO(application: ApplicationWithMeta): ApplicationDTO {
+  // userId is an internal ownership column, not part of the public API shape.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { userId: _userId, ...rest } = application;
+
   return {
-    ...application,
+    ...rest,
     appliedAt: application.appliedAt.toISOString(),
     lastActivityAt: application.lastActivityAt.toISOString(),
     createdAt: application.createdAt.toISOString(),

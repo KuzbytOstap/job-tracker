@@ -7,7 +7,7 @@ export type StatusChangeDTO = WithStringDates<StatusChange, "changedAt">;
 
 export type ApplicationDTO = Omit<
   WithStringDates<JobApplication, "appliedAt" | "lastActivityAt" | "createdAt" | "updatedAt">,
-  "hrInterviewQuestions" | "hrQuestionsGeneratedAt"
+  "hrInterviewQuestions" | "hrQuestionsGeneratedAt" | "userId"
 > & {
   effectiveStatus: Status;
   isAutoIgnored: boolean;
