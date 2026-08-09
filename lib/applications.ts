@@ -68,12 +68,13 @@ export function toApplicationListItemDTO(item: ApplicationListItemWithMeta): App
   };
 }
 
-export function buildApplicationsWhere(q: string): Prisma.JobApplicationWhereInput {
+export function buildApplicationsWhere(q: string, userId: string): Prisma.JobApplicationWhereInput {
   if (!q) {
-    return {};
+    return { userId };
   }
 
   return {
+    userId,
     OR: [
       { company: { contains: q, mode: "insensitive" } },
       { position: { contains: q, mode: "insensitive" } },

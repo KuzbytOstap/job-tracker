@@ -64,6 +64,52 @@ describe("GET /api/applications", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ applications: [], total: 0 });
   });
+
+  it("scopes the query to the current user's id", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    findManyMock.mockResolvedValue([]);
+    const request = new NextRequest("http://localhost:3000/api/applications");
+
+    await GET(request);
+
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "test-user-id" }),
+      }),
+    );
+  });
+
+  it("still scopes by userId when a search query is present", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    findManyMock.mockResolvedValue([]);
+    const request = new NextRequest("http://localhost:3000/api/applications?q=acme");
+
+    await GET(request);
+
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "test-user-id" }),
+      }),
+    );
+  });
+
+  it("only returns rows belonging to the current user, never another user's data", async () => {
+    // A correctly-scoped query never asks Prisma for another user's rows in
+    // the first place — this locks in that the where clause Prisma receives
+    // carries the session's userId, which is what keeps user B's rows out of
+    // user A's result set at the database level.
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    findManyMock.mockResolvedValue([
+      { id: "app-a1", company: "A-Corp", position: "Eng", platform: "DIRECT", link: null, status: "APPLIED", hasTestTask: false, testTaskDone: false, salaryExpectation: null, appliedAt: new Date(), lastActivityAt: new Date(), updatedAt: new Date() },
+    ]);
+    const request = new NextRequest("http://localhost:3000/api/applications");
+
+    const response = await GET(request);
+    const body = await response.json();
+
+    expect(body.applications).toHaveLength(1);
+    expect(findManyMock.mock.calls[0][0].where.userId).toBe("test-user-id");
+  });
 });
 
 function fakeCreatedRow(overrides: Record<string, unknown> = {}) {
@@ -152,6 +198,25 @@ describe("POST /api/applications", () => {
     const body = await response.json();
     expect(body.jobPostingText).toBe("We are hiring an engineer.");
     expect(body.coverLetterText).toBe("Dear hiring manager,");
+  });
+
+  it("creates the application owned by the current session user", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    createMock.mockResolvedValue(fakeCreatedRow());
+    const request = new NextRequest("http://localhost:3000/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company: "Acme", position: "Engineer", platform: "DIRECT" }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    expect(createMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ userId: "test-user-id" }),
+      }),
+    );
   });
 
   it("creates an application without source texts, storing them as null", async () => {

@@ -7,13 +7,13 @@ vi.mock("@/lib/auth", () => ({
   checkSession: () => checkSessionMock(),
 }));
 
-const findUniqueMock = vi.fn();
-const deleteMock = vi.fn();
+const findFirstMock = vi.fn();
+const deleteManyMock = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobApplication: {
-      findUnique: (...args: unknown[]) => findUniqueMock(...args),
-      delete: (...args: unknown[]) => deleteMock(...args),
+      findFirst: (...args: unknown[]) => findFirstMock(...args),
+      deleteMany: (...args: unknown[]) => deleteManyMock(...args),
     },
     $transaction: vi.fn(),
   },
@@ -33,6 +33,11 @@ const AUTHORIZED: SessionCheck = {
   session: { user: { id: "test-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
 };
 
+const OTHER_USER: SessionCheck = {
+  status: "authorized",
+  session: { user: { id: "other-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
+};
+
 function fakeRow(overrides: Record<string, unknown> = {}) {
   const now = new Date("2026-07-18T12:00:00.000Z");
   return {
@@ -48,6 +53,7 @@ function fakeRow(overrides: Record<string, unknown> = {}) {
     notes: null,
     jobPostingText: null,
     coverLetterText: null,
+    userId: "test-user-id",
     appliedAt: now,
     lastActivityAt: now,
     createdAt: now,
@@ -59,32 +65,34 @@ function fakeRow(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   checkSessionMock.mockReset();
-  findUniqueMock.mockReset();
-  deleteMock.mockReset();
+  findFirstMock.mockReset();
+  deleteManyMock.mockReset();
   vi.mocked(prisma.$transaction).mockReset();
 });
 
 // Builds a tx double matching the concurrency-safe PATCH flow: it reads the
-// current row (findUnique), applies a guarded conditional write (updateMany),
-// records history (statusChange.create), then re-reads the fresh row.
+// current row (findFirst, scoped by id+userId), applies a guarded
+// conditional write (updateMany), records history (statusChange.create),
+// then re-reads the fresh row (findFirstOrThrow).
 function mockPatchTransaction(options: {
   existing: Record<string, unknown> | null;
   updateCount?: number;
   fresh?: Record<string, unknown>;
 }) {
+  const findFirstTxMock = vi.fn().mockResolvedValue(options.existing);
   const updateManyMock = vi.fn().mockResolvedValue({ count: options.updateCount ?? 1 });
   const statusChangeCreateMock = vi.fn();
   vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
     (callback as (tx: unknown) => unknown)({
       jobApplication: {
-        findUnique: vi.fn().mockResolvedValue(options.existing),
+        findFirst: findFirstTxMock,
         updateMany: updateManyMock,
-        findUniqueOrThrow: vi.fn().mockResolvedValue(options.fresh ?? options.existing),
+        findFirstOrThrow: vi.fn().mockResolvedValue(options.fresh ?? options.existing),
       },
       statusChange: { create: statusChangeCreateMock },
     }),
   );
-  return { updateManyMock, statusChangeCreateMock };
+  return { findFirstTxMock, updateManyMock, statusChangeCreateMock };
 }
 
 describe("GET /api/applications/[id]", () => {
@@ -96,7 +104,7 @@ describe("GET /api/applications/[id]", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized" });
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(findFirstMock).not.toHaveBeenCalled();
   });
 
   it("returns 403 before touching Prisma when forbidden", async () => {
@@ -107,7 +115,36 @@ describe("GET /api/applications/[id]", () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "Forbidden" });
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(findFirstMock).not.toHaveBeenCalled();
+  });
+
+  it("scopes the lookup by id and the current user's id", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    findFirstMock.mockResolvedValue(fakeRow());
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1");
+
+    const response = await GET(request, { params });
+
+    expect(response.status).toBe(200);
+    expect(findFirstMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "app_1", userId: "test-user-id" } }),
+    );
+  });
+
+  it("returns 404 — not a leak of existence — when the application belongs to another user", async () => {
+    checkSessionMock.mockResolvedValue(OTHER_USER);
+    // A query scoped to {id, userId: "other-user-id"} finds nothing, because
+    // app_1 belongs to "test-user-id".
+    findFirstMock.mockResolvedValue(null);
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1");
+
+    const response = await GET(request, { params });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Application not found" });
+    expect(findFirstMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "app_1", userId: "other-user-id" } }),
+    );
   });
 });
 
@@ -124,7 +161,7 @@ describe("PATCH /api/applications/[id]", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized" });
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it("returns 403 before touching Prisma when forbidden", async () => {
@@ -139,7 +176,7 @@ describe("PATCH /api/applications/[id]", () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "Forbidden" });
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it("updates both source text fields", async () => {
@@ -342,6 +379,47 @@ describe("PATCH /api/applications/[id]", () => {
       }),
     );
   });
+
+  it("scopes the transactional read and the guarded write by the current user's id", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const { findFirstTxMock, updateManyMock } = mockPatchTransaction({
+      existing: fakeRow(),
+      fresh: fakeRow({ company: "New Co" }),
+    });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company: "New Co" }),
+    });
+
+    await PATCH(request, { params });
+
+    expect(findFirstTxMock).toHaveBeenCalledWith({ where: { id: "app_1", userId: "test-user-id" } });
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: "app_1", userId: "test-user-id" }) }),
+    );
+  });
+
+  it("returns 404 — not a leak of existence — when the application belongs to another user", async () => {
+    checkSessionMock.mockResolvedValue(OTHER_USER);
+    // Scoped by {id, userId: "other-user-id"} — app_1 belongs to a different
+    // user, so the transactional read finds nothing, identical to a
+    // genuinely missing id.
+    const { updateManyMock } = mockPatchTransaction({ existing: null });
+
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company: "New Co" }),
+    });
+
+    const response = await PATCH(request, { params });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Application not found" });
+    expect(updateManyMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("DELETE /api/applications/[id]", () => {
@@ -355,7 +433,7 @@ describe("DELETE /api/applications/[id]", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized" });
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(deleteManyMock).not.toHaveBeenCalled();
   });
 
   it("returns 403 before touching Prisma when forbidden", async () => {
@@ -368,6 +446,37 @@ describe("DELETE /api/applications/[id]", () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "Forbidden" });
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(deleteManyMock).not.toHaveBeenCalled();
+  });
+
+  it("deletes the row when it is scoped to id and the current user's id", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    deleteManyMock.mockResolvedValue({ count: 1 });
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "DELETE",
+    });
+
+    const response = await DELETE(request, { params });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true });
+    expect(deleteManyMock).toHaveBeenCalledWith({ where: { id: "app_1", userId: "test-user-id" } });
+  });
+
+  it("returns 404 — not a leak of existence — when the application belongs to another user", async () => {
+    checkSessionMock.mockResolvedValue(OTHER_USER);
+    // deleteMany scoped to {id, userId: "other-user-id"} deletes zero rows,
+    // because app_1 belongs to a different user — identical response to a
+    // genuinely missing id, and nothing is deleted.
+    deleteManyMock.mockResolvedValue({ count: 0 });
+    const request = new NextRequest("http://localhost:3000/api/applications/app_1", {
+      method: "DELETE",
+    });
+
+    const response = await DELETE(request, { params });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Application not found" });
+    expect(deleteManyMock).toHaveBeenCalledWith({ where: { id: "app_1", userId: "other-user-id" } });
   });
 });

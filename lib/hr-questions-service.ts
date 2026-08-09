@@ -66,11 +66,12 @@ export function isFirstHrCallTransition(
  */
 export async function ensureCoreHrQuestionsForTransition(params: {
   applicationId: string;
+  userId: string;
   previousStatus: Status;
   newStatus: Status;
   existingHrInterviewQuestions: Prisma.JsonValue | null;
 }): Promise<HrQuestionsResult | null> {
-  const { applicationId, previousStatus, newStatus, existingHrInterviewQuestions } = params;
+  const { applicationId, userId, previousStatus, newStatus, existingHrInterviewQuestions } = params;
 
   if (!isFirstHrCallTransition(previousStatus, newStatus, existingHrInterviewQuestions)) {
     return null;
@@ -82,7 +83,7 @@ export async function ensureCoreHrQuestionsForTransition(params: {
   let claim: { count: number };
   try {
     claim = await prisma.jobApplication.updateMany({
-      where: { id: applicationId, hrInterviewQuestions: { equals: Prisma.DbNull } },
+      where: { id: applicationId, userId, hrInterviewQuestions: { equals: Prisma.DbNull } },
       data: {
         hrInterviewQuestions: coreOnly as unknown as Prisma.InputJsonValue,
         hrQuestionsGeneratedAt: claimedAt,
@@ -113,8 +114,11 @@ export async function ensureCoreHrQuestionsForTransition(params: {
  */
 export async function generateVacancySpecificHrQuestions(
   applicationId: string,
+  userId: string,
 ): Promise<HrQuestionsResult | null> {
-  const application = await prisma.jobApplication.findUnique({ where: { id: applicationId } });
+  const application = await prisma.jobApplication.findFirst({
+    where: { id: applicationId, userId },
+  });
   if (!application) {
     return null;
   }

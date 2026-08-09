@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const { status, sort, q } = parsedQuery.data;
 
     const rows = await prisma.jobApplication.findMany({
-      where: buildApplicationsWhere(q),
+      where: buildApplicationsWhere(q, check.session.user.id),
       select: APPLICATION_LIST_ITEM_SELECT,
     });
 
@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
         status: Status.APPLIED,
         lastActivityAt: now,
         sourceUrls: extractUrls(parsed.data.jobPostingText),
+        userId: check.session.user.id,
       },
       include: { statusChanges: { orderBy: { changedAt: "desc" } } },
     });

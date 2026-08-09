@@ -57,4 +57,31 @@ describe("GET /api/stats", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ total: 0 });
   });
+
+  it("scopes the query to the current user's id", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    findManyMock.mockResolvedValue([]);
+
+    await GET();
+
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "test-user-id" } }),
+    );
+  });
+
+  it("only counts the current user's applications, never another user's", async () => {
+    // A correctly-scoped query only ever asks Prisma for rows matching the
+    // session's userId, which is what keeps user B's applications out of
+    // user A's statistics at the database level.
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    findManyMock.mockResolvedValue([
+      { status: "APPLIED", lastActivityAt: new Date(), statusChanges: [] },
+    ]);
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.total).toBe(1);
+    expect(findManyMock.mock.calls[0][0].where).toEqual({ userId: "test-user-id" });
+  });
 });

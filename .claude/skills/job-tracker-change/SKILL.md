@@ -1,5 +1,5 @@
 ---
-name: Job Tracker focused change
+name: job-tracker-change
 description: Implement a focused production-safe change in the Job Tracker without broad repository exploration.
 disable-model-invocation: true
 argument-hint: "<task>"
@@ -18,6 +18,7 @@ Project facts:
 - Heavy fields must not be added to the list endpoint.
 - PATCH concurrency uses expectedUpdatedAt.
 - HR_CALL AI questions are generated through a separate follow-up request.
+- Apply edits in their intended final form; do not create temporary explanatory comments or cleanup-only follow-up edits.
 
 Rules:
 - Do not analyze the whole repository.

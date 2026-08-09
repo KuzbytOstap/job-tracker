@@ -62,9 +62,9 @@ function mockTransaction(
   vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
     (callback as (tx: unknown) => unknown)({
       jobApplication: {
-        findUnique: vi.fn().mockResolvedValue(existing),
+        findFirst: vi.fn().mockResolvedValue(existing),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findUniqueOrThrow: vi
+        findFirstOrThrow: vi
           .fn()
           .mockResolvedValue(existing ? fakeRow({ ...existing, ...updatedOverrides }) : null),
       },
@@ -101,6 +101,7 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
     expect(ensureCoreHrQuestionsForTransitionMock).toHaveBeenCalledWith(
       expect.objectContaining({
         applicationId: "app_1",
+        userId: "test-user-id",
         previousStatus: "APPLIED",
         newStatus: "HR_CALL",
         existingHrInterviewQuestions: null,

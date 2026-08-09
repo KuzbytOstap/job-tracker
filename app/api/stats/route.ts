@@ -22,6 +22,7 @@ export async function GET() {
 
   try {
     const applications = await prisma.jobApplication.findMany({
+      where: { userId: check.session.user.id },
       select: {
         status: true,
         lastActivityAt: true,

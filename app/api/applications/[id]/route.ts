@@ -27,10 +27,11 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   if (check.status === "forbidden") return forbiddenResponse();
 
   const { id } = await params;
+  const userId = check.session.user.id;
 
   try {
-    const application = await prisma.jobApplication.findUnique({
-      where: { id },
+    const application = await prisma.jobApplication.findFirst({
+      where: { id, userId },
       include: { statusChanges: { orderBy: { changedAt: "desc" } } },
     });
 
@@ -51,6 +52,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (check.status === "forbidden") return forbiddenResponse();
 
   const { id } = await params;
+  const userId = check.session.user.id;
 
   let payload: unknown;
   try {
@@ -74,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     // that exact updatedAt so two concurrent PATCHes can't silently overwrite
     // each other or produce a StatusChange from a stale fromStatus.
     const outcome = await prisma.$transaction(async (tx) => {
-      const existing = await tx.jobApplication.findUnique({ where: { id } });
+      const existing = await tx.jobApplication.findFirst({ where: { id, userId } });
       if (!existing) {
         return { kind: "not_found" as const };
       }
@@ -89,6 +91,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       const updateResult = await tx.jobApplication.updateMany({
         where: {
           id,
+          userId,
           ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}),
         },
         data: {
@@ -119,8 +122,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         });
       }
 
-      const application = await tx.jobApplication.findUniqueOrThrow({
-        where: { id },
+      const application = await tx.jobApplication.findFirstOrThrow({
+        where: { id, userId },
         include: { statusChanges: { orderBy: { changedAt: "desc" } } },
       });
 
@@ -150,6 +153,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (outcome.statusChanged && status === Status.HR_CALL) {
       const coreResult = await ensureCoreHrQuestionsForTransition({
         applicationId: id,
+        userId,
         previousStatus: outcome.previousStatus,
         newStatus: status,
         existingHrInterviewQuestions: outcome.existingHrInterviewQuestions,
@@ -177,18 +181,14 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   if (check.status === "forbidden") return forbiddenResponse();
 
   const { id } = await params;
+  const userId = check.session.user.id;
 
   try {
-    const existing = await prisma.jobApplication.findUnique({
-      where: { id },
-      select: { id: true },
-    });
+    const { count } = await prisma.jobApplication.deleteMany({ where: { id, userId } });
 
-    if (!existing) {
+    if (count === 0) {
       return notFoundResponse();
     }
-
-    await prisma.jobApplication.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
