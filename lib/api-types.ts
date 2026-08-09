@@ -1,4 +1,13 @@
-import type { AiAccessStatus, JobApplication, StatusChange, Platform, Status } from "@/app/generated/prisma/client";
+import type {
+  AiAccessStatus,
+  AiRequestStatus,
+  AiRequestType,
+  JobApplication,
+  Role,
+  StatusChange,
+  Platform,
+  Status,
+} from "@/app/generated/prisma/client";
 import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 type WithStringDates<T, K extends keyof T> = Omit<T, K> & { [P in K]: string };
@@ -112,6 +121,65 @@ export type CreateApplicationPayload = {
   appliedAt?: string;
   jobPostingText?: string | null;
   coverLetterText?: string | null;
+};
+
+export type AdminUserRef = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
+export type AdminAiRequestDTO = {
+  id: string;
+  type: AiRequestType;
+  status: AiRequestStatus;
+  quotaDate: string | null;
+  message: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  grantedAmount: number | null;
+  createdAt: string;
+  updatedAt: string;
+  user: AdminUserRef;
+  decidedByUser: AdminUserRef | null;
+};
+
+export type AdminAiRequestsListResponse = {
+  requests: AdminAiRequestDTO[];
+};
+
+export type AdminQuotaAmounts = {
+  vacancy: number;
+  hr: number;
+  tokens: number;
+};
+
+export type AdminUserOverrides = {
+  vacancy: number | null;
+  hr: number | null;
+  tokens: number | null;
+};
+
+export type AdminUserDTO = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: Role;
+  aiAccessStatus: AiAccessStatus;
+  usage: AdminQuotaAmounts;
+  limits: AdminQuotaAmounts;
+  overrides: AdminUserOverrides;
+};
+
+export type AdminUsersListResponse = {
+  users: AdminUserDTO[];
+};
+
+export type AiGlobalLimitsDTO = {
+  vacancyGenerationLimit: number;
+  hrGenerationLimit: number;
+  tokenLimit: number;
+  updatedAt: string;
 };
 
 export type UpdateApplicationPayload = Partial<CreateApplicationPayload> & {
