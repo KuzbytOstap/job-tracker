@@ -29,7 +29,7 @@ import { POST } from "./route";
 
 const AUTHORIZED: SessionCheck = {
   status: "authorized",
-  session: { user: { email: "me@example.com" }, expires: new Date().toISOString() },
+  session: { user: { id: "test-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
 };
 
 function makeRequest(body: unknown) {

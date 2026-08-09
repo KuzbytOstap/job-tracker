@@ -1,17 +1,19 @@
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth, { type Session } from "next-auth";
 import Google from "next-auth/providers/google";
-
-export function isAllowedEmail(email: string | null | undefined): boolean {
-  return !!email && !!process.env.ALLOWED_EMAIL && email === process.env.ALLOWED_EMAIL;
-}
+import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [Google],
   session: { strategy: "jwt" },
   pages: { signIn: "/sign-in", error: "/sign-in" },
   callbacks: {
-    async signIn({ profile }) {
-      return isAllowedEmail(profile?.email);
+    async session({ session, token }) {
+      if (token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
     },
   },
 });
@@ -23,7 +25,6 @@ export type SessionCheck =
 
 export function evaluateSession(session: Session | null): SessionCheck {
   if (!session) return { status: "unauthenticated" };
-  if (!isAllowedEmail(session.user?.email)) return { status: "forbidden" };
   return { status: "authorized", session };
 }
 

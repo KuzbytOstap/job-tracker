@@ -26,7 +26,7 @@ const params = Promise.resolve({ id: "app_1" });
 
 const AUTHORIZED: SessionCheck = {
   status: "authorized",
-  session: { user: { email: "me@example.com" }, expires: new Date().toISOString() },
+  session: { user: { id: "test-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
 };
 
 function fakeRow(overrides: Record<string, unknown> = {}) {
@@ -62,9 +62,9 @@ function mockTransaction(
   vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) =>
     (callback as (tx: unknown) => unknown)({
       jobApplication: {
-        findUnique: vi.fn().mockResolvedValue(existing),
+        findFirst: vi.fn().mockResolvedValue(existing),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findUniqueOrThrow: vi
+        findFirstOrThrow: vi
           .fn()
           .mockResolvedValue(existing ? fakeRow({ ...existing, ...updatedOverrides }) : null),
       },
@@ -101,6 +101,7 @@ describe("PATCH /api/applications/[id] — HR Call question generation trigger",
     expect(ensureCoreHrQuestionsForTransitionMock).toHaveBeenCalledWith(
       expect.objectContaining({
         applicationId: "app_1",
+        userId: "test-user-id",
         previousStatus: "APPLIED",
         newStatus: "HR_CALL",
         existingHrInterviewQuestions: null,

@@ -130,14 +130,16 @@ app.
 
 - Core tracking, pipeline, board, statistics, dark mode, and PWA metadata are
   built (see `README.md` for the full feature list and how to run/deploy).
-- **Privacy gate is implemented.** The earlier reserved `APP_SECRET`
-  approach (a URL-embedded key) was replaced with Google sign-in via
-  Auth.js, restricted to a single email in the server-only `ALLOWED_EMAIL`
-  variable — see `README.md`'s Authentication section for the enforcement
-  details (double allowlist check, protected route group, per-route 401/403
-  in every API handler). The deployment is only actually private once real
-  `AUTH_SECRET`/`AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`/`ALLOWED_EMAIL` values
-  are configured, both locally and on Vercel.
+- **Privacy gate is implemented, multi-user.** The earlier reserved
+  `APP_SECRET` approach (a URL-embedded key) was replaced with Google
+  sign-in via Auth.js. Any Google account may sign in; the Auth.js Prisma
+  adapter persists a `User`/`Account` row on first sign-in, and every
+  `JobApplication` is scoped to its owning `userId` — see `README.md`'s
+  Authentication section for the enforcement details (protected route
+  group, per-route 401 in every API handler, per-user data scoping). The
+  deployment is only actually private once real
+  `AUTH_SECRET`/`AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` values are configured,
+  both locally and on Vercel.
 - The AI-assisted "paste a job posting, auto-fill the form" feature is
   **implemented**, behind a provider-agnostic extraction interface
   (`AI_PROVIDER=mock` for dev/tests, `AI_PROVIDER=openai` with GPT-5 nano for

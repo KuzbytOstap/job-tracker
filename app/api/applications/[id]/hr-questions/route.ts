@@ -28,12 +28,13 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
   if (check.status === "forbidden") return forbiddenResponse();
 
   const { id } = await params;
+  const userId = check.session.user.id;
 
   try {
-    await generateVacancySpecificHrQuestions(id);
+    await generateVacancySpecificHrQuestions(id, userId);
 
-    const application = await prisma.jobApplication.findUnique({
-      where: { id },
+    const application = await prisma.jobApplication.findFirst({
+      where: { id, userId },
       include: { statusChanges: { orderBy: { changedAt: "desc" } } },
     });
 

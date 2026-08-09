@@ -136,13 +136,21 @@ const applications: ApplicationSeed[] = [
   },
 ];
 
+const SEED_OWNER_EMAIL = "seed-owner@job-tracker.local";
+
 async function main() {
+  const seedOwner = await prisma.user.upsert({
+    where: { email: SEED_OWNER_EMAIL },
+    update: {},
+    create: { email: SEED_OWNER_EMAIL, name: "Seed Owner" },
+  });
+
   await prisma.statusChange.deleteMany();
   await prisma.jobApplication.deleteMany();
 
   for (const { statusHistory, ...applicationData } of applications) {
     const application = await prisma.jobApplication.create({
-      data: applicationData,
+      data: { ...applicationData, userId: seedOwner.id },
     });
 
     if (statusHistory.length > 0) {

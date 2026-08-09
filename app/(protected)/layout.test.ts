@@ -40,7 +40,7 @@ describe("ProtectedLayout", () => {
   it("renders children without redirecting when authorized", async () => {
     checkSessionMock.mockResolvedValue({
       status: "authorized",
-      session: { user: { email: "me@example.com" }, expires: new Date().toISOString() },
+      session: { user: { id: "test-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
     });
 
     const result = await ProtectedLayout({ children: "content" });

@@ -7,11 +7,11 @@ vi.mock("@/lib/auth", () => ({
   checkSession: () => checkSessionMock(),
 }));
 
-const findUniqueMock = vi.fn();
+const findFirstMock = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobApplication: {
-      findUnique: (...args: unknown[]) => findUniqueMock(...args),
+      findFirst: (...args: unknown[]) => findFirstMock(...args),
     },
   },
 }));
@@ -28,7 +28,12 @@ const params = Promise.resolve({ id: "app_1" });
 
 const AUTHORIZED: SessionCheck = {
   status: "authorized",
-  session: { user: { email: "me@example.com" }, expires: new Date().toISOString() },
+  session: { user: { id: "test-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
+};
+
+const OTHER_USER: SessionCheck = {
+  status: "authorized",
+  session: { user: { id: "other-user-id", email: "me@example.com" }, expires: new Date().toISOString() },
 };
 
 function fakeRow(overrides: Record<string, unknown> = {}) {
@@ -71,7 +76,7 @@ function postRequest() {
 
 beforeEach(() => {
   checkSessionMock.mockReset();
-  findUniqueMock.mockReset();
+  findFirstMock.mockReset();
   generateVacancySpecificHrQuestionsMock.mockReset();
   generateVacancySpecificHrQuestionsMock.mockResolvedValue(null);
 });
@@ -84,7 +89,7 @@ describe("POST /api/applications/[id]/hr-questions", () => {
 
     expect(response.status).toBe(401);
     expect(generateVacancySpecificHrQuestionsMock).not.toHaveBeenCalled();
-    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(findFirstMock).not.toHaveBeenCalled();
   });
 
   it("returns 403 before running generation when forbidden", async () => {
@@ -98,13 +103,16 @@ describe("POST /api/applications/[id]/hr-questions", () => {
 
   it("runs generation and returns the full application DTO with the merged questions", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
-    findUniqueMock.mockResolvedValue(fakeRow());
+    findFirstMock.mockResolvedValue(fakeRow());
 
     const response = await POST(postRequest(), { params });
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(generateVacancySpecificHrQuestionsMock).toHaveBeenCalledWith("app_1");
+    expect(generateVacancySpecificHrQuestionsMock).toHaveBeenCalledWith("app_1", "test-user-id");
+    expect(findFirstMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "app_1", userId: "test-user-id" } }),
+    );
     expect(
       body.hrInterviewQuestions.questions.some(
         (q: { category: string }) => q.category === "VACANCY_SPECIFIC",
@@ -114,10 +122,28 @@ describe("POST /api/applications/[id]/hr-questions", () => {
 
   it("returns 404 when the application no longer exists", async () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
-    findUniqueMock.mockResolvedValue(null);
+    findFirstMock.mockResolvedValue(null);
 
     const response = await POST(postRequest(), { params });
 
     expect(response.status).toBe(404);
+  });
+
+  it("returns 404 — not a leak of existence — when the application belongs to another user", async () => {
+    checkSessionMock.mockResolvedValue(OTHER_USER);
+    // The service call itself is scoped by userId and mocked in isolation
+    // here, so it's asserted to no-op; the follow-up read is scoped the same
+    // way and finds nothing because app_1 belongs to a different user.
+    generateVacancySpecificHrQuestionsMock.mockResolvedValue(null);
+    findFirstMock.mockResolvedValue(null);
+
+    const response = await POST(postRequest(), { params });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Application not found" });
+    expect(generateVacancySpecificHrQuestionsMock).toHaveBeenCalledWith("app_1", "other-user-id");
+    expect(findFirstMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "app_1", userId: "other-user-id" } }),
+    );
   });
 });
