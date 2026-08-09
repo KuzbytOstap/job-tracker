@@ -172,9 +172,10 @@ export async function generateVacancySpecificHrQuestions(
   const merged = buildHrInterviewQuestionSet(additionalQuestions);
   const mergedAt = new Date();
 
+  let persisted: { count: number };
   try {
-    await prisma.jobApplication.update({
-      where: { id: applicationId },
+    persisted = await prisma.jobApplication.updateMany({
+      where: { id: applicationId, userId },
       data: {
         hrInterviewQuestions: merged as unknown as Prisma.InputJsonValue,
         hrQuestionsGeneratedAt: mergedAt,
@@ -182,6 +183,13 @@ export async function generateVacancySpecificHrQuestions(
     });
   } catch {
     console.error("[hr-questions] failed to persist enhanced questions", { applicationId });
+    return { hrInterviewQuestions: current, hrQuestionsGeneratedAt: generatedAt };
+  }
+
+  if (persisted.count === 0) {
+    console.error("[hr-questions] application vanished before persisting enhanced questions", {
+      applicationId,
+    });
     return { hrInterviewQuestions: current, hrQuestionsGeneratedAt: generatedAt };
   }
 

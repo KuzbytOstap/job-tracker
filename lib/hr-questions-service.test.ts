@@ -278,7 +278,10 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
     const result = await generateVacancySpecificHrQuestions("app_1", "user_1");
 
     expect(generateAdditionalQuestionsMock).toHaveBeenCalledTimes(1);
-    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(updateManyMock).toHaveBeenCalledTimes(1);
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "app_1", userId: "user_1" } }),
+    );
     expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toEqual([
       { text: "What is your Node.js experience?", category: "VACANCY_SPECIFIC" },
     ]);
