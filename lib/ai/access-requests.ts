@@ -28,8 +28,12 @@ const USAGE_QUOTA_FIELD: Record<AiUsageRequestType, "vacancy" | "hr" | "tokens">
   TOKEN_LIMIT: "tokens",
 };
 
-export function aiAccessRequestErrorStatus(_code: AiAccessRequestErrorCode): number {
-  return 409;
+export function aiAccessRequestErrorStatus(code: AiAccessRequestErrorCode): number {
+  switch (code) {
+    case "NOT_ELIGIBLE":
+    case "QUOTA_NOT_EXHAUSTED":
+      return 409;
+  }
 }
 
 export async function getAiAccessStatus(userId: string): Promise<AiAccessStatus> {

@@ -63,8 +63,8 @@ Key facts for quota design:
 - `AiAccessRequest` — request-more-usage records (`AI_ACCESS` | `VACANCY_LIMIT`
   | `HR_LIMIT` | `TOKEN_LIMIT`), one pending request per type per user
   (partial unique index on `status = 'PENDING'`). `AI_ACCESS` is read/written
-  starting Phase 3 (see below); the other types are still schema-only, ahead
-  of Phase 4.
+  starting Phase 3; the usage-limit types starting Phase 4; all four are
+  decided by admins starting Phase 5.
 - `JobApplication.hrEnhancementClaimedAt` / `hrEnhancementClaimToken` — the
   HR-enhancement lease fields, see below.
 
@@ -181,7 +181,8 @@ All in `lib/ai/access-control.ts` unless noted.
 - UI must explain exactly which limit was exhausted and when it resets.
 - **Implemented** — these are the live `AiGlobalLimits` defaults (Phase 1) and
   are enforced independently by `reserveAiQuota` (Phase 2). The "UI must
-  explain..." requirement is still open (Phase 4).
+  explain which limit was exhausted and when it resets" requirement is
+  implemented by `AiQuotaNotice` (Phase 4).
 
 ## Request more usage
 
@@ -191,6 +192,9 @@ All in `lib/ai/access-control.ts` unless noted.
 - Admin approval of a quota request normally grants a **temporary bonus for the
   current day only**.
 - Admin can separately configure **permanent per-user overrides**.
+- **Implemented** (Phase 4) — `GET /api/ai-usage` + `POST /api/ai-usage/requests`
+  (`lib/ai-quota.ts`, `lib/ai/access-requests.ts`); UI via `AiQuotaNotice`,
+  shown at both AI entry points once the relevant quota is exhausted.
 
 ## Limit configuration
 
@@ -213,22 +217,64 @@ All in `lib/ai/access-control.ts` unless noted.
   is rolled back); reservation is a single atomic guarded `updateMany`; mock
   calls never call `runGatedAiCall` at all.
 
-## Admin
+## Admin (Phase 5) ✅
 
 - `User.role` supports `USER` and `ADMIN`.
-- Admin authorization must be server-side via `role` — never a hardcoded email
-  check (that pattern is exactly what the completed auth migration removed).
-- Admin needs: pending access/usage requests; approve/reject; suspend/restore AI;
-  today's vacancy/HR/token usage; global defaults; per-user permanent overrides;
-  temporary daily bonuses.
+- Admin authorization is based **only** on the persisted `User.role === ADMIN`,
+  re-checked server-side on every call via **`requireAdmin()`**
+  (`lib/admin/require-admin.ts`) — never a JWT claim or hardcoded email (that
+  pattern is exactly what the completed auth migration removed). Every
+  `/api/admin/*` route calls it first.
+- **Implemented** — `lib/admin/{ai-requests,users,settings}.ts` +
+  `app/api/admin/**`:
+  - `GET/PATCH /api/admin/ai-requests[/[id]]` — lists requests (pending
+    first) and decides one: approve/reject `AI_ACCESS` (flips
+    `aiAccessStatus`), or approve (with `grantedAmount` + optional
+    `decisionNote`) / reject a usage-limit request.
+    - Usage-limit **approval** requires the request's `quotaDate` to still be
+      today's UTC quota day — a stale request returns `STALE_REQUEST` and can
+      never be approved. **Rejection** is always allowed while a request is
+      still `PENDING`, stale or not (it never touches `AiUsageDaily`), so a
+      stale request can be rejected but never approved.
+    - The status flip and any `AiUsageDaily` bonus write happen in one
+      `prisma.$transaction` behind a guarded `updateMany`
+      (`WHERE status = PENDING`); a losing concurrent decision matches zero
+      rows and fails closed — approval is atomic and can never double-grant.
+  - `GET /api/admin/users` — role, `aiAccessStatus`, today's usage, effective
+    limits (`override ?? globalDefault`, plus today's bonus), and the raw
+    overrides, for every user.
+  - `POST /api/admin/users/[id]/suspend|restore` — guarded
+    `APPROVED → SUSPENDED` / `SUSPENDED → APPROVED` transitions only.
+  - `PATCH /api/admin/users/[id]/limits` — sets/clears permanent per-user
+    overrides (`null` clears a field back to the global default).
+  - `GET/PATCH /api/admin/settings` — reads/updates the `AiGlobalLimits`
+    singleton.
 
-## Admin UI
+## Admin UI (Phase 6) ✅
 
-- Preserve the current Game Hub visual language (see
-  `.claude/rules/game-hub-ui.md`).
-- When admin UI implementation begins, use the `ui-ux-pro-max` skill and the
-  21st.dev MCP for admin/dashboard patterns.
-- Reuse existing shadcn/ui components — don't create duplicate primitives.
+- **Implemented** — `/admin` (`app/(protected)/admin/page.tsx`) is
+  server-gated: it calls `requireAdmin()` and redirects (`/sign-in`
+  unauthenticated, `/` forbidden) before any admin markup renders — admin
+  controls are never exposed client-side to a non-admin.
+- `AdminShell` (`components/admin/`) has three sections:
+  - **Requests** — pending `AI_ACCESS` requests (approve/reject with an
+    optional decision note); pending usage-limit requests (quick `+5`/`+10`
+    grants, a custom-amount dialog, or reject — a stale request is visually
+    marked and never offers approve, only reject); recent decided-request
+    history.
+  - **Users** — name/email, AI access status with suspend/restore, and each
+    user's current usage vs. effective limit per feature (vacancy/HR/tokens)
+    with an inline override/bonus breakdown so the base-vs-effective
+    relationship is legible; an "Edit limits" dialog sets or clears
+    permanent overrides.
+  - **Settings** — edits the three `AiGlobalLimits` defaults.
+- Built per the existing Game Hub visual language (see
+  `.claude/rules/game-hub-ui.md`) — `data-job-tracker-theme="game-hub"`,
+  existing `--gh-*` tokens/surfaces, existing shadcn/ui primitives; no new
+  visual system. Built using the `ui-ux-pro-max` skill and 21st.dev MCP for
+  admin/dashboard pattern research, as directed.
+- Server responses stay authoritative — actions invalidate/refetch React
+  Query state rather than assume optimistic outcomes.
 
 ## Implementation order
 
@@ -237,7 +283,9 @@ All in `lib/ai/access-control.ts` unless noted.
    quota/reservation layer".
 3. ~~User AI-access request UX.~~ ✅ Done — see "Implemented: user AI-access
    request UX".
-4. Exhausted-quota UX + "Request more usage".
-5. Admin APIs.
-6. Admin UI using ui-ux-pro-max + 21st.dev.
-7. Concurrency/security audit and production rollout.
+4. ~~Exhausted-quota UX + "Request more usage".~~ ✅ Done — see "Request more
+   usage" and "Default daily limits".
+5. ~~Admin APIs.~~ ✅ Done — see "Admin (Phase 5)".
+6. ~~Admin UI using ui-ux-pro-max + 21st.dev.~~ ✅ Done — see "Admin UI
+   (Phase 6)".
+7. Concurrency/security audit and production rollout. ← only phase remaining.

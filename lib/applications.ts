@@ -98,13 +98,7 @@ export function toApplicationWithMeta(
 export function toApplicationDTO(application: ApplicationWithMeta): ApplicationDTO {
   // userId, hrEnhancementClaimedAt, and hrEnhancementClaimToken are internal
   // columns, not part of the public API shape.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const {
-    userId: _userId,
-    hrEnhancementClaimedAt: _hrEnhancementClaimedAt,
-    hrEnhancementClaimToken: _hrEnhancementClaimToken,
-    ...rest
-  } = application;
+  const { userId, hrEnhancementClaimedAt, hrEnhancementClaimToken, ...rest } = application;
 
   return {
     ...rest,
