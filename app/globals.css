@@ -129,6 +129,29 @@
   }
 }
 
+/*
+ * AlertDialog (confirmation/destructive dialogs) portals to document.body by
+ * default, outside the [data-job-tracker-theme="game-hub"] subtree. The
+ * tokens below re-declare, at :root, the exact values those dialogs read via
+ * var(--gh-*) so they resolve there too — otherwise the custom property is
+ * unresolved for portaled content and the declaration referencing it
+ * silently drops to its CSS initial value (transparent background, no
+ * shadow, currentcolor border) instead of the intended Game Hub surface.
+ */
+:root {
+  --gh-surface: oklch(0.995 0.004 80);
+  --gh-surface-secondary: oklch(0.975 0.008 70);
+  --gh-border: oklch(0.89 0.012 65);
+  --gh-border-strong: oklch(0.82 0.016 60);
+  --gh-text: oklch(0.24 0.02 50);
+  --gh-text-secondary: oklch(0.42 0.02 50);
+  --gh-accent: oklch(0.62 0.17 45);
+  --gh-accent-secondary: oklch(0.58 0.11 30);
+  --gh-accent-soft: oklch(0.93 0.05 60);
+  --gh-warning: oklch(0.64 0.13 68);
+  --gh-dock-panel-shadow: 0 4px 10px oklch(0.24 0.02 50 / 0.08), 0 20px 40px -20px oklch(0.24 0.02 50 / 0.28);
+}
+
 [data-job-tracker-theme="game-hub"] {
   --gh-bg: oklch(0.965 0.008 70);
   --gh-bg-secondary: oklch(0.945 0.012 65);
