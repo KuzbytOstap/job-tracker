@@ -24,7 +24,7 @@ export function KanbanColumnContent({
   const groups = groupApplicationsByAppliedDate(applications, sort);
 
   return (
-    <div className="px-3 pb-3">
+    <div className="kanban-lane-content px-3 pb-3">
       {groups.length === 0 ? (
         <BoardColumnEmptyState column={column} />
       ) : (

@@ -21,6 +21,7 @@ export function ApplicationDetailDialog({ applicationId, open, onOpenChange }: A
       title="Application details"
       isDirty={isDirty}
       isPending={isPending}
+      desktopPresentation="side-panel"
     >
       {applicationId && (
         <ApplicationDetail

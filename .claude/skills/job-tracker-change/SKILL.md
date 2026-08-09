@@ -10,7 +10,7 @@ Implement only this task:
 $ARGUMENTS
 
 Project facts:
-- Production single-user Next.js and TypeScript application.
+- Production multi-user Next.js and TypeScript application.
 - Prisma with PostgreSQL.
 - TanStack Query handles server state and caches.
 - ApplicationListItemDTO is for board and list views.
@@ -20,22 +20,23 @@ Project facts:
 - HR_CALL AI questions are generated through a separate follow-up request.
 - Apply edits in their intended final form; do not create temporary explanatory comments or cleanup-only follow-up edits.
 
-Rules:
-- Do not analyze the whole repository.
-- If exact files are unknown, use the code-locator subagent first.
-- Use GitNexus only for narrow symbol, dependency, and flow discovery.
-- Read only files required by the discovered flow.
+Workflow:
+- Follow CLAUDE.md and any applicable path-scoped rules in .claude/rules.
+- If exact files are named, read only those files.
+- If exact files are unknown, use targeted repository search first; use the code-locator subagent only if the required flow is still ambiguous.
+- Use GitNexus only for unfamiliar cross-cutting flows, high-risk refactors, dependency impact, or complex debugging. Never run GitNexus impact analysis for routine local UI edits.
 - Preserve the existing architecture, production behavior, and stored data.
 - Keep database, API, validation, hooks, and UI responsibilities separated.
 - Do not create large monolithic components.
-- Do not add comments to code.
+- Do not perform broad repository exploration.
+- Implement directly once enough context is known.
 - Do not refactor or format unrelated code.
 - Do not update documentation unless explicitly requested.
-- Do not run the full test suite, full lint, or production build.
-- Stop after the requested task.
+- Do not run verification commands.
+- Stop after the requested change.
 
 Return only:
 - modified files;
-- migration or deployment steps;
-- focused checks;
+- concise implementation summary;
+- manual checks;
 - unresolved issues.

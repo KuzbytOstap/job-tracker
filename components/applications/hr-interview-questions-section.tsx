@@ -27,16 +27,18 @@ export function HrInterviewQuestionsSection({ questions }: HrInterviewQuestionsS
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <h3 className="text-xs font-medium tracking-wide text-[var(--gh-text-muted,var(--muted-foreground))] uppercase">
           HR interview questions
         </h3>
         <CopyButton text={allQuestionsText} label="Copy all questions" />
       </div>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 rounded-xl border border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 p-3">
         {coreQuestions.length > 0 && (
           <div>
-            <p className="mb-1.5 text-sm font-medium">Common questions</p>
-            <ol className="list-decimal space-y-1 pl-5 text-sm">
+            <p className="mb-1.5 text-xs font-medium tracking-wide text-[var(--gh-text-secondary,var(--muted-foreground))] uppercase">
+              Common questions
+            </p>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--gh-text,var(--foreground))]">
               {coreQuestions.map((question) => (
                 <li key={question.text} className="break-words">
                   {question.text}
@@ -48,8 +50,10 @@ export function HrInterviewQuestionsSection({ questions }: HrInterviewQuestionsS
 
         {vacancyQuestions.length > 0 && (
           <div>
-            <p className="mb-1.5 text-sm font-medium">For this vacancy</p>
-            <ol className="list-decimal space-y-1 pl-5 text-sm">
+            <p className="mb-1.5 text-xs font-medium tracking-wide text-[var(--gh-text-secondary,var(--muted-foreground))] uppercase">
+              For this vacancy
+            </p>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--gh-text,var(--foreground))]">
               {vacancyQuestions.map((question) => (
                 <li key={question.text} className="break-words">
                   {question.text}

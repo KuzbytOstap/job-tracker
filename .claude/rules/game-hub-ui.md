@@ -1,0 +1,24 @@
+---
+paths:
+  - app/globals.css
+  - app/sign-in/**/*.tsx
+  - components/board/**/*.tsx
+  - components/dashboard/**/*.tsx
+  - components/overlay/**/*.tsx
+  - components/applications/**/*.tsx
+---
+
+- Game Hub V2 is warm, tactile, premium, restrained, and slightly cinematic.
+- It must not look like a generic admin dashboard or playful game UI.
+- Scope Game Hub styling through [data-job-tracker-theme="game-hub"] where appropriate.
+- Reuse existing Game Hub tokens, surfaces, typography hierarchy, and motion language.
+- Prefer CSS responsive behavior over JavaScript viewport detection when CSS is sufficient.
+- Preserve existing mobile layout and behavior unless mobile work is explicitly requested.
+- Reuse existing shadcn primitives before creating new UI primitives.
+- Respect keyboard accessibility, focus-visible states, contrast, and prefers-reduced-motion.
+- For tasks that materially change UI appearance, interaction, layout, motion, or UX, invoke ui-ux-pro-max once for a focused audit.
+- Do not invoke ui-ux-pro-max for backend or non-visual logic tasks.
+- Use 21st MCP only when the task explicitly needs a new visual direction or external component/reference research.
+- When 21st is used, inspect no more than 3 relevant references.
+- Do not generate replacement production components from 21st.
+- Do not add gamification, routes, user steps, dependencies, canvas, WebGL, Three.js, or external visual assets unless explicitly requested.

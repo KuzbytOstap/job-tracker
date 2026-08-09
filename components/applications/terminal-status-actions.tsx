@@ -47,37 +47,44 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
     }
   }
 
-  const dialogCopy: Record<ConfirmKind, { title: string; description: string; confirmLabel: string; destructive: boolean }> = {
+  const dialogCopy: Record<
+    ConfirmKind,
+    { title: string; description: string; confirmLabel: string; destructive: boolean; intent: "neutral" | "warning" | "destructive" }
+  > = {
     reject: {
       title: "Mark as rejected?",
       description: `${subject} will be moved to Rejected.`,
       confirmLabel: "Reject",
       destructive: true,
+      intent: "destructive",
     },
     ignore: {
       title: "Mark as ignored?",
       description: `${subject} will be moved to Ignored.`,
       confirmLabel: "Ignore",
       destructive: false,
+      intent: "warning",
     },
     "restore-rejected": {
       title: "Restore this application?",
       description: `${subject} will be moved out of Rejected back to its previous status.`,
       confirmLabel: "Restore",
       destructive: false,
+      intent: "neutral",
     },
     "restore-ignored": {
       title: "Restore this application?",
       description: `${subject} will be moved out of Ignored back to its previous status.`,
       confirmLabel: "Restore",
       destructive: false,
+      intent: "neutral",
     },
   };
 
   const activeCopy = confirmKind ? dialogCopy[confirmKind] : null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 rounded-lg border border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 p-2.5">
       {isStoredRejected ? (
         <Button type="button" variant="outline" size="sm" onClick={() => setConfirmKind("restore-rejected")}>
           Restore application
@@ -117,6 +124,8 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
         description={activeCopy?.description ?? ""}
         confirmLabel={activeCopy?.confirmLabel ?? "Confirm"}
         destructive={activeCopy?.destructive ?? false}
+        visualVariant="gameHub"
+        intent={activeCopy?.intent ?? "neutral"}
         pending={moveMutation.isPending}
         onConfirm={handleConfirm}
       />

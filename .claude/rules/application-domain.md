@@ -1,0 +1,35 @@
+---
+paths:
+  - app/api/applications/**
+  - hooks/use-application*.ts
+  - hooks/use-create-application.ts
+  - hooks/use-delete-application.ts
+  - hooks/use-move-application-to-status.ts
+  - hooks/use-reactivate-application.ts
+  - hooks/use-extract-application.ts
+  - hooks/use-generate-hr-questions.ts
+  - lib/applications.ts
+  - lib/application-form.ts
+  - lib/application-extraction.ts
+  - lib/api-types.ts
+  - lib/api.ts
+  - lib/api-response.ts
+  - lib/validation.ts
+  - lib/cache-updates.ts
+  - lib/sync-application-caches.ts
+  - lib/board-mutations.ts
+  - lib/query-keys.ts
+  - lib/hr-interview-questions.ts
+  - lib/hr-questions-service.ts
+  - lib/ai/**
+---
+
+- ApplicationListItemDTO is the lightweight representation for board/list views.
+- Full ApplicationDTO is used for application details.
+- Heavy fields must not be added to the list endpoint unless explicitly required.
+- PATCH concurrency uses expectedUpdatedAt.
+- Preserve existing 409 conflict/refetch recovery.
+- TanStack Query owns server state.
+- Preserve existing query keys and cache synchronization unless the task explicitly changes them.
+- HR_CALL vacancy-specific AI questions are generated through a separate follow-up request.
+- Keep API, validation, hooks, cache handling, and UI responsibilities separated.

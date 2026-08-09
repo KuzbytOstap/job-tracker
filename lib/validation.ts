@@ -53,6 +53,12 @@ function optionalSourceText(maxLength: number, maxLengthMessage: string) {
     });
 }
 
+const sourceUrlSchema = z
+  .string()
+  .trim()
+  .min(1, "source URL is required")
+  .refine(isHttpUrl, { message: "each source URL must be a valid http or https URL" });
+
 const linkSchema = z
   .string()
   .optional()
@@ -99,6 +105,7 @@ export const updateApplicationSchema = z
     platform: platformSchema.optional(),
     status: statusSchema.optional(),
     hrCallTranscript: optionalSourceText(50_000, "HR call transcript is too long"),
+    sourceUrls: z.array(sourceUrlSchema).optional(),
     // Optimistic-concurrency token (not a stored column): the `updatedAt` the
     // client last saw. Stripped from the write and used only to guard against
     // stale updates.

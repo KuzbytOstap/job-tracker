@@ -46,6 +46,8 @@ export function DeleteApplicationDialog({ application, onDeleted }: DeleteApplic
         description={`This permanently deletes ${application.company} — ${application.position}. This can't be undone.`}
         confirmLabel="Delete"
         destructive
+        visualVariant="gameHub"
+        intent="destructive"
         pending={mutation.isPending}
         onConfirm={handleConfirm}
       />

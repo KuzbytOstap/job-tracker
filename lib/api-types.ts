@@ -89,6 +89,7 @@ export type CreateApplicationPayload = {
 export type UpdateApplicationPayload = Partial<CreateApplicationPayload> & {
   status?: Status;
   hrCallTranscript?: string | null;
+  sourceUrls?: string[];
   // Optimistic-concurrency token: the `updatedAt` the client last saw. When
   // present, the server only applies the update if the stored row still
   // matches, otherwise it responds 409 Conflict.

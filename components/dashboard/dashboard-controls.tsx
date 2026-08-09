@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SORT_LABELS, SORT_OPTIONS } from "@/lib/labels";
+import { cn } from "@/lib/utils";
 import type { SortOption } from "@/lib/validation";
 
 type DashboardControlsProps = {
@@ -18,6 +19,7 @@ type DashboardControlsProps = {
   onSearchChange: (value: string) => void;
   sort: SortOption;
   onSortChange: (value: SortOption) => void;
+  visualVariant?: "default" | "gameHub";
 };
 
 export function DashboardControls({
@@ -25,7 +27,10 @@ export function DashboardControls({
   onSearchChange,
   sort,
   onSortChange,
+  visualVariant = "default",
 }: DashboardControlsProps) {
+  const isGameHub = visualVariant === "gameHub";
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative flex-1">
@@ -35,7 +40,7 @@ export function DashboardControls({
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search company or position"
           aria-label="Search applications"
-          className="pl-8"
+          className={cn("pl-8", isGameHub && "gh-list-control-input")}
         />
         {search.length > 0 && (
           <Button
@@ -51,7 +56,10 @@ export function DashboardControls({
         )}
       </div>
       <Select value={sort} onValueChange={(nextValue) => onSortChange(nextValue as SortOption)}>
-        <SelectTrigger className="w-full sm:w-44" aria-label="Sort applications">
+        <SelectTrigger
+          className={cn("w-full sm:w-44", isGameHub && "gh-list-control-input")}
+          aria-label="Sort applications"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

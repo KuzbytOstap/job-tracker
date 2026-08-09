@@ -35,8 +35,10 @@ export function TestTaskBranch({ application }: TestTaskBranchProps) {
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-amber-300/70 bg-amber-50/50 p-3 dark:border-amber-400/25 dark:bg-amber-400/5">
-      <p className="mb-2 text-xs font-medium text-amber-800 dark:text-amber-300">Test task branch</p>
+    <div className="rounded-lg border border-dashed border-amber-300/70 bg-amber-50/50 p-2.5 dark:border-amber-400/25 dark:bg-amber-400/5">
+      <p className="mb-2 text-[0.7rem] font-medium tracking-wide text-amber-800 uppercase dark:text-amber-300">
+        Test task branch
+      </p>
       {isInTestTask ? (
         <div className="flex flex-wrap gap-2">
           <Button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -98,11 +98,21 @@ export function ApplicationExtractionPanel({
   }
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border p-3">
+    <Collapsible open={open} onOpenChange={setOpen} className="gh-extraction-panel rounded-lg border p-3">
       <CollapsibleTrigger
-        className="flex min-h-9 w-full items-center justify-between gap-2 text-left text-sm font-medium"
+        className="flex min-h-9 w-full items-center justify-between gap-2 text-left text-sm font-medium sm:min-h-11"
       >
-        Fill from job posting
+        <span className="flex items-center gap-2.5">
+          <span className="gh-extraction-icon hidden size-7 shrink-0 items-center justify-center sm:flex">
+            <Sparkles className="size-4" aria-hidden="true" />
+          </span>
+          <span className="flex flex-col">
+            <span>Fill from job posting</span>
+            <span className="gh-extraction-subtitle hidden text-xs font-normal sm:block">
+              Optional — prefills the form below
+            </span>
+          </span>
+        </span>
         <ChevronDown
           aria-hidden
           className={cn(

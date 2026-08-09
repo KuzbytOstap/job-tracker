@@ -22,11 +22,13 @@ export function DraggableApplicationCard({ application, onSelect }: DraggableApp
     <div
       ref={setNodeRef}
       style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
-      className={cn("relative", isDragging && "z-10 opacity-40")}
+      data-dragging={isDragging ? "true" : undefined}
+      className={cn("kanban-drag-source relative", isDragging && "z-10 scale-[0.97] opacity-55")}
     >
       <ApplicationCard
         application={application}
         onSelect={onSelect}
+        visualVariant="gameHub"
         dragHandle={
           <ApplicationDragHandle
             company={application.company}

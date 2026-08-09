@@ -128,3 +128,678 @@
     @apply font-sans;
   }
 }
+
+[data-job-tracker-theme="game-hub"] {
+  --gh-bg: oklch(0.965 0.008 70);
+  --gh-bg-secondary: oklch(0.945 0.012 65);
+  --gh-surface: oklch(0.995 0.004 80);
+  --gh-surface-secondary: oklch(0.975 0.008 70);
+  --gh-surface-subtle: oklch(0.955 0.012 65);
+  --gh-border: oklch(0.89 0.012 65);
+  --gh-border-strong: oklch(0.82 0.016 60);
+  --gh-text: oklch(0.24 0.02 50);
+  --gh-text-secondary: oklch(0.42 0.02 50);
+  --gh-text-muted: oklch(0.55 0.02 55);
+  --gh-accent: oklch(0.62 0.17 45);
+  --gh-accent-secondary: oklch(0.58 0.11 30);
+  --gh-accent-soft: oklch(0.93 0.05 60);
+  --gh-warning: oklch(0.64 0.13 68);
+  --gh-shadow: 0 1px 2px oklch(0.24 0.02 50 / 0.06), 0 8px 20px -12px oklch(0.24 0.02 50 / 0.18);
+
+  --gh-lane-surface: oklch(0.975 0.006 68 / 0.55);
+  --gh-lane-surface-rich: oklch(0.96 0.02 55 / 0.6);
+  --gh-lane-border: oklch(0.89 0.012 65 / 0.65);
+  --gh-lane-border-rich: oklch(0.8 0.055 50 / 0.55);
+  --gh-lane-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4);
+  --gh-lane-drop-bg: oklch(0.93 0.06 60 / 0.5);
+  --gh-lane-drop-border: oklch(0.68 0.14 50);
+  --gh-lane-drop-shadow: inset 0 0 0 1px oklch(0.68 0.14 50 / 0.35), 0 0 0 4px oklch(0.93 0.08 55 / 0.35);
+  --gh-lane-source-surface: oklch(0.96 0.005 65 / 0.4);
+
+  --gh-card-surface: var(--gh-surface);
+  --gh-card-border: oklch(0.885 0.014 60);
+  --gh-card-shadow: 0 1px 2px oklch(0.3 0.03 45 / 0.07), 0 6px 14px -10px oklch(0.3 0.03 45 / 0.2);
+  --gh-card-shadow-hover: 0 2px 6px oklch(0.3 0.03 45 / 0.1), 0 16px 28px -16px oklch(0.3 0.03 45 / 0.32);
+  --gh-drag-elevation-shadow: 0 20px 44px -12px oklch(0.24 0.06 45 / 0.45), 0 4px 14px oklch(0.24 0.06 45 / 0.26);
+
+  --gh-status-applied: oklch(0.62 0.03 240);
+  --gh-status-hr-replied: oklch(0.63 0.1 230);
+  --gh-status-hr-call: oklch(0.6 0.13 275);
+  --gh-status-tech-interview: oklch(0.58 0.14 305);
+  --gh-status-test-task: oklch(0.68 0.13 75);
+  --gh-status-offer: oklch(0.63 0.15 150);
+  --gh-status-offer-glow: oklch(0.85 0.09 145 / 0.45);
+  --gh-status-rejected: oklch(0.58 0.15 25);
+  --gh-status-ignored: oklch(0.6 0.008 60);
+
+  --gh-core-glow: oklch(0.74 0.14 55 / 0.55);
+  --gh-core-highlight: oklch(0.97 0.05 85 / 0.9);
+  --gh-orbit-front: oklch(0.78 0.08 55 / 0.65);
+  --gh-orbit-rear: oklch(0.6 0.05 50 / 0.3);
+  --gh-node-early: oklch(0.68 0.09 60);
+  --gh-node-interview: oklch(0.68 0.15 48);
+  --gh-node-advanced: oklch(0.64 0.19 32);
+  --gh-milestone-flare: oklch(0.88 0.12 70);
+  --gh-ambient-shadow: oklch(0.2 0.02 50 / 0.28);
+
+  --gh-core-facet-front: oklch(0.82 0.1 68 / 0.95);
+  --gh-core-facet-front-dim: oklch(0.7 0.12 52 / 0.9);
+  --gh-core-facet-rear: oklch(0.4 0.07 40 / 0.9);
+  --gh-core-facet-rear-dim: oklch(0.32 0.05 35 / 0.78);
+  --gh-core-edge-highlight: oklch(0.96 0.04 82 / 0.95);
+  --gh-core-rear-glint: oklch(0.55 0.06 50 / 0.5);
+  --gh-core-energy-core: oklch(0.98 0.03 85);
+  --gh-ring-front-glow: oklch(0.78 0.1 55 / 0.55);
+  --gh-ring-mid: oklch(0.68 0.09 48 / 0.6);
+  --gh-particle: oklch(0.8 0.1 60 / 0.55);
+  --gh-hero-bloom: oklch(0.82 0.07 58 / 0.32);
+  --gh-hero-bloom-strong: oklch(0.88 0.09 62 / 0.5);
+  --gh-hero-falloff: oklch(0.3 0.02 50 / 0.14);
+  --gh-hero-reflected: oklch(0.85 0.06 55 / 0.16);
+
+  --gh-dock-surface: var(--gh-surface);
+  --gh-dock-border: var(--gh-border);
+  --gh-dock-selected: var(--gh-accent-soft);
+  --gh-dock-row-hover: oklch(0.94 0.02 60 / 0.55);
+  --gh-dock-badge-bg: var(--gh-accent-soft);
+  --gh-dock-badge-text: var(--gh-accent-secondary);
+  --gh-dock-panel-shadow: 0 4px 10px oklch(0.24 0.02 50 / 0.08), 0 20px 40px -20px oklch(0.24 0.02 50 / 0.28);
+
+  --gh-duration-instant: 110ms;
+  --gh-duration-fast: 180ms;
+  --gh-duration-standard: 220ms;
+  --gh-duration-deliberate: 280ms;
+  --gh-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --gh-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --gh-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane {
+  background: var(--gh-lane-surface);
+  border: 1px solid var(--gh-lane-border);
+  box-shadow: var(--gh-lane-shadow);
+  transition:
+    background var(--gh-duration-standard) var(--gh-ease-standard),
+    border-color var(--gh-duration-standard) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-standard) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-lane-tier="rich"] {
+  background: var(--gh-lane-surface-rich);
+  border-color: var(--gh-lane-border-rich);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-lane-tier="quiet"] {
+  background: var(--gh-lane-source-surface);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-drop-target="true"] {
+  background: var(--gh-lane-drop-bg);
+  border-color: var(--gh-lane-drop-border);
+  box-shadow: var(--gh-lane-drop-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane[data-drag-source="true"] {
+  background: var(--gh-lane-source-surface);
+  border-color: var(--gh-lane-border);
+  opacity: 0.85;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-content {
+  padding: 0 0.625rem 0.75rem;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-header {
+  color: var(--gh-text);
+  transition: background var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-header:hover {
+  background: oklch(1 0 0 / 0.5);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-count {
+  background: oklch(1 0 0 / 0.6);
+  color: var(--gh-text-secondary);
+  font-weight: 600;
+  transition: background var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-lane-header:hover .kanban-lane-count {
+  background: var(--gh-surface);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-date-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-date-group-count {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-date-group-heading {
+  margin-bottom: -0.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card {
+  background: var(--gh-card-surface);
+  border-color: var(--gh-card-border);
+  box-shadow: var(--gh-card-shadow);
+  border-left-width: 3px;
+  border-left-color: var(--gh-status-rail, var(--gh-card-border));
+  transition:
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard),
+    border-color var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card:hover {
+  box-shadow: var(--gh-card-shadow-hover), inset 2px 0 0 0 var(--gh-status-rail, transparent);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card:active {
+  box-shadow: 0 1px 1px oklch(0.3 0.03 45 / 0.08);
+  transition-duration: var(--gh-duration-instant);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card-content {
+  padding: 0.75rem 0.875rem;
+  gap: 0.5rem;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card-monogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: var(--gh-surface-subtle);
+  border: 1px solid var(--gh-border);
+  color: var(--gh-text-secondary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="APPLIED"] { --gh-status-rail: var(--gh-status-applied); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="HR_REPLIED"] { --gh-status-rail: var(--gh-status-hr-replied); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="HR_CALL"] { --gh-status-rail: var(--gh-status-hr-call); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="TECH_INTERVIEW"] { --gh-status-rail: var(--gh-status-tech-interview); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="TEST_TASK"] { --gh-status-rail: var(--gh-status-test-task); }
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="OFFER"] {
+  --gh-status-rail: var(--gh-status-offer);
+  box-shadow: var(--gh-card-shadow), 0 0 0 1px var(--gh-status-offer-glow);
+}
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="OFFER"]:hover {
+  box-shadow: var(--gh-card-shadow-hover), 0 0 0 1px var(--gh-status-offer-glow), inset 2px 0 0 0 var(--gh-status-rail);
+}
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="REJECTED"] {
+  --gh-status-rail: var(--gh-status-rejected);
+  background: oklch(0.97 0.012 30 / 0.7);
+}
+[data-job-tracker-theme="game-hub"] .kanban-card[data-status="IGNORED"] {
+  --gh-status-rail: var(--gh-status-ignored);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-drag-source {
+  transition:
+    opacity var(--gh-duration-fast) var(--gh-ease-standard),
+    transform var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-drag-overlay {
+  background: var(--gh-card-surface);
+  border-color: var(--gh-card-border);
+  box-shadow: var(--gh-drag-elevation-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-empty-state {
+  background: oklch(1 0 0 / 0.35);
+  border-color: var(--gh-border);
+  color: var(--gh-text-muted);
+  transition:
+    background var(--gh-duration-standard) var(--gh-ease-standard),
+    border-color var(--gh-duration-standard) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .kanban-skeleton {
+  background: var(--gh-lane-surface);
+  border: 1px solid var(--gh-lane-border);
+  box-shadow: none;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-hero {
+  transition: background-color var(--gh-duration-deliberate) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-hero-bloom {
+  opacity: 0.85;
+  transition: opacity var(--gh-duration-deliberate) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-hero:hover .gh-hero-bloom {
+  opacity: 1;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-core-glow {
+  filter: blur(18px);
+  transition: filter var(--gh-duration-deliberate) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-hero:hover .gh-core-glow {
+  filter: blur(18px) brightness(1.12);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-rail {
+  background: var(--gh-dock-surface);
+  border-left: 1px solid var(--gh-dock-border);
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-panel {
+  background: var(--gh-dock-surface);
+  border: 1px solid var(--gh-dock-border);
+  box-shadow: var(--gh-dock-panel-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-icon,
+[data-job-tracker-theme="game-hub"] .focus-dock-row {
+  transition:
+    background var(--gh-duration-fast) var(--gh-ease-standard),
+    color var(--gh-duration-fast) var(--gh-ease-standard),
+    transform var(--gh-duration-instant) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-icon:hover,
+[data-job-tracker-theme="game-hub"] .focus-dock-row:hover {
+  background: var(--gh-dock-row-hover);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-row:active {
+  transform: scale(0.99);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-icon[data-active="true"] {
+  background: var(--gh-dock-selected);
+  color: var(--gh-accent-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .focus-dock-badge {
+  background: var(--gh-dock-badge-bg);
+  color: var(--gh-dock-badge-text);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-form-surface {
+  border-radius: 1rem;
+  border: 1px solid var(--gh-border);
+  background: var(--gh-surface-secondary);
+  padding: 1.25rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-section-heading {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="field-label"] {
+  color: var(--gh-text-secondary);
+  font-weight: 500;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"] {
+  background: var(--gh-surface);
+  border-color: var(--gh-border);
+  color: var(--gh-text);
+  transition:
+    border-color var(--gh-duration-fast) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"]::placeholder,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"]::placeholder {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"]:hover,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"]:hover,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"]:hover {
+  border-color: var(--gh-border-strong);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"]:focus-visible,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"]:focus-visible,
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"]:focus-visible {
+  border-color: var(--gh-accent);
+  box-shadow: 0 0 0 3px oklch(0.62 0.17 45 / 0.16);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="input"][aria-invalid="true"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="textarea"][aria-invalid="true"],
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="select-trigger"][aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="checkbox"] {
+  border-color: var(--gh-border-strong);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-app-form [data-slot="checkbox"][data-checked] {
+  background: var(--gh-accent);
+  border-color: var(--gh-accent);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-panel {
+  border-color: var(--gh-border-strong);
+  background: var(--gh-accent-soft);
+  border-radius: 1rem;
+  padding: 1.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-icon {
+  background: var(--gh-surface);
+  color: var(--gh-accent-secondary);
+  border-radius: 0.625rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-subtitle {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-panel [data-slot="button"] {
+  background: var(--gh-accent);
+  color: oklch(0.99 0.01 85);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-extraction-panel [data-slot="button"]:hover {
+  background: var(--gh-accent-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-source-panel {
+  border-color: var(--gh-border);
+  background: var(--gh-surface-secondary);
+  border-radius: 1rem;
+  padding: 1.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-stage-header {
+  --gh-stage-accent: var(--gh-accent);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="APPLIED"] { --gh-stage-accent: var(--gh-status-applied); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="HR_REPLIED"] { --gh-stage-accent: var(--gh-status-hr-replied); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="HR_CALL"] { --gh-stage-accent: var(--gh-status-hr-call); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="TECH_INTERVIEW"] { --gh-stage-accent: var(--gh-status-tech-interview); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="TEST_TASK"] { --gh-stage-accent: var(--gh-status-test-task); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="OFFER"] { --gh-stage-accent: var(--gh-status-offer); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="REJECTED"] { --gh-stage-accent: var(--gh-status-rejected); }
+[data-job-tracker-theme="game-hub"] .gh-stage-header[data-status="IGNORED"] { --gh-stage-accent: var(--gh-status-ignored); }
+
+@media (min-width: 640px) {
+  [data-job-tracker-theme="game-hub"] .gh-stage-header {
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid var(--gh-border);
+    border-left: 3px solid var(--gh-stage-accent);
+    background: var(--gh-surface-secondary);
+    box-shadow: var(--gh-shadow);
+    padding: 1rem 1.5rem;
+  }
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input {
+  background: var(--gh-surface);
+  border-color: var(--gh-border);
+  color: var(--gh-text);
+  transition:
+    border-color var(--gh-duration-fast) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input::placeholder {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input:hover {
+  border-color: var(--gh-border-strong);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-control-input:focus-visible {
+  border-color: var(--gh-accent);
+  box-shadow: 0 0 0 3px oklch(0.62 0.17 45 / 0.16);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-date-heading {
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--gh-border);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-date-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gh-text-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-date-count {
+  color: var(--gh-text-muted);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-skeleton-card {
+  background: var(--gh-card-surface);
+  border-color: var(--gh-card-border);
+  box-shadow: var(--gh-card-shadow);
+  border-left-width: 3px;
+  border-left-color: var(--gh-border);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-skeleton-heading {
+  background: var(--gh-border);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-quiet-state {
+  border-style: solid;
+  border-color: var(--gh-border);
+  background: var(--gh-surface-secondary);
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-quiet-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: var(--gh-surface);
+  border: 1px solid var(--gh-border);
+  color: var(--gh-accent-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-error-state {
+  border-style: solid;
+  border-color: var(--gh-border);
+  background: var(--gh-surface-secondary);
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-list-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: oklch(0.94 0.03 30 / 0.6);
+  border: 1px solid oklch(0.75 0.08 30 / 0.5);
+  color: var(--destructive);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-bg {
+  background:
+    radial-gradient(60% 55% at 78% 28%, var(--gh-hero-bloom), transparent 70%),
+    radial-gradient(46% 42% at 80% 66%, var(--gh-hero-reflected), transparent 75%),
+    linear-gradient(155deg, var(--gh-bg) 0%, var(--gh-bg-secondary) 55%, var(--gh-bg) 100%),
+    radial-gradient(130% 95% at 50% 45%, transparent 55%, var(--gh-hero-falloff) 100%);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--gh-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gh-border) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity: 0.04;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-visual {
+  isolation: isolate;
+  animation: gh-signin-fade-in var(--gh-duration-deliberate) var(--gh-ease-entrance) both;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-core-glow {
+  filter: blur(20px);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gh-signin-orbit-drift 12s var(--gh-ease-standard) infinite;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, var(--gh-accent), var(--gh-accent-secondary));
+  color: oklch(0.99 0.01 85);
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-title {
+  color: var(--gh-text);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-description {
+  color: var(--gh-text-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-surface {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--gh-card-border);
+  background: var(--gh-surface);
+  box-shadow: var(--gh-card-shadow), inset 0 1px 0 oklch(1 0 0 / 0.35);
+  padding: 2rem 1.75rem;
+  animation: gh-signin-rise var(--gh-duration-deliberate) var(--gh-ease-entrance) both;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid oklch(0.75 0.08 30 / 0.5);
+  background: oklch(0.94 0.03 30 / 0.55);
+  color: var(--destructive);
+  padding: 0.625rem 0.75rem;
+  line-height: 1.4;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-error svg {
+  margin-top: 0.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-surface [data-slot="button"] {
+  height: 2.75rem;
+  font-weight: 600;
+  background: var(--gh-accent);
+  color: oklch(0.99 0.01 85);
+  box-shadow: var(--gh-shadow);
+  transition:
+    background var(--gh-duration-fast) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-surface [data-slot="button"]:hover {
+  background: var(--gh-accent-secondary);
+  box-shadow: var(--gh-card-shadow-hover);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-fade {
+  animation: gh-signin-fade-in var(--gh-duration-fast) var(--gh-ease-entrance) both;
+}
+
+@keyframes gh-signin-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gh-signin-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gh-signin-orbit-drift {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-job-tracker-theme="game-hub"] .kanban-card,
+  [data-job-tracker-theme="game-hub"] .kanban-lane,
+  [data-job-tracker-theme="game-hub"] .kanban-lane-header,
+  [data-job-tracker-theme="game-hub"] .kanban-lane-count,
+  [data-job-tracker-theme="game-hub"] .kanban-empty-state,
+  [data-job-tracker-theme="game-hub"] .kanban-drag-source,
+  [data-job-tracker-theme="game-hub"] .gh-list-control-input,
+  [data-job-tracker-theme="game-hub"] .gh-hero,
+  [data-job-tracker-theme="game-hub"] .gh-hero-bloom,
+  [data-job-tracker-theme="game-hub"] .gh-core-glow,
+  [data-job-tracker-theme="game-hub"] .focus-dock-icon,
+  [data-job-tracker-theme="game-hub"] .focus-dock-row {
+    transition: none;
+  }
+
+  [data-job-tracker-theme="game-hub"] .focus-dock-row:active {
+    transform: none;
+  }
+
+  [data-job-tracker-theme="game-hub"] .gh-signin-visual,
+  [data-job-tracker-theme="game-hub"] .gh-signin-surface,
+  [data-job-tracker-theme="game-hub"] .gh-signin-fade,
+  [data-job-tracker-theme="game-hub"] .gh-signin-orbit {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
