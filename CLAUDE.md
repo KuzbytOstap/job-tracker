@@ -1,59 +1,40 @@
-# Job Tracker development rules
+# Job Tracker
 
-- Work only inside the existing repository.
-- Do not create another Next.js project or a nested job-tracker directory.
-- Do not commit or push changes. The user handles Git manually.
-- Use npm, not pnpm, yarn, or bun.
-- Prisma Client must use @prisma/adapter-pg.
-- Prisma runtime queries use DATABASE_URL.
-- Prisma CLI migrations use DIRECT_URL through prisma.config.ts.
-- Use the installed shadcn/ui components instead of inventing duplicate UI primitives.
-- Use Motion for React from "motion/react" for animations.
-- Use the current shadcn/ui Field components with React Hook Form and Zod. Do not expect a legacy components/ui/form.tsx file.
-- Build mobile-first and verify the UI at 360px width and desktop sizes.
-- Respect prefers-reduced-motion.
+Production single-user Next.js + TypeScript application using PostgreSQL/Prisma and TanStack Query.
 
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+## Working defaults
 
-This project is indexed by GitNexus as **job-tracker** (1119 symbols, 3000 relationships, 84 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+- Make the smallest change that fully solves the requested task.
+- Work only inside this repository. Never create another Next.js project or nested job-tracker directory.
+- Use npm only.
+- The user handles Git manually. Never commit or push.
+- Do not add dependencies unless explicitly requested.
+- Do not add code comments unless explicitly requested.
+- Do not update documentation unless explicitly requested.
+- Do not refactor, rename, reformat, or clean up unrelated code.
+- Read only files required for the task.
+- When the prompt provides exact files, do not perform codebase discovery first.
+- Use MCP tools and subagents only when they materially reduce uncertainty; never invoke them by default.
+- Preserve existing production behavior and stored data unless the task explicitly changes them.
+- Stop when the requested scope is complete.
 
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+## Verification
 
-## Always Do
+- Do not run tests, typecheck, lint, build, Playwright, or other verification commands.
+- The user runs verification manually.
+- Return targeted verification commands instead.
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
-- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
+## UI defaults
 
-## Never Do
+- Reuse installed shadcn/ui primitives.
+- Use motion/react for JavaScript-driven animation.
+- Respect accessibility and prefers-reduced-motion.
+- Preserve existing mobile behavior unless the task explicitly includes mobile.
 
-- NEVER edit a function, class, or method without first running `impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
-- NEVER commit changes without running `detect_changes()` to check affected scope.
+## Final response
 
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/job-tracker/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/job-tracker/clusters` | All functional areas |
-| `gitnexus://repo/job-tracker/processes` | All execution flows |
-| `gitnexus://repo/job-tracker/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->
+Return only:
+- modified files;
+- concise implementation summary;
+- manual checks;
+- unresolved issues.
