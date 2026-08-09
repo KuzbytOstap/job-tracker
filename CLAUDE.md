@@ -3,6 +3,7 @@
 - Work only inside the existing repository.
 - Do not create another Next.js project or a nested job-tracker directory.
 - Do not commit or push changes. The user handles Git manually.
+- Do not add code comments under any circumstances unless the user explicitly asks for comments. This includes inline comments, block comments, JSDoc/TSDoc, TODO/FIXME notes, explanatory comments, and commented-out code. Prefer clear naming and self-explanatory code instead. Do not modify or remove existing comments unless required by the task.
 - Use npm, not pnpm, yarn, or bun.
 - Prisma Client must use @prisma/adapter-pg.
 - Prisma runtime queries use DATABASE_URL.

@@ -12,6 +12,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:backfill-owner": "tsx scripts/backfill-owner.ts",
     "db:studio": "prisma studio",
     "test": "vitest",
     "test:run": "vitest run",
