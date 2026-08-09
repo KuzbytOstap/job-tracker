@@ -1,4 +1,5 @@
 import type {
+  AiAccessStatusResponse,
   ApiErrorBody,
   ApplicationDTO,
   ApplicationsListResponse,
@@ -107,6 +108,14 @@ export function generateHrQuestions(id: string): Promise<ApplicationDTO> {
 
 export function getStats(): Promise<StatsResponse> {
   return request<StatsResponse>("/api/stats");
+}
+
+export function getAiAccessStatus(): Promise<AiAccessStatusResponse> {
+  return request<AiAccessStatusResponse>("/api/ai-access");
+}
+
+export function requestAiAccess(): Promise<AiAccessStatusResponse> {
+  return request<AiAccessStatusResponse>("/api/ai-access/requests", { method: "POST" });
 }
 
 export function extractApplicationFromPosting(

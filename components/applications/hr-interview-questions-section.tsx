@@ -1,11 +1,14 @@
 import { CopyButton } from "@/components/ui/copy-button";
-import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
+import { AiAccessNotice, type LockedAiAccessStatus } from "@/components/ai/ai-access-notice";
+import { hasVacancySpecificQuestions, type HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
+import { AiAccessStatus } from "@/app/generated/prisma/enums";
 
 type HrInterviewQuestionsSectionProps = {
   questions: HrInterviewQuestionSet | null;
+  aiAccessStatus: AiAccessStatus | undefined;
 };
 
-export function HrInterviewQuestionsSection({ questions }: HrInterviewQuestionsSectionProps) {
+export function HrInterviewQuestionsSection({ questions, aiAccessStatus }: HrInterviewQuestionsSectionProps) {
   if (!questions) {
     return null;
   }
@@ -14,6 +17,18 @@ export function HrInterviewQuestionsSection({ questions }: HrInterviewQuestionsS
   const vacancyQuestions = questions.questions.filter(
     (question) => question.category === "VACANCY_SPECIFIC",
   );
+
+  // Only the two-sided "waiting on AI" states get an explanatory notice —
+  // REJECTED hides AI entry points entirely (silently, like elsewhere), and
+  // APPROVED users who still lack vacancy-specific questions are covered by
+  // the automatic HR_CALL follow-up, not this notice.
+  const lockedAiAccessStatus: LockedAiAccessStatus | null =
+    !hasVacancySpecificQuestions(questions) &&
+    (aiAccessStatus === AiAccessStatus.NOT_REQUESTED ||
+      aiAccessStatus === AiAccessStatus.PENDING ||
+      aiAccessStatus === AiAccessStatus.SUSPENDED)
+      ? aiAccessStatus
+      : null;
 
   const allQuestionsText = [
     coreQuestions.length > 0 && "Common questions",
@@ -62,6 +77,8 @@ export function HrInterviewQuestionsSection({ questions }: HrInterviewQuestionsS
             </ol>
           </div>
         )}
+
+        {lockedAiAccessStatus && <AiAccessNotice status={lockedAiAccessStatus} />}
       </div>
     </div>
   );

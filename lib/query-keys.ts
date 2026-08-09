@@ -16,4 +16,5 @@ export const queryKeys = {
     detail: (id: string) => ["applications", "detail", id] as const,
   },
   stats: () => ["stats"] as const,
+  aiAccess: () => ["ai-access"] as const,
 };

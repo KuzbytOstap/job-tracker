@@ -14,7 +14,8 @@ import {
   readCachedUpdatedAt,
 } from "@/lib/sync-application-caches";
 import { useGenerateHrQuestions } from "@/hooks/use-generate-hr-questions";
-import { hasVacancySpecificQuestions } from "@/lib/hr-interview-questions";
+import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
+import { shouldAutoGenerateHrQuestions } from "@/lib/hr-interview-questions";
 import { Status } from "@/app/generated/prisma/enums";
 import type { ApplicationDTO, ApplicationListItemDTO, ApplicationsListResponse } from "@/lib/api-types";
 
@@ -38,6 +39,7 @@ type MoveContext = {
 export function useMoveApplicationToStatus() {
   const queryClient = useQueryClient();
   const generateHrQuestions = useGenerateHrQuestions();
+  const aiAccess = useAiAccessStatus();
 
   return useMutation<ApplicationDTO, unknown, MoveApplicationInput, MoveContext>({
     mutationFn: ({ applicationId, targetStatus }) =>
@@ -128,8 +130,11 @@ export function useMoveApplicationToStatus() {
       // request when the application just entered HR_CALL and only the core
       // questions are present so far.
       if (
-        updated.status === Status.HR_CALL &&
-        !hasVacancySpecificQuestions(updated.hrInterviewQuestions)
+        shouldAutoGenerateHrQuestions({
+          status: updated.status,
+          hrInterviewQuestions: updated.hrInterviewQuestions,
+          aiAccessStatus: aiAccess.data?.status,
+        })
       ) {
         generateHrQuestions.mutate(updated.id);
       }

@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApplicationCreateForm } from "@/components/applications/application-create-form";
-import { createApplication, extractApplicationFromPosting } from "@/lib/api";
+import { createApplication, extractApplicationFromPosting, getAiAccessStatus } from "@/lib/api";
 import type { ApplicationDTO } from "@/lib/api-types";
 import type { ApplicationExtractionResponse } from "@/lib/application-extraction";
 import { Status } from "@/app/generated/prisma/enums";
@@ -21,11 +21,14 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/api", () => ({
   createApplication: vi.fn(),
   extractApplicationFromPosting: vi.fn(),
+  getAiAccessStatus: vi.fn(),
+  requestAiAccess: vi.fn(),
   ApiError: class ApiError extends Error {},
 }));
 
 const createApplicationMock = vi.mocked(createApplication);
 const extractApplicationFromPostingMock = vi.mocked(extractApplicationFromPosting);
+const getAiAccessStatusMock = vi.mocked(getAiAccessStatus);
 
 function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDTO {
   return {
@@ -103,6 +106,8 @@ function fakeExtractionResponse(
 beforeEach(() => {
   createApplicationMock.mockReset();
   extractApplicationFromPostingMock.mockReset();
+  getAiAccessStatusMock.mockReset();
+  getAiAccessStatusMock.mockResolvedValue({ status: "APPROVED" });
 });
 
 afterEach(() => {
@@ -431,5 +436,45 @@ describe("ApplicationCreateForm AI-assisted extraction", () => {
 
     expect(onCancel).not.toHaveBeenCalled();
     expect(screen.getByText("Discard unsaved changes?")).toBeInTheDocument();
+  });
+});
+
+describe("ApplicationCreateForm AI access gating", () => {
+  it("shows a locked notice with a Request AI access action for NOT_REQUESTED and blocks Analyze", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "NOT_REQUESTED" });
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+
+    await waitFor(() => expect(screen.getByText("AI features are locked")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Request AI access" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+    expect(extractApplicationFromPostingMock).not.toHaveBeenCalled();
+  });
+
+  it("shows a pending notice for PENDING and blocks Analyze", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "PENDING" });
+    renderForm();
+
+    await waitFor(() => expect(screen.getByText("AI access request pending")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a suspended notice for SUSPENDED and blocks Analyze", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "SUSPENDED" });
+    renderForm();
+
+    await waitFor(() => expect(screen.getByText("AI access is suspended")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+  });
+
+  it("hides the entire panel for REJECTED", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "REJECTED" });
+    renderForm();
+
+    await waitFor(() => expect(screen.queryByText("Fill from job posting")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Company")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import type { JobApplication, StatusChange, Platform, Status } from "@/app/generated/prisma/client";
+import type { AiAccessStatus, JobApplication, StatusChange, Platform, Status } from "@/app/generated/prisma/client";
 import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 type WithStringDates<T, K extends keyof T> = Omit<T, K> & { [P in K]: string };
@@ -65,6 +65,10 @@ export type StatsResponse = {
     interviews: FunnelStage;
     offers: FunnelStage;
   };
+};
+
+export type AiAccessStatusResponse = {
+  status: AiAccessStatus;
 };
 
 export type ApiErrorBody = {

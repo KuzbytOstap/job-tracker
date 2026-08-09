@@ -9,9 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useExtractApplication } from "@/hooks/use-extract-application";
+import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
+import { AiAccessNotice } from "@/components/ai/ai-access-notice";
 import { inferPlatformFromLink } from "@/lib/platform-inference";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { AiAccessStatus } from "@/app/generated/prisma/enums";
 import type { ApplicationFormValues } from "@/lib/application-form";
 import type { ApplicationExtractionResult } from "@/lib/application-extraction";
 
@@ -36,6 +39,8 @@ export function ApplicationExtractionPanel({
   const [lastResultProvider, setLastResultProvider] = useState<"mock" | "openai" | null>(null);
   const form = useFormContext<ApplicationFormValues>();
   const mutation = useExtractApplication();
+  const aiAccess = useAiAccessStatus();
+  const aiAccessStatus = aiAccess.data?.status;
 
   function applyTextField(field: TextFieldName, value: string | null, counts: { filled: number; kept: number }) {
     if (value === null) return;
@@ -74,6 +79,7 @@ export function ApplicationExtractionPanel({
   function handleAnalyze() {
     if (mutation.isPending) return;
     if (jobPostingText.trim().length === 0) return;
+    if (aiAccessStatus !== AiAccessStatus.APPROVED) return;
 
     mutation.mutate(
       {
@@ -95,6 +101,10 @@ export function ApplicationExtractionPanel({
         },
       },
     );
+  }
+
+  if (aiAccessStatus === AiAccessStatus.REJECTED) {
+    return null;
   }
 
   return (
@@ -158,24 +168,28 @@ export function ApplicationExtractionPanel({
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-9"
-              disabled={mutation.isPending || jobPostingText.trim().length === 0}
-              aria-busy={mutation.isPending}
-              onClick={handleAnalyze}
-            >
-              {mutation.isPending ? "Analyzing…" : "Analyze posting"}
-            </Button>
-            {mutation.isSuccess && lastResultProvider === "mock" && (
-              <p className="text-xs text-muted-foreground">Mock result — no external AI request was made.</p>
-            )}
-            {mutation.isSuccess && lastResultProvider === "openai" && (
-              <p className="text-xs text-muted-foreground">Posting analyzed.</p>
-            )}
-          </div>
+          {aiAccessStatus != null && aiAccessStatus !== AiAccessStatus.APPROVED ? (
+            <AiAccessNotice status={aiAccessStatus} />
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-9"
+                disabled={mutation.isPending || jobPostingText.trim().length === 0 || aiAccessStatus == null}
+                aria-busy={mutation.isPending}
+                onClick={handleAnalyze}
+              >
+                {mutation.isPending ? "Analyzing…" : "Analyze posting"}
+              </Button>
+              {mutation.isSuccess && lastResultProvider === "mock" && (
+                <p className="text-xs text-muted-foreground">Mock result — no external AI request was made.</p>
+              )}
+              {mutation.isSuccess && lastResultProvider === "openai" && (
+                <p className="text-xs text-muted-foreground">Posting analyzed.</p>
+              )}
+            </div>
+          )}
         </div>
       </CollapsibleContent>
     </Collapsible>

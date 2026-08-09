@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AiAccessStatus, Status } from "@/app/generated/prisma/enums";
 
 // Deterministic core questions asked for every HR Call. Order is
 // intentional: it's the order shown to the user and the order the AI is
@@ -94,6 +95,27 @@ export function buildHrInterviewQuestionSet(additionalQuestionTexts: readonly st
 
 export function hasVacancySpecificQuestions(set: HrInterviewQuestionSet | null): boolean {
   return set !== null && set.questions.some((question) => question.category === "VACANCY_SPECIFIC");
+}
+
+/**
+ * Client-side gate for the automatic vacancy-specific HR question follow-up
+ * fired right after a status change into HR_CALL. This is purely an
+ * optimization to skip a call the server would reject anyway — the server's
+ * own access check (`requireAiAccessApproved` / `runGatedAiCall`) stays the
+ * source of truth. `aiAccessStatus` is treated as "ok to attempt" when it
+ * hasn't loaded yet (`null`/`undefined`) so a slow status fetch never
+ * silently drops the enhancement for an already-approved user.
+ */
+export function shouldAutoGenerateHrQuestions(params: {
+  status: Status;
+  hrInterviewQuestions: HrInterviewQuestionSet | null;
+  aiAccessStatus: AiAccessStatus | null | undefined;
+}): boolean {
+  return (
+    params.status === Status.HR_CALL &&
+    !hasVacancySpecificQuestions(params.hrInterviewQuestions) &&
+    (params.aiAccessStatus == null || params.aiAccessStatus === AiAccessStatus.APPROVED)
+  );
 }
 
 export function parseStoredHrInterviewQuestionSet(value: unknown): HrInterviewQuestionSet | null {
