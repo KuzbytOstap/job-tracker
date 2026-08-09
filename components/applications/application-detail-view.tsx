@@ -20,8 +20,11 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
 import { useReactivateApplication } from "@/hooks/use-reactivate-application";
+import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
+import { useAiUsageStatus } from "@/hooks/use-ai-usage-status";
 import { STATUS_LABELS } from "@/lib/labels";
 import { AUTO_IGNORE_AFTER_DAYS } from "@/lib/status";
+import { AiAccessStatus } from "@/app/generated/prisma/enums";
 import type { ApplicationDTO } from "@/lib/api-types";
 import type { ReactNode } from "react";
 
@@ -78,6 +81,8 @@ function companyMonogram(company: string) {
 
 export function ApplicationDetailView({ application, onEdit, onDeleted }: ApplicationDetailViewProps) {
   const reactivateMutation = useReactivateApplication();
+  const aiAccess = useAiAccessStatus();
+  const aiUsage = useAiUsageStatus(aiAccess.data?.status === AiAccessStatus.APPROVED);
 
   function handleReactivate() {
     reactivateMutation.mutate(application.id, {
@@ -226,7 +231,11 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
       />
 
       {application.hrInterviewQuestions && (
-        <HrInterviewQuestionsSection questions={application.hrInterviewQuestions} />
+        <HrInterviewQuestionsSection
+          questions={application.hrInterviewQuestions}
+          aiAccessStatus={aiAccess.data?.status}
+          aiUsage={aiUsage.data}
+        />
       )}
 
       <div>

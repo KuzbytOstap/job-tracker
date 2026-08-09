@@ -22,6 +22,7 @@ vi.mock("@/lib/hr-questions-service", () => ({
     generateVacancySpecificHrQuestionsMock(...args),
 }));
 
+import { AiAccessError } from "@/lib/ai/access-control";
 import { POST } from "./route";
 
 const params = Promise.resolve({ id: "app_1" });
@@ -118,6 +119,22 @@ describe("POST /api/applications/[id]/hr-questions", () => {
         (q: { category: string }) => q.category === "VACANCY_SPECIFIC",
       ),
     ).toBe(true);
+  });
+
+  it("maps a propagated AiAccessError to a structured response instead of a generic 500, without reading the application", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    generateVacancySpecificHrQuestionsMock.mockRejectedValue(
+      new AiAccessError("HR_LIMIT_REACHED", "Daily HR question generation limit reached."),
+    );
+
+    const response = await POST(postRequest(), { params });
+
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({
+      error: "Daily HR question generation limit reached.",
+      details: { code: "HR_LIMIT_REACHED" },
+    });
+    expect(findFirstMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the application no longer exists", async () => {

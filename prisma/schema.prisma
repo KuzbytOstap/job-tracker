@@ -4,8 +4,9 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../app/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -32,32 +33,66 @@ enum Status {
   IGNORED
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AiAccessStatus {
+  NOT_REQUESTED
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum AiFeature {
+  VACANCY_GENERATION
+  HR_GENERATION
+}
+
+enum AiRequestType {
+  AI_ACCESS
+  VACANCY_LIMIT
+  HR_LIMIT
+  TOKEN_LIMIT
+}
+
+enum AiRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model JobApplication {
-  id                     String    @id @default(cuid())
-  company                String
-  position               String
-  platform               Platform
-  link                   String?
-  status                 Status    @default(APPLIED)
-  hasTestTask            Boolean   @default(false)
-  testTaskDone           Boolean   @default(false)
-  salaryExpectation      String?
-  notes                  String?
-  jobPostingText         String?
-  sourceUrls             String[]  @default([])
-  coverLetterText        String?
-  hrCallTranscript       String?
-  hrInterviewQuestions   Json?
-  hrQuestionsGeneratedAt DateTime?
-  appliedAt              DateTime  @default(now())
-  lastActivityAt         DateTime  @default(now())
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  company                 String
+  position                String
+  platform                Platform
+  link                    String?
+  status                  Status    @default(APPLIED)
+  hasTestTask             Boolean   @default(false)
+  testTaskDone            Boolean   @default(false)
+  salaryExpectation       String?
+  notes                   String?
+  jobPostingText          String?
+  sourceUrls              String[]  @default([])
+  coverLetterText         String?
+  hrCallTranscript        String?
+  hrInterviewQuestions    Json?
+  hrQuestionsGeneratedAt  DateTime?
+  hrEnhancementClaimedAt  DateTime?
+  hrEnhancementClaimToken String?
+  appliedAt               DateTime  @default(now())
+  lastActivityAt          DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   statusChanges StatusChange[]
+  aiUsageEvents AiUsageEvent[]
 
   @@index([status])
   @@index([appliedAt])
@@ -67,14 +102,99 @@ model JobApplication {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
+  id             String         @id @default(cuid())
+  name           String?
+  email          String?        @unique
+  emailVerified  DateTime?
+  image          String?
+  role           Role           @default(USER)
+  aiAccessStatus AiAccessStatus @default(NOT_REQUESTED)
 
-  accounts        Account[]
-  jobApplications JobApplication[]
+  accounts          Account[]
+  jobApplications   JobApplication[]
+  aiUserLimit       AiUserLimit?
+  aiUsageDaily      AiUsageDaily[]
+  aiUsageEvents     AiUsageEvent[]
+  aiAccessRequests  AiAccessRequest[] @relation("AiAccessRequestUser")
+  aiDecidedRequests AiAccessRequest[] @relation("AiAccessRequestDecider")
+}
+
+model AiGlobalLimits {
+  id                     Int      @id @default(1)
+  vacancyGenerationLimit Int      @default(10)
+  hrGenerationLimit      Int      @default(10)
+  tokenLimit             Int      @default(20000)
+  updatedAt              DateTime @updatedAt
+}
+
+model AiUserLimit {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vacancyGenerationLimit Int?
+  hrGenerationLimit      Int?
+  tokenLimit             Int?
+  updatedAt              DateTime @updatedAt
+}
+
+model AiUsageDaily {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                   DateTime @db.Date
+  vacancyGenerationCount Int      @default(0)
+  hrGenerationCount      Int      @default(0)
+  tokenCount             Int      @default(0)
+  vacancyGenerationBonus Int      @default(0)
+  hrGenerationBonus      Int      @default(0)
+  tokenBonus             Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
+model AiUsageEvent {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String?
+  application   JobApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  feature       AiFeature
+  model         String
+  inputTokens   Int
+  outputTokens  Int
+  totalTokens   Int
+  createdAt     DateTime        @default(now())
+
+  @@index([userId])
+  @@index([userId, feature])
+  @@index([createdAt])
+  @@index([applicationId])
+}
+
+model AiAccessRequest {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation("AiAccessRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  type            AiRequestType
+  status          AiRequestStatus @default(PENDING)
+  quotaDate       DateTime?       @db.Date
+  message         String?
+  decidedAt       DateTime?
+  decidedByUserId String?
+  decidedByUser   User?           @relation("AiAccessRequestDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  decisionNote    String?
+  grantedAmount   Int?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([userId, type], where: { status: "PENDING", type: "AI_ACCESS" }, map: "AiAccessRequest_userId_type_key")
+  @@unique([userId, type, quotaDate], where: { status: "PENDING" }, map: "AiAccessRequest_userId_type_quotaDate_key")
+  @@index([userId])
+  @@index([status])
+  @@index([userId, type, status])
 }
 
 model Account {

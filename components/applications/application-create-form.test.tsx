@@ -5,8 +5,15 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApplicationCreateForm } from "@/components/applications/application-create-form";
-import { createApplication, extractApplicationFromPosting } from "@/lib/api";
-import type { ApplicationDTO } from "@/lib/api-types";
+import {
+  ApiError,
+  createApplication,
+  extractApplicationFromPosting,
+  getAiAccessStatus,
+  getAiUsageStatus,
+  requestMoreAiUsage,
+} from "@/lib/api";
+import type { ApplicationDTO, AiUsageStatusResponse } from "@/lib/api-types";
 import type { ApplicationExtractionResponse } from "@/lib/application-extraction";
 import { Status } from "@/app/generated/prisma/enums";
 
@@ -21,11 +28,36 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/api", () => ({
   createApplication: vi.fn(),
   extractApplicationFromPosting: vi.fn(),
-  ApiError: class ApiError extends Error {},
+  getAiAccessStatus: vi.fn(),
+  requestAiAccess: vi.fn(),
+  getAiUsageStatus: vi.fn(),
+  requestMoreAiUsage: vi.fn(),
+  ApiError: class ApiError extends Error {
+    readonly status: number;
+    readonly details?: unknown;
+    constructor(status: number, message: string, details?: unknown) {
+      super(message);
+      this.status = status;
+      this.details = details;
+    }
+  },
 }));
 
 const createApplicationMock = vi.mocked(createApplication);
 const extractApplicationFromPostingMock = vi.mocked(extractApplicationFromPosting);
+const getAiAccessStatusMock = vi.mocked(getAiAccessStatus);
+const getAiUsageStatusMock = vi.mocked(getAiUsageStatus);
+const requestMoreAiUsageMock = vi.mocked(requestMoreAiUsage);
+
+function fakeUsageStatus(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusResponse {
+  return {
+    resetAt: "2026-08-10T00:00:00.000Z",
+    vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
+    ...overrides,
+  };
+}
 
 function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDTO {
   return {
@@ -103,6 +135,11 @@ function fakeExtractionResponse(
 beforeEach(() => {
   createApplicationMock.mockReset();
   extractApplicationFromPostingMock.mockReset();
+  getAiAccessStatusMock.mockReset();
+  getAiAccessStatusMock.mockResolvedValue({ status: "APPROVED" });
+  getAiUsageStatusMock.mockReset();
+  getAiUsageStatusMock.mockResolvedValue(fakeUsageStatus());
+  requestMoreAiUsageMock.mockReset();
 });
 
 afterEach(() => {
@@ -431,5 +468,113 @@ describe("ApplicationCreateForm AI-assisted extraction", () => {
 
     expect(onCancel).not.toHaveBeenCalled();
     expect(screen.getByText("Discard unsaved changes?")).toBeInTheDocument();
+  });
+});
+
+describe("ApplicationCreateForm AI access gating", () => {
+  it("shows a locked notice with a Request AI access action for NOT_REQUESTED and blocks Analyze", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "NOT_REQUESTED" });
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+
+    await waitFor(() => expect(screen.getByText("AI features are locked")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Request AI access" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+    expect(extractApplicationFromPostingMock).not.toHaveBeenCalled();
+  });
+
+  it("shows a pending notice for PENDING and blocks Analyze", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "PENDING" });
+    renderForm();
+
+    await waitFor(() => expect(screen.getByText("AI access request pending")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a suspended notice for SUSPENDED and blocks Analyze", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "SUSPENDED" });
+    renderForm();
+
+    await waitFor(() => expect(screen.getByText("AI access is suspended")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+  });
+
+  it("hides the entire panel for REJECTED", async () => {
+    getAiAccessStatusMock.mockResolvedValue({ status: "REJECTED" });
+    renderForm();
+
+    await waitFor(() => expect(screen.queryByText("Fill from job posting")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Company")).toBeInTheDocument();
+  });
+});
+
+describe("ApplicationCreateForm AI quota gating", () => {
+  it("shows the vacancy quota notice with usage/limit/reset and blocks Analyze when the vacancy limit is exhausted", async () => {
+    getAiUsageStatusMock.mockResolvedValue(
+      fakeUsageStatus({ vacancy: { used: 10, limit: 10, exhausted: true, pendingRequest: false } }),
+    );
+    renderForm();
+
+    await waitFor(() => expect(screen.getByText("Daily vacancy analysis limit reached")).toBeInTheDocument());
+    expect(screen.getByText(/Used 10 \/ 10 today/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+    expect(extractApplicationFromPostingMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the token quota notice when only the shared token budget is exhausted", async () => {
+    getAiUsageStatusMock.mockResolvedValue(
+      fakeUsageStatus({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } }),
+    );
+    renderForm();
+
+    await waitFor(() => expect(screen.getByText("Daily AI token limit reached")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /analyze posting/i })).not.toBeInTheDocument();
+  });
+
+  it("does not block Analyze when only the (unrelated) HR limit is exhausted", async () => {
+    getAiUsageStatusMock.mockResolvedValue(
+      fakeUsageStatus({ hr: { used: 10, limit: 10, exhausted: true, pendingRequest: false } }),
+    );
+    renderForm();
+
+    await waitFor(() => expect(getAiUsageStatusMock).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: /analyze posting/i })).toBeInTheDocument();
+    expect(screen.queryByText(/limit reached/i)).not.toBeInTheDocument();
+  });
+
+  it("requests more usage and shows the pending state, preventing a duplicate submission", async () => {
+    getAiUsageStatusMock.mockResolvedValue(
+      fakeUsageStatus({ vacancy: { used: 10, limit: 10, exhausted: true, pendingRequest: false } }),
+    );
+    requestMoreAiUsageMock.mockResolvedValue({ status: "PENDING" });
+    const user = userEvent.setup();
+    renderForm();
+
+    const requestButton = await screen.findByRole("button", { name: "Request more usage" });
+    await user.click(requestButton);
+
+    await waitFor(() => expect(requestMoreAiUsageMock).toHaveBeenCalledWith("VACANCY_LIMIT"));
+    await waitFor(() =>
+      expect(screen.getByText("More usage requested — awaiting admin approval.")).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("button", { name: "Request more usage" })).not.toBeInTheDocument();
+  });
+
+  it("shows the specific exhausted reason instead of a generic error when Analyze is rejected for quota", async () => {
+    extractApplicationFromPostingMock.mockRejectedValue(
+      new ApiError(429, "Daily vacancy generation limit reached.", { code: "VACANCY_LIMIT_REACHED" }),
+    );
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+    await user.click(screen.getByRole("button", { name: /analyze posting/i }));
+
+    await waitFor(() => expect(screen.getByText("Daily vacancy analysis limit reached")).toBeInTheDocument());
+    expect(screen.queryByText("Daily vacancy generation limit reached.")).not.toBeInTheDocument();
+    expect(getAiUsageStatusMock).toHaveBeenCalled();
   });
 });

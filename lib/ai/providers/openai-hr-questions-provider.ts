@@ -10,6 +10,7 @@ import {
   type HrQuestionsProvider,
 } from "@/lib/ai/hr-questions-provider";
 import { HR_CORE_QUESTIONS } from "@/lib/hr-interview-questions";
+import type { AiUsageReport } from "@/lib/ai/token-usage";
 
 // Pinned deliberately, same snapshot as vacancy extraction: switching models
 // must be a conscious code change, not an environment-variable typo.
@@ -80,6 +81,32 @@ function buildInput(input: HrQuestionsGenerationInput): string {
   return parts.join("\n");
 }
 
+// Single source of truth for the request shape (including truncation), used
+// both to count input tokens ahead of quota reservation and to actually
+// generate — so the count is always for the exact request that gets sent.
+function buildResponseParams(input: HrQuestionsGenerationInput) {
+  const truncatedInput: HrQuestionsGenerationInput = {
+    ...input,
+    notes: truncateOrNull(input.notes, 4_000),
+    jobPostingText: truncateOrNull(input.jobPostingText, 20_000),
+    coverLetterText: truncateOrNull(input.coverLetterText, 8_000),
+  };
+
+  return {
+    model: OPENAI_HR_QUESTIONS_MODEL,
+    instructions: HR_QUESTIONS_INSTRUCTIONS,
+    input: buildInput(truncatedInput),
+    store: false,
+    tools: [],
+    max_output_tokens: MAX_OUTPUT_TOKENS,
+    text: {
+      format: zodTextFormat(openAiHrQuestionsWireSchema, RESPONSE_FORMAT_NAME),
+      verbosity: "low" as const,
+    },
+    reasoning: { effort: "minimal" as const },
+  };
+}
+
 function mapOpenAIError(error: unknown): never {
   if (error instanceof HrQuestionsProviderError) {
     throw error;
@@ -120,33 +147,27 @@ function mapOpenAIError(error: unknown): never {
 
 export class OpenAIHrQuestionsProvider implements HrQuestionsProvider {
   readonly name = "openai";
+  readonly maxOutputTokens = MAX_OUTPUT_TOKENS;
 
-  async generateAdditionalQuestions(
-    input: HrQuestionsGenerationInput,
-  ): Promise<HrQuestionsGenerationResult> {
-    const truncatedInput: HrQuestionsGenerationInput = {
-      ...input,
-      notes: truncateOrNull(input.notes, 4_000),
-      jobPostingText: truncateOrNull(input.jobPostingText, 20_000),
-      coverLetterText: truncateOrNull(input.coverLetterText, 8_000),
-    };
-
+  async countInputTokens(input: HrQuestionsGenerationInput): Promise<number> {
     let response;
     try {
       const client = getOpenAIClient();
-      response = await client.responses.parse({
-        model: OPENAI_HR_QUESTIONS_MODEL,
-        instructions: HR_QUESTIONS_INSTRUCTIONS,
-        input: buildInput(truncatedInput),
-        store: false,
-        tools: [],
-        max_output_tokens: MAX_OUTPUT_TOKENS,
-        text: {
-          format: zodTextFormat(openAiHrQuestionsWireSchema, RESPONSE_FORMAT_NAME),
-          verbosity: "low",
-        },
-        reasoning: { effort: "minimal" },
-      });
+      response = await client.responses.inputTokens.count(buildResponseParams(input));
+    } catch (error) {
+      mapOpenAIError(error);
+    }
+    return response.input_tokens;
+  }
+
+  async generateAdditionalQuestions(
+    input: HrQuestionsGenerationInput,
+    options?: { onUsage?: (usage: AiUsageReport) => void },
+  ): Promise<HrQuestionsGenerationResult> {
+    let response;
+    try {
+      const client = getOpenAIClient();
+      response = await client.responses.parse(buildResponseParams(input));
     } catch (error) {
       mapOpenAIError(error);
     }
@@ -164,6 +185,13 @@ export class OpenAIHrQuestionsProvider implements HrQuestionsProvider {
     if (!validated.success) {
       throw new HrQuestionsProviderError("Couldn't generate HR questions.");
     }
+
+    options?.onUsage?.({
+      model: OPENAI_HR_QUESTIONS_MODEL,
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+      totalTokens: response.usage?.total_tokens ?? 0,
+    });
 
     return validated.data;
   }

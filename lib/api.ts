@@ -1,9 +1,19 @@
+import type { AiRequestStatus, AiRequestType } from "@/app/generated/prisma/enums";
 import type {
+  AdminAiRequestDTO,
+  AdminAiRequestsListResponse,
+  AdminUserOverrides,
+  AdminUsersListResponse,
+  AiAccessStatusResponse,
+  AiGlobalLimitsDTO,
+  AiUsageRequestType,
+  AiUsageStatusResponse,
   ApiErrorBody,
   ApplicationDTO,
   ApplicationsListResponse,
   CreateApplicationPayload,
   DeleteResponse,
+  RequestMoreAiUsageResponse,
   StatsResponse,
   UpdateApplicationPayload,
 } from "@/lib/api-types";
@@ -109,11 +119,107 @@ export function getStats(): Promise<StatsResponse> {
   return request<StatsResponse>("/api/stats");
 }
 
+export function getAiAccessStatus(): Promise<AiAccessStatusResponse> {
+  return request<AiAccessStatusResponse>("/api/ai-access");
+}
+
+export function requestAiAccess(): Promise<AiAccessStatusResponse> {
+  return request<AiAccessStatusResponse>("/api/ai-access/requests", { method: "POST" });
+}
+
+export function getAiUsageStatus(): Promise<AiUsageStatusResponse> {
+  return request<AiUsageStatusResponse>("/api/ai-usage");
+}
+
+export function requestMoreAiUsage(type: AiUsageRequestType): Promise<RequestMoreAiUsageResponse> {
+  return request<RequestMoreAiUsageResponse>("/api/ai-usage/requests", {
+    method: "POST",
+    body: JSON.stringify({ type }),
+  });
+}
+
 export function extractApplicationFromPosting(
   input: ApplicationExtractionInput,
 ): Promise<ApplicationExtractionResponse> {
   return request<ApplicationExtractionResponse>("/api/applications/extract", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export type GetAdminAiRequestsParams = {
+  status?: AiRequestStatus;
+  type?: AiRequestType;
+};
+
+export function getAdminAiRequests(
+  params: GetAdminAiRequestsParams = {},
+): Promise<AdminAiRequestsListResponse> {
+  const searchParams = new URLSearchParams();
+  if (params.status) searchParams.set("status", params.status);
+  if (params.type) searchParams.set("type", params.type);
+
+  const query = searchParams.toString();
+  return request<AdminAiRequestsListResponse>(`/api/admin/ai-requests${query ? `?${query}` : ""}`);
+}
+
+export type DecideAdminAiRequestPayload = {
+  decision: "APPROVED" | "REJECTED";
+  decisionNote?: string | null;
+  grantedAmount?: number | null;
+};
+
+export function decideAdminAiRequest(
+  id: string,
+  payload: DecideAdminAiRequestPayload,
+): Promise<AdminAiRequestDTO> {
+  return request<AdminAiRequestDTO>(`/api/admin/ai-requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminUsers(): Promise<AdminUsersListResponse> {
+  return request<AdminUsersListResponse>("/api/admin/users");
+}
+
+export function suspendAdminUserAiAccess(userId: string): Promise<AiAccessStatusResponse> {
+  return request<AiAccessStatusResponse>(`/api/admin/users/${userId}/suspend`, { method: "POST" });
+}
+
+export function restoreAdminUserAiAccess(userId: string): Promise<AiAccessStatusResponse> {
+  return request<AiAccessStatusResponse>(`/api/admin/users/${userId}/restore`, { method: "POST" });
+}
+
+export type SetAdminUserLimitsPayload = {
+  vacancyGenerationLimit?: number | null;
+  hrGenerationLimit?: number | null;
+  tokenLimit?: number | null;
+};
+
+export function setAdminUserLimits(
+  userId: string,
+  payload: SetAdminUserLimitsPayload,
+): Promise<AdminUserOverrides> {
+  return request<AdminUserOverrides>(`/api/admin/users/${userId}/limits`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminSettings(): Promise<AiGlobalLimitsDTO> {
+  return request<AiGlobalLimitsDTO>("/api/admin/settings");
+}
+
+export type UpdateAdminSettingsPayload = {
+  vacancyGenerationLimit?: number;
+  hrGenerationLimit?: number;
+  tokenLimit?: number;
+};
+
+export function updateAdminSettings(payload: UpdateAdminSettingsPayload): Promise<AiGlobalLimitsDTO> {
+  return request<AiGlobalLimitsDTO>("/api/admin/settings", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }

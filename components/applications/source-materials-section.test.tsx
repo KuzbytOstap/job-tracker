@@ -19,8 +19,8 @@ describe("SourceMaterialsSection", () => {
     render(<SourceMaterialsSection jobPostingText="Some posting" coverLetterText={null} />);
 
     expect(screen.getByText("Source materials")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /job posting/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /cover letter/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^job posting/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^cover letter/i })).not.toBeInTheDocument();
   });
 
   it("renders plain text safely rather than interpreting HTML or markdown", async () => {
@@ -28,7 +28,7 @@ describe("SourceMaterialsSection", () => {
     const htmlLikeText = "<script>alert('x')</script>\n**bold** _italic_";
     const { container } = render(<SourceMaterialsSection jobPostingText={htmlLikeText} coverLetterText={null} />);
 
-    await user.click(screen.getByRole("button", { name: /job posting/i }));
+    await user.click(screen.getByRole("button", { name: /^job posting/i }));
 
     const paragraph = container.querySelector("p");
     expect(paragraph?.textContent).toBe(htmlLikeText);
@@ -38,7 +38,7 @@ describe("SourceMaterialsSection", () => {
   it("shows both items when both source texts are stored", () => {
     render(<SourceMaterialsSection jobPostingText="Posting" coverLetterText="Cover letter" />);
 
-    expect(screen.getByRole("button", { name: /job posting/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /cover letter/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^job posting/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^cover letter/i })).toBeInTheDocument();
   });
 });

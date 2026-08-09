@@ -23,8 +23,20 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+const runGatedAiCallMock = vi.fn();
+const requireAiAccessApprovedMock = vi.fn();
+vi.mock("@/lib/ai/access-control", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ai/access-control")>("@/lib/ai/access-control");
+  return {
+    ...actual,
+    runGatedAiCall: (...args: unknown[]) => runGatedAiCallMock(...args),
+    requireAiAccessApproved: (...args: unknown[]) => requireAiAccessApprovedMock(...args),
+  };
+});
+
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 import type { ApplicationExtractionErrorKind } from "@/lib/ai/application-extraction-provider";
+import { AiAccessError } from "@/lib/ai/access-control";
 import { POST } from "./route";
 
 const AUTHORIZED: SessionCheck = {
@@ -45,6 +57,13 @@ beforeEach(() => {
   getProviderMock.mockReset();
   prismaFindManyMock.mockReset();
   prismaCreateMock.mockReset();
+  runGatedAiCallMock.mockReset();
+  runGatedAiCallMock.mockImplementation(
+    async ({ call }: { call: (reportUsage: (usage: unknown) => void) => Promise<unknown> }) =>
+      call(() => {}),
+  );
+  requireAiAccessApprovedMock.mockReset();
+  requireAiAccessApprovedMock.mockResolvedValue(undefined);
 });
 
 describe("POST /api/applications/extract", () => {
@@ -178,6 +197,7 @@ describe("POST /api/applications/extract", () => {
     checkSessionMock.mockResolvedValue(AUTHORIZED);
     getProviderMock.mockReturnValue({
       name: "openai",
+      maxOutputTokens: 1_000,
       extractApplication: vi.fn().mockResolvedValue({
         company: "Acme",
         position: "Engineer",
@@ -206,7 +226,11 @@ describe("POST /api/applications/extract", () => {
       salaryExpectation: null,
       notes: null,
     });
-    getProviderMock.mockReturnValue({ name: "openai", extractApplication: extractApplicationMock });
+    getProviderMock.mockReturnValue({
+      name: "openai",
+      maxOutputTokens: 1_000,
+      extractApplication: extractApplicationMock,
+    });
 
     const response = await POST(makeRequest({ jobPostingText: "Some posting" }));
 
@@ -218,11 +242,119 @@ describe("POST /api/applications/extract", () => {
     expect(prismaCreateMock).not.toHaveBeenCalled();
   });
 
+  it("reserves quota before calling a real provider, keyed by the session user and the vacancy feature", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    getProviderMock.mockReturnValue({
+      name: "openai",
+      maxOutputTokens: 1_000,
+      countInputTokens: vi.fn().mockResolvedValue(42),
+      extractApplication: vi.fn().mockResolvedValue({
+        company: "Acme",
+        position: "Engineer",
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      }),
+    });
+
+    await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+    expect(runGatedAiCallMock).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "test-user-id", feature: "VACANCY_GENERATION", maxOutputTokens: 1_000 }),
+    );
+  });
+
+  it("passes a countInputTokens callback that delegates to the provider's own exact token counter", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const countInputTokensMock = vi.fn().mockResolvedValue(321);
+    getProviderMock.mockReturnValue({
+      name: "openai",
+      maxOutputTokens: 1_000,
+      countInputTokens: countInputTokensMock,
+      extractApplication: vi.fn().mockResolvedValue({
+        company: "Acme",
+        position: "Engineer",
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      }),
+    });
+
+    await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+    const callArgs = runGatedAiCallMock.mock.calls[0][0];
+    await expect(callArgs.countInputTokens()).resolves.toBe(321);
+    expect(countInputTokensMock).toHaveBeenCalledWith({ jobPostingText: "Some posting" });
+  });
+
+  it("never gates the mock provider behind quota reservation, but still requires AI access approval", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    getProviderMock.mockReturnValue({
+      name: "mock",
+      extractApplication: vi.fn().mockResolvedValue({
+        company: "Acme",
+        position: "Engineer",
+        platform: null,
+        link: null,
+        salaryExpectation: null,
+        notes: null,
+      }),
+    });
+
+    await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+    expect(runGatedAiCallMock).not.toHaveBeenCalled();
+    expect(requireAiAccessApprovedMock).toHaveBeenCalledWith("test-user-id");
+  });
+
+  it("blocks the mock provider with a structured error when AI access is not approved, without calling it", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    const extractApplicationMock = vi.fn();
+    getProviderMock.mockReturnValue({ name: "mock", extractApplication: extractApplicationMock });
+    requireAiAccessApprovedMock.mockRejectedValue(
+      new AiAccessError("AI_ACCESS_REQUIRED", "AI access has not been approved yet."),
+    );
+
+    const response = await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body).toEqual({
+      error: "AI access has not been approved yet.",
+      details: { code: "AI_ACCESS_REQUIRED" },
+    });
+    expect(extractApplicationMock).not.toHaveBeenCalled();
+  });
+
+  it("maps an AiAccessError to a structured 403/429 response instead of a generic 502", async () => {
+    checkSessionMock.mockResolvedValue(AUTHORIZED);
+    getProviderMock.mockReturnValue({
+      name: "openai",
+      maxOutputTokens: 1_000,
+      extractApplication: vi.fn(),
+    });
+    runGatedAiCallMock.mockRejectedValue(
+      new AiAccessError("VACANCY_LIMIT_REACHED", "Daily vacancy generation limit reached."),
+    );
+
+    const response = await POST(makeRequest({ jobPostingText: "Some posting" }));
+
+    expect(response.status).toBe(429);
+    const body = await response.json();
+    expect(body).toEqual({
+      error: "Daily vacancy generation limit reached.",
+      details: { code: "VACANCY_LIMIT_REACHED" },
+    });
+  });
+
   function providerErrorCase(kind: ApplicationExtractionErrorKind, expectedStatus: number) {
     it(`maps a "${kind}" provider error to HTTP ${expectedStatus}`, async () => {
       checkSessionMock.mockResolvedValue(AUTHORIZED);
       getProviderMock.mockReturnValue({
         name: "openai",
+        maxOutputTokens: 1_000,
         extractApplication: vi
           .fn()
           .mockRejectedValue(new ApplicationExtractionProviderError("safe message", kind)),

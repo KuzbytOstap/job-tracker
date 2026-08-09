@@ -25,7 +25,11 @@ import type { SortOption } from "@/lib/validation";
 
 const ENTRANCE_EASE = [0.16, 1, 0.3, 1] as const;
 
-export function BoardShell() {
+type BoardShellProps = {
+  isAdmin?: boolean;
+};
+
+export function BoardShell({ isAdmin = false }: BoardShellProps) {
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -63,6 +67,7 @@ export function BoardShell() {
         total={statsQuery.data?.total}
         onAddClick={() => setAddDialogOpen(true)}
         playEntrance={!reducedMotion}
+        isAdmin={isAdmin}
       />
 
       <motion.div

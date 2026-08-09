@@ -1,17 +1,19 @@
 "use client";
 
-import { LogOut, Plus } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Plus, ShieldCheck } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion } from "motion/react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 type AppHeaderProps = {
   total: number | undefined;
   onAddClick: () => void;
   playEntrance?: boolean;
+  isAdmin?: boolean;
 };
 
-export function AppHeader({ total, onAddClick, playEntrance = false }: AppHeaderProps) {
+export function AppHeader({ total, onAddClick, playEntrance = false, isAdmin = false }: AppHeaderProps) {
   return (
     <motion.header
       initial={playEntrance ? { opacity: 0, y: -10 } : false}
@@ -37,6 +39,16 @@ export function AppHeader({ total, onAddClick, playEntrance = false }: AppHeader
             <Plus data-icon="inline-start" />
             Add
           </Button>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              title="Admin"
+              aria-label="Admin"
+              className={buttonVariants({ variant: "ghost", size: "icon" })}
+            >
+              <ShieldCheck />
+            </Link>
+          )}
           <Button
             type="button"
             variant="ghost"

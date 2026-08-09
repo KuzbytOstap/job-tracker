@@ -3,10 +3,14 @@ import {
   HR_CORE_QUESTIONS,
   buildHrInterviewQuestionSet,
   createCoreOnlyQuestionSet,
+  hasVacancySpecificQuestions,
   hrInterviewQuestionSetSchema,
   normalizeAndDedupeQuestions,
   parseStoredHrInterviewQuestionSet,
+  shouldAutoGenerateHrQuestions,
 } from "@/lib/hr-interview-questions";
+import { AiAccessStatus, Status } from "@/app/generated/prisma/enums";
+import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 describe("createCoreOnlyQuestionSet", () => {
   it("produces a valid question set matching the schema", () => {
@@ -184,5 +188,85 @@ describe("parseStoredHrInterviewQuestionSet", () => {
   it("parses a valid stored question set", () => {
     const stored = createCoreOnlyQuestionSet();
     expect(parseStoredHrInterviewQuestionSet(stored)).toEqual(stored);
+  });
+});
+
+describe("hasVacancySpecificQuestions", () => {
+  it("returns false for null", () => {
+    expect(hasVacancySpecificQuestions(null)).toBe(false);
+  });
+
+  it("returns false for a core-only set", () => {
+    expect(hasVacancySpecificQuestions(createCoreOnlyQuestionSet())).toBe(false);
+  });
+
+  it("returns true once at least one vacancy-specific question exists", () => {
+    const set = buildHrInterviewQuestionSet(["A custom vacancy question?"]);
+    expect(hasVacancySpecificQuestions(set)).toBe(true);
+  });
+});
+
+describe("shouldAutoGenerateHrQuestions", () => {
+  const coreOnly: HrInterviewQuestionSet = createCoreOnlyQuestionSet();
+  const withVacancySpecific: HrInterviewQuestionSet = buildHrInterviewQuestionSet(["Custom question?"]);
+
+  it("is true for an HR_CALL application with only core questions and approved access", () => {
+    expect(
+      shouldAutoGenerateHrQuestions({
+        status: Status.HR_CALL,
+        hrInterviewQuestions: coreOnly,
+        aiAccessStatus: AiAccessStatus.APPROVED,
+      }),
+    ).toBe(true);
+  });
+
+  it("is true when the AI access status hasn't loaded yet (unknown treated as ok to attempt)", () => {
+    expect(
+      shouldAutoGenerateHrQuestions({
+        status: Status.HR_CALL,
+        hrInterviewQuestions: coreOnly,
+        aiAccessStatus: undefined,
+      }),
+    ).toBe(true);
+    expect(
+      shouldAutoGenerateHrQuestions({
+        status: Status.HR_CALL,
+        hrInterviewQuestions: coreOnly,
+        aiAccessStatus: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("is false when AI access is not approved", () => {
+    for (const aiAccessStatus of [
+      AiAccessStatus.NOT_REQUESTED,
+      AiAccessStatus.PENDING,
+      AiAccessStatus.REJECTED,
+      AiAccessStatus.SUSPENDED,
+    ]) {
+      expect(
+        shouldAutoGenerateHrQuestions({ status: Status.HR_CALL, hrInterviewQuestions: coreOnly, aiAccessStatus }),
+      ).toBe(false);
+    }
+  });
+
+  it("is false when the application isn't in HR_CALL", () => {
+    expect(
+      shouldAutoGenerateHrQuestions({
+        status: Status.TECH_INTERVIEW,
+        hrInterviewQuestions: coreOnly,
+        aiAccessStatus: AiAccessStatus.APPROVED,
+      }),
+    ).toBe(false);
+  });
+
+  it("is false once vacancy-specific questions already exist", () => {
+    expect(
+      shouldAutoGenerateHrQuestions({
+        status: Status.HR_CALL,
+        hrInterviewQuestions: withVacancySpecific,
+        aiAccessStatus: AiAccessStatus.APPROVED,
+      }),
+    ).toBe(false);
   });
 });

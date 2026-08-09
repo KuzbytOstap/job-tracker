@@ -17,6 +17,8 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/api", () => ({
   createApplication: vi.fn(),
   extractApplicationFromPosting: vi.fn(),
+  getAiAccessStatus: vi.fn().mockResolvedValue({ status: "APPROVED" }),
+  requestAiAccess: vi.fn(),
   ApiError: class ApiError extends Error {},
 }));
 

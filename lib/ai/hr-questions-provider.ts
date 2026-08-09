@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AiUsageReport } from "@/lib/ai/token-usage";
 
 export type HrQuestionsGenerationInput = {
   company: string;
@@ -20,8 +21,19 @@ export type HrQuestionsGenerationResult = z.infer<typeof hrQuestionsGenerationRe
 
 export interface HrQuestionsProvider {
   readonly name: string;
+  readonly maxOutputTokens: number;
 
-  generateAdditionalQuestions(input: HrQuestionsGenerationInput): Promise<HrQuestionsGenerationResult>;
+  /**
+   * Exact input-token count for the same request `generateAdditionalQuestions`
+   * would send, obtained from the provider itself rather than approximated —
+   * quota reservation must know the real cost before committing to it.
+   */
+  countInputTokens(input: HrQuestionsGenerationInput): Promise<number>;
+
+  generateAdditionalQuestions(
+    input: HrQuestionsGenerationInput,
+    options?: { onUsage?: (usage: AiUsageReport) => void },
+  ): Promise<HrQuestionsGenerationResult>;
 }
 
 export type HrQuestionsProviderErrorKind =
