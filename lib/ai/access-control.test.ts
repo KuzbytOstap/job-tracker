@@ -30,6 +30,7 @@ import { AiAccessStatus, AiFeature } from "@/app/generated/prisma/client";
 import {
   AiAccessError,
   finalizeAiUsage,
+  getAiUsageStatus,
   requireAiAccessApproved,
   reserveAiQuota,
   rollbackAiReservation,
@@ -226,6 +227,54 @@ describe("reserveAiQuota — limits and reservation", () => {
     await expect(
       reserveAiQuota({ userId: "user_1", feature: AiFeature.VACANCY_GENERATION, estimatedTokens: 500 }),
     ).rejects.toMatchObject({ code: "TOKEN_LIMIT_REACHED" });
+  });
+});
+
+describe("getAiUsageStatus", () => {
+  it("throws AI_ACCESS_REQUIRED / AI_SUSPENDED for a non-approved user without touching quota tables", async () => {
+    userFindUniqueMock.mockResolvedValue({ aiAccessStatus: AiAccessStatus.PENDING });
+
+    await expect(getAiUsageStatus("user_1")).rejects.toMatchObject({ code: "AI_ACCESS_REQUIRED" });
+    expect(dailyUpsertMock).not.toHaveBeenCalled();
+
+    userFindUniqueMock.mockResolvedValue({ aiAccessStatus: AiAccessStatus.SUSPENDED });
+    await expect(getAiUsageStatus("user_1")).rejects.toMatchObject({ code: "AI_SUSPENDED" });
+  });
+
+  it("reports used/limit/exhausted for each quota against the effective limits", async () => {
+    dailyUpsertMock.mockResolvedValue(
+      dailyRow({ vacancyGenerationCount: 10, hrGenerationCount: 3, tokenCount: 19_999 }),
+    );
+
+    const status = await getAiUsageStatus("user_1");
+
+    expect(status.vacancy).toEqual({ used: 10, limit: 10, exhausted: true });
+    expect(status.hr).toEqual({ used: 3, limit: 10, exhausted: false });
+    expect(status.tokens).toEqual({ used: 19_999, limit: 20_000, exhausted: false });
+  });
+
+  it("applies per-user overrides and today's bonuses the same way reserveAiQuota does", async () => {
+    userLimitFindUniqueMock.mockResolvedValue({ vacancyGenerationLimit: 3, hrGenerationLimit: null, tokenLimit: null });
+    dailyUpsertMock.mockResolvedValue(
+      dailyRow({ vacancyGenerationCount: 3, hrGenerationBonus: 5, hrGenerationCount: 12 }),
+    );
+
+    const status = await getAiUsageStatus("user_1");
+
+    expect(status.vacancy).toEqual({ used: 3, limit: 3, exhausted: true });
+    expect(status.hr).toEqual({ used: 12, limit: 15, exhausted: false });
+  });
+
+  it("resolves resetAt to the next UTC midnight after today", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-09T14:32:00.000Z"));
+
+    try {
+      const status = await getAiUsageStatus("user_1");
+      expect(status.resetAt).toBe("2026-08-10T00:00:00.000Z");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

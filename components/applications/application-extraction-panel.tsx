@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
@@ -10,9 +11,13 @@ import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useExtractApplication } from "@/hooks/use-extract-application";
 import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
+import { useAiUsageStatus } from "@/hooks/use-ai-usage-status";
 import { AiAccessNotice } from "@/components/ai/ai-access-notice";
+import { AiQuotaNotice } from "@/components/ai/ai-quota-notice";
 import { inferPlatformFromLink } from "@/lib/platform-inference";
 import { ApiError } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
+import { extractAiQuotaReasonFromError, quotaForReason, resolveAiQuotaReason } from "@/lib/ai-quota";
 import { cn } from "@/lib/utils";
 import { AiAccessStatus } from "@/app/generated/prisma/enums";
 import type { ApplicationFormValues } from "@/lib/application-form";
@@ -37,10 +42,15 @@ export function ApplicationExtractionPanel({
 }: ApplicationExtractionPanelProps) {
   const [open, setOpen] = useState(true);
   const [lastResultProvider, setLastResultProvider] = useState<"mock" | "openai" | null>(null);
+  const queryClient = useQueryClient();
   const form = useFormContext<ApplicationFormValues>();
   const mutation = useExtractApplication();
   const aiAccess = useAiAccessStatus();
   const aiAccessStatus = aiAccess.data?.status;
+  const aiUsage = useAiUsageStatus(aiAccessStatus === AiAccessStatus.APPROVED);
+  const mutationErrorReason =
+    mutation.error instanceof ApiError ? extractAiQuotaReasonFromError(mutation.error.details) : null;
+  const quotaReason = resolveAiQuotaReason(aiUsage.data, "VACANCY_GENERATION") ?? mutationErrorReason;
 
   function applyTextField(field: TextFieldName, value: string | null, counts: { filled: number; kept: number }) {
     if (value === null) return;
@@ -80,6 +90,7 @@ export function ApplicationExtractionPanel({
     if (mutation.isPending) return;
     if (jobPostingText.trim().length === 0) return;
     if (aiAccessStatus !== AiAccessStatus.APPROVED) return;
+    if (quotaReason) return;
 
     mutation.mutate(
       {
@@ -97,6 +108,10 @@ export function ApplicationExtractionPanel({
           toast.success(summary);
         },
         onError: (error) => {
+          if (error instanceof ApiError && extractAiQuotaReasonFromError(error.details)) {
+            queryClient.invalidateQueries({ queryKey: queryKeys.aiUsage() });
+            return;
+          }
           toast.error(error instanceof ApiError ? error.message : GENERIC_ERROR_MESSAGE);
         },
       },
@@ -162,7 +177,7 @@ export function ApplicationExtractionPanel({
             />
           </Field>
 
-          {mutation.isError && (
+          {mutation.isError && !quotaReason && (
             <p role="alert" className="text-sm text-destructive">
               {mutation.error instanceof ApiError ? mutation.error.message : GENERIC_ERROR_MESSAGE}
             </p>
@@ -170,13 +185,24 @@ export function ApplicationExtractionPanel({
 
           {aiAccessStatus != null && aiAccessStatus !== AiAccessStatus.APPROVED ? (
             <AiAccessNotice status={aiAccessStatus} />
+          ) : quotaReason && aiUsage.data ? (
+            <AiQuotaNotice
+              reason={quotaReason}
+              quota={quotaForReason(aiUsage.data, quotaReason)}
+              resetAt={aiUsage.data.resetAt}
+            />
           ) : (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <Button
                 type="button"
                 variant="secondary"
                 className="h-9"
-                disabled={mutation.isPending || jobPostingText.trim().length === 0 || aiAccessStatus == null}
+                disabled={
+                  mutation.isPending ||
+                  jobPostingText.trim().length === 0 ||
+                  aiAccessStatus == null ||
+                  quotaReason != null
+                }
                 aria-busy={mutation.isPending}
                 onClick={handleAnalyze}
               >

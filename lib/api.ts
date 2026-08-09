@@ -1,10 +1,13 @@
 import type {
   AiAccessStatusResponse,
+  AiUsageRequestType,
+  AiUsageStatusResponse,
   ApiErrorBody,
   ApplicationDTO,
   ApplicationsListResponse,
   CreateApplicationPayload,
   DeleteResponse,
+  RequestMoreAiUsageResponse,
   StatsResponse,
   UpdateApplicationPayload,
 } from "@/lib/api-types";
@@ -116,6 +119,17 @@ export function getAiAccessStatus(): Promise<AiAccessStatusResponse> {
 
 export function requestAiAccess(): Promise<AiAccessStatusResponse> {
   return request<AiAccessStatusResponse>("/api/ai-access/requests", { method: "POST" });
+}
+
+export function getAiUsageStatus(): Promise<AiUsageStatusResponse> {
+  return request<AiUsageStatusResponse>("/api/ai-usage");
+}
+
+export function requestMoreAiUsage(type: AiUsageRequestType): Promise<RequestMoreAiUsageResponse> {
+  return request<RequestMoreAiUsageResponse>("/api/ai-usage/requests", {
+    method: "POST",
+    body: JSON.stringify({ type }),
+  });
 }
 
 export function extractApplicationFromPosting(

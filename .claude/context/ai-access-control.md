@@ -62,8 +62,9 @@ Key facts for quota design:
   `outputTokens`, `totalTokens`, optional `applicationId`.
 - `AiAccessRequest` — request-more-usage records (`AI_ACCESS` | `VACANCY_LIMIT`
   | `HR_LIMIT` | `TOKEN_LIMIT`), one pending request per type per user
-  (partial unique index on `status = 'PENDING'`). Not yet read or written by
-  any code path — schema only, ahead of Phase 3/4.
+  (partial unique index on `status = 'PENDING'`). `AI_ACCESS` is read/written
+  starting Phase 3 (see below); the other types are still schema-only, ahead
+  of Phase 4.
 - `JobApplication.hrEnhancementClaimedAt` / `hrEnhancementClaimToken` — the
   HR-enhancement lease fields, see below.
 
@@ -125,6 +126,39 @@ All in `lib/ai/access-control.ts` unless noted.
   (interface conformance only; never actually called, since the mock path
   bypasses `runGatedAiCall` entirely).
 
+## Implemented: user AI-access request UX (Phase 3) ✅
+
+- **`GET /api/ai-access`** — returns `{ status }`, the current user's
+  `aiAccessStatus`, via `getAiAccessStatus(userId)`
+  (`lib/ai/access-requests.ts`).
+- **`POST /api/ai-access/requests`** — creates an `AI_ACCESS` request via
+  `requestAiAccess(userId)`. Only a `NOT_REQUESTED` user can succeed;
+  `PENDING`/`APPROVED`/`REJECTED`/`SUSPENDED` all get `409` (`AiAccessRequestError`,
+  code `NOT_ELIGIBLE`). The `NOT_REQUESTED → PENDING` transition and the
+  `AiAccessRequest` row are written atomically in one `prisma.$transaction`: a
+  guarded `User.updateMany({ where: { aiAccessStatus: NOT_REQUESTED } })`
+  serializes concurrent callers through Postgres' row lock, so only one ever
+  flips the status and creates the request. The DB's partial unique index
+  (`status = 'PENDING'`, Phase 1) is the backstop — a `P2002` violation on the
+  request insert is mapped to the same `NOT_ELIGIBLE` error.
+- **`requireAiAccessApproved` / `runGatedAiCall` stay the sole source of
+  truth** for whether an AI call is actually allowed; the request flow only
+  ever moves `aiAccessStatus` to `PENDING` and never grants access itself.
+- **UI** (`components/ai/ai-access-notice.tsx`, `hooks/use-ai-access-status.ts`,
+  `hooks/use-request-ai-access.ts`), applied to both AI entry points (vacancy
+  extraction panel, HR_CALL enhancement):
+  - `NOT_REQUESTED` — AI stays visible but locked, with a "Request AI access"
+    action that calls the endpoint above.
+  - `PENDING` — visible but locked, shown as awaiting approval.
+  - `APPROVED` — unchanged existing AI behavior (subject to Phase 2 quotas).
+  - `REJECTED` — AI entry points hidden entirely (extraction panel renders
+    nothing; no notice in the HR question section).
+  - `SUSPENDED` — shown as unavailable/disabled, no AI action offered.
+  - The HR_CALL automatic enhancement call is additionally skipped
+    client-side (`shouldAutoGenerateHrQuestions`) once the status is known
+    and not `APPROVED` — a client-side optimization only; the server gate is
+    unchanged and still rejects unauthorized calls.
+
 ## Product rules
 
 - Base Job Tracker remains fully usable without AI.
@@ -134,6 +168,8 @@ All in `lib/ai/access-control.ts` unless noted.
   - `APPROVED`: AI enabled, subject to quotas.
   - `REJECTED`: AI UI hidden entirely.
   - `SUSPENDED`: AI disabled by admin (post-approval).
+- **Implemented** (Phase 3, see above) — all five states are handled in the UI
+  for both AI entry points; `NOT_REQUESTED → PENDING` is live end-to-end.
 
 ## Default daily limits
 
@@ -199,7 +235,8 @@ All in `lib/ai/access-control.ts` unless noted.
 1. ~~DB foundation and admin role.~~ ✅ Done — see "Implemented: DB foundation".
 2. ~~Central AI quota/reservation/usage layer.~~ ✅ Done — see "Implemented:
    quota/reservation layer".
-3. User AI-access request UX.
+3. ~~User AI-access request UX.~~ ✅ Done — see "Implemented: user AI-access
+   request UX".
 4. Exhausted-quota UX + "Request more usage".
 5. Admin APIs.
 6. Admin UI using ui-ux-pro-max + 21st.dev.

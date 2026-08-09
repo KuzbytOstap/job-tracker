@@ -180,6 +180,7 @@ model AiAccessRequest {
   user            User            @relation("AiAccessRequestUser", fields: [userId], references: [id], onDelete: Cascade)
   type            AiRequestType
   status          AiRequestStatus @default(PENDING)
+  quotaDate       DateTime?       @db.Date
   message         String?
   decidedAt       DateTime?
   decidedByUserId String?
@@ -189,7 +190,8 @@ model AiAccessRequest {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  @@unique([userId, type], where: { status: "PENDING" })
+  @@unique([userId, type], where: { status: "PENDING", type: "AI_ACCESS" }, map: "AiAccessRequest_userId_type_key")
+  @@unique([userId, type, quotaDate], where: { status: "PENDING" }, map: "AiAccessRequest_userId_type_quotaDate_key")
   @@index([userId])
   @@index([status])
   @@index([userId, type, status])

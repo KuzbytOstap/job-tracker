@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HrInterviewQuestionsSection } from "@/components/applications/hr-interview-questions-section";
 import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 import type { AiAccessStatus } from "@/app/generated/prisma/enums";
+import type { AiUsageStatusResponse } from "@/lib/api-types";
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -37,11 +38,25 @@ const withVacancySpecific: HrInterviewQuestionSet = {
   ],
 };
 
-function renderSection(questions: HrInterviewQuestionSet | null, aiAccessStatus: AiAccessStatus | undefined) {
+function usageStatus(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusResponse {
+  return {
+    resetAt: "2026-08-10T00:00:00.000Z",
+    vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
+    ...overrides,
+  };
+}
+
+function renderSection(
+  questions: HrInterviewQuestionSet | null,
+  aiAccessStatus: AiAccessStatus | undefined,
+  aiUsage?: AiUsageStatusResponse,
+) {
   const queryClient = new QueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
-      <HrInterviewQuestionsSection questions={questions} aiAccessStatus={aiAccessStatus} />
+      <HrInterviewQuestionsSection questions={questions} aiAccessStatus={aiAccessStatus} aiUsage={aiUsage} />
     </QueryClientProvider>,
   );
 }
@@ -126,5 +141,48 @@ describe("HrInterviewQuestionsSection", () => {
   it("does not show a locked notice while the AI access status hasn't loaded yet", () => {
     renderSection(coreOnly, undefined);
     expect(screen.queryByText(/AI access|AI features/)).not.toBeInTheDocument();
+  });
+
+  it("shows the HR quota notice for an APPROVED user whose HR limit is exhausted", () => {
+    renderSection(coreOnly, "APPROVED", usageStatus({ hr: { used: 10, limit: 10, exhausted: true, pendingRequest: false } }));
+    expect(screen.getByText("Daily HR question limit reached")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Request more usage" })).toBeInTheDocument();
+  });
+
+  it("shows the token quota notice for an APPROVED user whose token budget is exhausted", () => {
+    renderSection(
+      coreOnly,
+      "APPROVED",
+      usageStatus({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } }),
+    );
+    expect(screen.getByText("Daily AI token limit reached")).toBeInTheDocument();
+  });
+
+  it("does not show an HR quota notice from an exhausted vacancy limit (independent quotas)", () => {
+    renderSection(
+      coreOnly,
+      "APPROVED",
+      usageStatus({ vacancy: { used: 10, limit: 10, exhausted: true, pendingRequest: false } }),
+    );
+    expect(screen.queryByText(/quota|limit reached/i)).not.toBeInTheDocument();
+  });
+
+  it("does not show a quota notice once vacancy-specific questions already exist", () => {
+    renderSection(
+      withVacancySpecific,
+      "APPROVED",
+      usageStatus({ hr: { used: 10, limit: 10, exhausted: true, pendingRequest: false } }),
+    );
+    expect(screen.queryByText("Daily HR question limit reached")).not.toBeInTheDocument();
+  });
+
+  it("shows the pending request state when a request is already pending for that quota", () => {
+    renderSection(
+      coreOnly,
+      "APPROVED",
+      usageStatus({ hr: { used: 10, limit: 10, exhausted: true, pendingRequest: true } }),
+    );
+    expect(screen.getByText("More usage requested — awaiting admin approval.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Request more usage" })).not.toBeInTheDocument();
   });
 });

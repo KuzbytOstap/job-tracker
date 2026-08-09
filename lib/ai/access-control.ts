@@ -38,7 +38,7 @@ export type AiQuotaReservation = {
   reservedTokens: number;
 };
 
-function utcDateOnly(date: Date): Date {
+export function utcDateOnly(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
@@ -54,10 +54,16 @@ export async function requireAiAccessApproved(userId: string): Promise<void> {
   }
 }
 
-async function loadEffectiveLimits(
-  userId: string,
-  date: Date,
-): Promise<{ vacancyLimit: number; hrLimit: number; tokenLimit: number }> {
+type EffectiveLimitsAndUsage = {
+  vacancyLimit: number;
+  hrLimit: number;
+  tokenLimit: number;
+  vacancyUsed: number;
+  hrUsed: number;
+  tokenUsed: number;
+};
+
+async function loadEffectiveLimitsAndUsage(userId: string, date: Date): Promise<EffectiveLimitsAndUsage> {
   const [globalLimits, userLimit, daily] = await Promise.all([
     prisma.aiGlobalLimits.upsert({ where: { id: 1 }, create: {}, update: {} }),
     prisma.aiUserLimit.findUnique({ where: { userId } }),
@@ -73,6 +79,50 @@ async function loadEffectiveLimits(
       (userLimit?.vacancyGenerationLimit ?? globalLimits.vacancyGenerationLimit) + daily.vacancyGenerationBonus,
     hrLimit: (userLimit?.hrGenerationLimit ?? globalLimits.hrGenerationLimit) + daily.hrGenerationBonus,
     tokenLimit: (userLimit?.tokenLimit ?? globalLimits.tokenLimit) + daily.tokenBonus,
+    vacancyUsed: daily.vacancyGenerationCount,
+    hrUsed: daily.hrGenerationCount,
+    tokenUsed: daily.tokenCount,
+  };
+}
+
+export type AiQuotaStatus = {
+  used: number;
+  limit: number;
+  exhausted: boolean;
+};
+
+export type AiUsageStatus = {
+  resetAt: string;
+  vacancy: AiQuotaStatus;
+  hr: AiQuotaStatus;
+  tokens: AiQuotaStatus;
+};
+
+/**
+ * Reports the approved caller's current UTC-day AI usage against their
+ * effective limits (global defaults, permanent per-user overrides, and
+ * today's bonuses — the same precedence `reserveAiQuota` enforces). Gated by
+ * `requireAiAccessApproved` so a non-approved caller gets the same
+ * structured `AI_ACCESS_REQUIRED`/`AI_SUSPENDED` error real AI calls do,
+ * instead of a second access-check code path.
+ */
+export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
+  await requireAiAccessApproved(userId);
+
+  const date = utcDateOnly(new Date());
+  const { vacancyLimit, hrLimit, tokenLimit, vacancyUsed, hrUsed, tokenUsed } = await loadEffectiveLimitsAndUsage(
+    userId,
+    date,
+  );
+
+  const resetAt = new Date(date);
+  resetAt.setUTCDate(resetAt.getUTCDate() + 1);
+
+  return {
+    resetAt: resetAt.toISOString(),
+    vacancy: { used: vacancyUsed, limit: vacancyLimit, exhausted: vacancyUsed >= vacancyLimit },
+    hr: { used: hrUsed, limit: hrLimit, exhausted: hrUsed >= hrLimit },
+    tokens: { used: tokenUsed, limit: tokenLimit, exhausted: tokenUsed >= tokenLimit },
   };
 }
 
@@ -118,7 +168,7 @@ export async function reserveAiQuota(params: {
   await requireAiAccessApproved(userId);
 
   const date = utcDateOnly(new Date());
-  const { vacancyLimit, hrLimit, tokenLimit } = await loadEffectiveLimits(userId, date);
+  const { vacancyLimit, hrLimit, tokenLimit } = await loadEffectiveLimitsAndUsage(userId, date);
 
   if (feature === AiFeature.VACANCY_GENERATION) {
     const reserved = await prisma.aiUsageDaily.updateMany({

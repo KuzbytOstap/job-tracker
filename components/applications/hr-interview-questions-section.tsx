@@ -1,14 +1,18 @@
 import { CopyButton } from "@/components/ui/copy-button";
 import { AiAccessNotice, type LockedAiAccessStatus } from "@/components/ai/ai-access-notice";
+import { AiQuotaNotice } from "@/components/ai/ai-quota-notice";
 import { hasVacancySpecificQuestions, type HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
+import { resolveAiQuotaReason, quotaForReason } from "@/lib/ai-quota";
 import { AiAccessStatus } from "@/app/generated/prisma/enums";
+import type { AiUsageStatusResponse } from "@/lib/api-types";
 
 type HrInterviewQuestionsSectionProps = {
   questions: HrInterviewQuestionSet | null;
   aiAccessStatus: AiAccessStatus | undefined;
+  aiUsage?: AiUsageStatusResponse;
 };
 
-export function HrInterviewQuestionsSection({ questions, aiAccessStatus }: HrInterviewQuestionsSectionProps) {
+export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage }: HrInterviewQuestionsSectionProps) {
   if (!questions) {
     return null;
   }
@@ -17,17 +21,28 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus }: HrInt
   const vacancyQuestions = questions.questions.filter(
     (question) => question.category === "VACANCY_SPECIFIC",
   );
+  const missingVacancyQuestions = !hasVacancySpecificQuestions(questions);
 
   // Only the two-sided "waiting on AI" states get an explanatory notice —
   // REJECTED hides AI entry points entirely (silently, like elsewhere), and
   // APPROVED users who still lack vacancy-specific questions are covered by
-  // the automatic HR_CALL follow-up, not this notice.
+  // the automatic HR_CALL follow-up (and, if a quota is exhausted, the
+  // quota notice below), not this notice.
   const lockedAiAccessStatus: LockedAiAccessStatus | null =
-    !hasVacancySpecificQuestions(questions) &&
+    missingVacancyQuestions &&
     (aiAccessStatus === AiAccessStatus.NOT_REQUESTED ||
       aiAccessStatus === AiAccessStatus.PENDING ||
       aiAccessStatus === AiAccessStatus.SUSPENDED)
       ? aiAccessStatus
+      : null;
+
+  // Same idea for an APPROVED user whose HR-generation or shared token quota
+  // is exhausted: the automatic follow-up already ran (or will) and was
+  // rejected server-side, so explain why vacancy-specific questions are
+  // still missing instead of leaving it unexplained.
+  const quotaReason =
+    aiAccessStatus === AiAccessStatus.APPROVED && missingVacancyQuestions
+      ? resolveAiQuotaReason(aiUsage, "HR_GENERATION")
       : null;
 
   const allQuestionsText = [
@@ -79,6 +94,9 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus }: HrInt
         )}
 
         {lockedAiAccessStatus && <AiAccessNotice status={lockedAiAccessStatus} />}
+        {quotaReason && aiUsage && (
+          <AiQuotaNotice reason={quotaReason} quota={quotaForReason(aiUsage, quotaReason)} resetAt={aiUsage.resetAt} />
+        )}
       </div>
     </div>
   );

@@ -71,6 +71,26 @@ export type AiAccessStatusResponse = {
   status: AiAccessStatus;
 };
 
+export type AiUsageRequestType = "VACANCY_LIMIT" | "HR_LIMIT" | "TOKEN_LIMIT";
+
+export type AiQuotaStatus = {
+  used: number;
+  limit: number;
+  exhausted: boolean;
+  pendingRequest: boolean;
+};
+
+export type AiUsageStatusResponse = {
+  resetAt: string;
+  vacancy: AiQuotaStatus;
+  hr: AiQuotaStatus;
+  tokens: AiQuotaStatus;
+};
+
+export type RequestMoreAiUsageResponse = {
+  status: "PENDING";
+};
+
 export type ApiErrorBody = {
   error: string;
   details?: unknown;

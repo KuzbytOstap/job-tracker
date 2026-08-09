@@ -17,4 +17,5 @@ export const queryKeys = {
   },
   stats: () => ["stats"] as const,
   aiAccess: () => ["ai-access"] as const,
+  aiUsage: () => ["ai-usage"] as const,
 };
