@@ -87,7 +87,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             className="gh-signin-fade gh-signin-description mt-3 text-sm"
             style={{ animationDelay: "30ms" }}
           >
-            This tracker is private. Sign in with the Google account it&apos;s configured for.
+            Sign in with your Google account to continue.
           </p>
 
           {accessDenied && (
@@ -97,7 +97,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               style={{ animationDelay: "60ms" }}
             >
               <ShieldAlert className="size-4" aria-hidden="true" />
-              <span>Access denied — this app is restricted to one account.</span>
+              <span>Access denied — sign-in was not completed. Please try again.</span>
             </p>
           )}
 
