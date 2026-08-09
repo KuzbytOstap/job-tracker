@@ -97,7 +97,20 @@ const applicationSourceTextFields = {
   hrCallTranscript: z.string().max(50_000, "HR call transcript is too long"),
 };
 
-export const applicationEditFormSchema = applicationFormSchema.extend(applicationSourceTextFields);
+const sourceUrlEntrySchema = z.object({
+  url: z
+    .string()
+    .trim()
+    .min(1, "Enter a URL")
+    .refine(isHttpUrl, { message: "Enter a valid http or https URL" }),
+});
+
+export type SourceUrlEntry = z.infer<typeof sourceUrlEntrySchema>;
+
+export const applicationEditFormSchema = applicationFormSchema.extend({
+  ...applicationSourceTextFields,
+  sourceUrls: z.array(sourceUrlEntrySchema),
+});
 
 export type ApplicationEditFormValues = z.infer<typeof applicationEditFormSchema>;
 
@@ -107,6 +120,7 @@ export function applicationEditFormValuesFromApplication(application: Applicatio
     jobPostingText: application.jobPostingText ?? "",
     coverLetterText: application.coverLetterText ?? "",
     hrCallTranscript: application.hrCallTranscript ?? "",
+    sourceUrls: application.sourceUrls.map((url) => ({ url })),
   };
 }
 
@@ -118,6 +132,7 @@ export function applicationEditFormValuesToUpdatePayload(
     jobPostingText: normalizeSourceText(values.jobPostingText),
     coverLetterText: normalizeSourceText(values.coverLetterText),
     hrCallTranscript: normalizeSourceText(values.hrCallTranscript),
+    sourceUrls: values.sourceUrls.map((entry) => entry.url.trim()).filter((url) => url.length > 0),
   };
 }
 

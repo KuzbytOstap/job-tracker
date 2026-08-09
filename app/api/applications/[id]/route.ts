@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   const now = new Date();
-  const { status, expectedUpdatedAt, ...rest } = parsed.data;
+  const { status, expectedUpdatedAt, sourceUrls: manualSourceUrls, ...rest } = parsed.data;
 
   try {
     // Everything that reads the current row and derives the status change is
@@ -96,9 +96,23 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           hasTestTask,
           testTaskDone,
           ...(status !== undefined ? { status } : {}),
-          ...(rest.jobPostingText !== undefined
-            ? { sourceUrls: extractUrls(rest.jobPostingText) }
-            : {}),
+          // Manually managed sources (added/edited/removed through the Edit
+          // Application UI) are the base. Automatic extraction from the job
+          // posting text only adds newly detected URLs on top of that base —
+          // it never fully replaces it, so it can't silently discard a
+          // manually added source or one that isn't mentioned in the text.
+          ...(manualSourceUrls !== undefined
+            ? {
+                sourceUrls: Array.from(
+                  new Set([
+                    ...manualSourceUrls,
+                    ...(rest.jobPostingText !== undefined ? extractUrls(rest.jobPostingText) : []),
+                  ]),
+                ),
+              }
+            : rest.jobPostingText !== undefined
+              ? { sourceUrls: extractUrls(rest.jobPostingText) }
+              : {}),
           lastActivityAt: now,
         },
       });
