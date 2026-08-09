@@ -3,7 +3,10 @@ import OpenAI from "openai";
 import { HrQuestionsProviderError } from "@/lib/ai/hr-questions-provider";
 
 const parseMock = vi.fn();
-const getOpenAIClientMock = vi.fn(() => ({ responses: { parse: parseMock } }));
+const inputTokensCountMock = vi.fn();
+const getOpenAIClientMock = vi.fn(() => ({
+  responses: { parse: parseMock, inputTokens: { count: inputTokensCountMock } },
+}));
 vi.mock("@/lib/ai/openai-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/ai/openai-client")>("@/lib/ai/openai-client");
   return { ...actual, getOpenAIClient: () => getOpenAIClientMock() };
@@ -28,12 +31,67 @@ function completedResponse(outputParsed: unknown) {
 
 beforeEach(() => {
   parseMock.mockReset();
+  inputTokensCountMock.mockReset();
   getOpenAIClientMock.mockReset();
-  getOpenAIClientMock.mockReturnValue({ responses: { parse: parseMock } });
+  getOpenAIClientMock.mockReturnValue({
+    responses: { parse: parseMock, inputTokens: { count: inputTokensCountMock } },
+  });
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("OpenAIHrQuestionsProvider — countInputTokens", () => {
+  it("returns the exact input token count reported by the Responses input-tokens endpoint", async () => {
+    inputTokensCountMock.mockResolvedValue({ input_tokens: 87, object: "response.input_tokens" });
+
+    const provider = new OpenAIHrQuestionsProvider();
+    const count = await provider.countInputTokens(BASE_INPUT);
+
+    expect(count).toBe(87);
+    expect(inputTokensCountMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts the exact same (already-truncated) request shape that generateAdditionalQuestions would send", async () => {
+    inputTokensCountMock.mockResolvedValue({ input_tokens: 10, object: "response.input_tokens" });
+    parseMock.mockResolvedValue(completedResponse({ additionalQuestions: [] }));
+
+    const provider = new OpenAIHrQuestionsProvider();
+    const input = { ...BASE_INPUT, notes: "a".repeat(5_000) };
+    await provider.countInputTokens(input);
+    await provider.generateAdditionalQuestions(input);
+
+    const countBody = inputTokensCountMock.mock.calls[0][0];
+    const parseBody = parseMock.mock.calls[0][0];
+    expect(countBody.model).toBe(parseBody.model);
+    expect(countBody.instructions).toBe(parseBody.instructions);
+    expect(countBody.input).toBe(parseBody.input);
+    expect(countBody.text).toEqual(parseBody.text);
+    // The 4,000-char notes truncation must be reflected identically in both.
+    expect(countBody.input).not.toContain("a".repeat(4_001));
+  });
+
+  it("maps a counting failure through the same error mapping as generation, without ever calling parse", async () => {
+    inputTokensCountMock.mockRejectedValue(
+      new OpenAI.RateLimitError(429, { message: "rate limited" }, "rate limited", new Headers()),
+    );
+
+    const provider = new OpenAIHrQuestionsProvider();
+
+    await expect(provider.countInputTokens(BASE_INPUT)).rejects.toMatchObject({ kind: "rate_limit" });
+    expect(parseMock).not.toHaveBeenCalled();
+  });
+
+  it("maps a shared OpenAI client-configuration failure to its own configuration error", async () => {
+    getOpenAIClientMock.mockImplementation(() => {
+      throw new OpenAIConfigurationError("OPENAI_API_KEY is not configured.");
+    });
+
+    const provider = new OpenAIHrQuestionsProvider();
+
+    await expect(provider.countInputTokens(BASE_INPUT)).rejects.toMatchObject({ kind: "configuration" });
+  });
 });
 
 describe("OpenAIHrQuestionsProvider", () => {
@@ -142,6 +200,36 @@ describe("OpenAIHrQuestionsProvider", () => {
     const result = await provider.generateAdditionalQuestions(BASE_INPUT);
 
     expect(result.additionalQuestions).toEqual([question]);
+  });
+
+  it("reports actual input/output/total token usage from the response to onUsage", async () => {
+    parseMock.mockResolvedValue({
+      status: "completed",
+      output_parsed: { additionalQuestions: [] },
+      usage: { input_tokens: 60, output_tokens: 12, total_tokens: 72 },
+    });
+    const onUsage = vi.fn();
+
+    const provider = new OpenAIHrQuestionsProvider();
+    await provider.generateAdditionalQuestions(BASE_INPUT, { onUsage });
+
+    expect(onUsage).toHaveBeenCalledWith({
+      model: "gpt-5-nano-2025-08-07",
+      inputTokens: 60,
+      outputTokens: 12,
+      totalTokens: 72,
+    });
+  });
+
+  it("never calls onUsage when the provider throws", async () => {
+    parseMock.mockRejectedValue(new OpenAI.APIConnectionError({ message: "network down" }));
+    const onUsage = vi.fn();
+    const provider = new OpenAIHrQuestionsProvider();
+
+    await expect(
+      provider.generateAdditionalQuestions(BASE_INPUT, { onUsage }),
+    ).rejects.toBeInstanceOf(HrQuestionsProviderError);
+    expect(onUsage).not.toHaveBeenCalled();
   });
 
   it("handles missing parsed output as a safe invalid-result error", async () => {

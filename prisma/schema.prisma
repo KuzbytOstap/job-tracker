@@ -65,26 +65,28 @@ enum AiRequestStatus {
 }
 
 model JobApplication {
-  id                     String    @id @default(cuid())
-  company                String
-  position               String
-  platform               Platform
-  link                   String?
-  status                 Status    @default(APPLIED)
-  hasTestTask            Boolean   @default(false)
-  testTaskDone           Boolean   @default(false)
-  salaryExpectation      String?
-  notes                  String?
-  jobPostingText         String?
-  sourceUrls             String[]  @default([])
-  coverLetterText        String?
-  hrCallTranscript       String?
-  hrInterviewQuestions   Json?
-  hrQuestionsGeneratedAt DateTime?
-  appliedAt              DateTime  @default(now())
-  lastActivityAt         DateTime  @default(now())
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  company                 String
+  position                String
+  platform                Platform
+  link                    String?
+  status                  Status    @default(APPLIED)
+  hasTestTask             Boolean   @default(false)
+  testTaskDone            Boolean   @default(false)
+  salaryExpectation       String?
+  notes                   String?
+  jobPostingText          String?
+  sourceUrls              String[]  @default([])
+  coverLetterText         String?
+  hrCallTranscript        String?
+  hrInterviewQuestions    Json?
+  hrQuestionsGeneratedAt  DateTime?
+  hrEnhancementClaimedAt  DateTime?
+  hrEnhancementClaimToken String?
+  appliedAt               DateTime  @default(now())
+  lastActivityAt          DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

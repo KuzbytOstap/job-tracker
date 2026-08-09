@@ -15,6 +15,13 @@ import {
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 import { getApplicationExtractionProvider } from "@/lib/ai/get-application-extraction-provider";
 import { extractUrls } from "@/lib/url-extraction";
+import { AiFeature } from "@/app/generated/prisma/client";
+import {
+  AiAccessError,
+  aiAccessErrorStatus,
+  requireAiAccessApproved,
+  runGatedAiCall,
+} from "@/lib/ai/access-control";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,8 +55,22 @@ export async function POST(request: NextRequest) {
 
   let rawResult;
   try {
-    rawResult = await provider.extractApplication(parsedInput.data);
+    if (provider.name === "mock") {
+      await requireAiAccessApproved(check.session.user.id);
+      rawResult = await provider.extractApplication(parsedInput.data);
+    } else {
+      rawResult = await runGatedAiCall({
+        userId: check.session.user.id,
+        feature: AiFeature.VACANCY_GENERATION,
+        maxOutputTokens: provider.maxOutputTokens,
+        countInputTokens: () => provider.countInputTokens(parsedInput.data),
+        call: (reportUsage) => provider.extractApplication(parsedInput.data, { onUsage: reportUsage }),
+      });
+    }
   } catch (error) {
+    if (error instanceof AiAccessError) {
+      return jsonError(aiAccessErrorStatus(error.code), error.message, { code: error.code });
+    }
     if (error instanceof ApplicationExtractionProviderError) {
       switch (error.kind) {
         case "configuration":

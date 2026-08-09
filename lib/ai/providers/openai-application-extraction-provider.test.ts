@@ -4,7 +4,10 @@ import { Platform } from "@/app/generated/prisma/enums";
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 
 const parseMock = vi.fn();
-const getOpenAIClientMock = vi.fn(() => ({ responses: { parse: parseMock } }));
+const inputTokensCountMock = vi.fn();
+const getOpenAIClientMock = vi.fn(() => ({
+  responses: { parse: parseMock, inputTokens: { count: inputTokensCountMock } },
+}));
 vi.mock("@/lib/ai/openai-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/ai/openai-client")>("@/lib/ai/openai-client");
   return { ...actual, getOpenAIClient: () => getOpenAIClientMock() };
@@ -30,12 +33,71 @@ function fullyNullResult() {
 
 beforeEach(() => {
   parseMock.mockReset();
+  inputTokensCountMock.mockReset();
   getOpenAIClientMock.mockReset();
-  getOpenAIClientMock.mockReturnValue({ responses: { parse: parseMock } });
+  getOpenAIClientMock.mockReturnValue({
+    responses: { parse: parseMock, inputTokens: { count: inputTokensCountMock } },
+  });
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("OpenAIApplicationExtractionProvider — countInputTokens", () => {
+  it("returns the exact input token count reported by the Responses input-tokens endpoint", async () => {
+    inputTokensCountMock.mockResolvedValue({ input_tokens: 321, object: "response.input_tokens" });
+
+    const provider = new OpenAIApplicationExtractionProvider();
+    const count = await provider.countInputTokens({ jobPostingText: "Some posting" });
+
+    expect(count).toBe(321);
+    expect(inputTokensCountMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts the exact same request shape that extractApplication would send", async () => {
+    inputTokensCountMock.mockResolvedValue({ input_tokens: 10, object: "response.input_tokens" });
+    parseMock.mockResolvedValue(completedResponse(fullyNullResult()));
+
+    const provider = new OpenAIApplicationExtractionProvider();
+    const input = { jobPostingText: "Some posting", coverLetterText: "A cover letter." };
+    await provider.countInputTokens(input);
+    await provider.extractApplication(input);
+
+    const countBody = inputTokensCountMock.mock.calls[0][0];
+    const parseBody = parseMock.mock.calls[0][0];
+    expect(countBody.model).toBe(parseBody.model);
+    expect(countBody.instructions).toBe(parseBody.instructions);
+    expect(countBody.input).toBe(parseBody.input);
+    expect(countBody.text).toEqual(parseBody.text);
+    expect(countBody.tools).toEqual(parseBody.tools);
+    expect(countBody.reasoning).toEqual(parseBody.reasoning);
+  });
+
+  it("maps a counting failure through the same error mapping as generation, without ever calling parse", async () => {
+    inputTokensCountMock.mockRejectedValue(
+      new OpenAI.RateLimitError(429, { message: "rate limited" }, "rate limited", new Headers()),
+    );
+
+    const provider = new OpenAIApplicationExtractionProvider();
+
+    await expect(
+      provider.countInputTokens({ jobPostingText: "Some posting" }),
+    ).rejects.toMatchObject({ kind: "rate_limit" });
+    expect(parseMock).not.toHaveBeenCalled();
+  });
+
+  it("maps a shared OpenAI client-configuration failure to its own configuration error", async () => {
+    getOpenAIClientMock.mockImplementation(() => {
+      throw new OpenAIConfigurationError("OPENAI_API_KEY is not configured.");
+    });
+
+    const provider = new OpenAIApplicationExtractionProvider();
+
+    await expect(
+      provider.countInputTokens({ jobPostingText: "Some posting" }),
+    ).rejects.toMatchObject({ kind: "configuration" });
+  });
 });
 
 describe("OpenAIApplicationExtractionProvider", () => {
@@ -111,6 +173,36 @@ describe("OpenAIApplicationExtractionProvider", () => {
     const result = await provider.extractApplication({ jobPostingText: "Some posting" });
 
     expect(result.platform).toBe(Platform.LINKEDIN);
+  });
+
+  it("reports actual input/output/total token usage from the response to onUsage", async () => {
+    parseMock.mockResolvedValue({
+      status: "completed",
+      output_parsed: fullyNullResult(),
+      usage: { input_tokens: 123, output_tokens: 45, total_tokens: 168 },
+    });
+    const onUsage = vi.fn();
+
+    const provider = new OpenAIApplicationExtractionProvider();
+    await provider.extractApplication({ jobPostingText: "Some posting" }, { onUsage });
+
+    expect(onUsage).toHaveBeenCalledWith({
+      model: "gpt-5-nano-2025-08-07",
+      inputTokens: 123,
+      outputTokens: 45,
+      totalTokens: 168,
+    });
+  });
+
+  it("never calls onUsage when the provider throws", async () => {
+    parseMock.mockRejectedValue(new OpenAI.APIConnectionError({ message: "network down" }));
+    const onUsage = vi.fn();
+    const provider = new OpenAIApplicationExtractionProvider();
+
+    await expect(
+      provider.extractApplication({ jobPostingText: "Some posting" }, { onUsage }),
+    ).rejects.toBeInstanceOf(ApplicationExtractionProviderError);
+    expect(onUsage).not.toHaveBeenCalled();
   });
 
   it("preserves null values instead of inventing data", async () => {

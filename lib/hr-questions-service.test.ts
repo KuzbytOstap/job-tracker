@@ -1,33 +1,46 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const updateManyMock = vi.fn();
-const updateMock = vi.fn();
 const findFirstMock = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobApplication: {
       updateMany: (...args: unknown[]) => updateManyMock(...args),
-      update: (...args: unknown[]) => updateMock(...args),
       findFirst: (...args: unknown[]) => findFirstMock(...args),
     },
   },
 }));
 
 const generateAdditionalQuestionsMock = vi.fn();
-const getHrQuestionsProviderMock = vi.fn(() => ({
+const getHrQuestionsProviderMock = vi.fn<() => HrQuestionsProvider>(() => ({
   name: "mock",
+  maxOutputTokens: 400,
+  countInputTokens: vi.fn(),
   generateAdditionalQuestions: generateAdditionalQuestionsMock,
 }));
 vi.mock("@/lib/ai/get-hr-questions-provider", () => ({
   getHrQuestionsProvider: () => getHrQuestionsProviderMock(),
 }));
 
+const requireAiAccessApprovedMock = vi.fn();
+const runGatedAiCallMock = vi.fn();
+vi.mock("@/lib/ai/access-control", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ai/access-control")>("@/lib/ai/access-control");
+  return {
+    ...actual,
+    requireAiAccessApproved: (...args: unknown[]) => requireAiAccessApprovedMock(...args),
+    runGatedAiCall: (...args: unknown[]) => runGatedAiCallMock(...args),
+  };
+});
+
 import { Status } from "@/app/generated/prisma/client";
+import { AiAccessError } from "@/lib/ai/access-control";
 import {
   ensureCoreHrQuestionsForTransition,
   generateVacancySpecificHrQuestions,
 } from "@/lib/hr-questions-service";
 import type { HrInterviewQuestion } from "@/lib/hr-interview-questions";
+import type { HrQuestionsProvider } from "@/lib/ai/hr-questions-provider";
 
 const CORE_ONLY_SET = {
   version: 1 as const,
@@ -56,12 +69,22 @@ function vacancyQuestions(questions: HrInterviewQuestion[] | undefined) {
 
 beforeEach(() => {
   updateManyMock.mockReset();
-  updateMock.mockReset();
   findFirstMock.mockReset();
   generateAdditionalQuestionsMock.mockReset();
   getHrQuestionsProviderMock.mockClear();
+  getHrQuestionsProviderMock.mockReturnValue({
+    name: "mock",
+    maxOutputTokens: 400,
+    countInputTokens: vi.fn(),
+    generateAdditionalQuestions: generateAdditionalQuestionsMock,
+  });
+  requireAiAccessApprovedMock.mockReset();
+  requireAiAccessApprovedMock.mockResolvedValue(undefined);
+  runGatedAiCallMock.mockReset();
+  runGatedAiCallMock.mockImplementation(
+    async ({ call }: { call: (reportUsage: (usage: unknown) => void) => Promise<unknown> }) => call(() => {}),
+  );
   updateManyMock.mockResolvedValue({ count: 1 });
-  updateMock.mockResolvedValue({});
 });
 
 describe("ensureCoreHrQuestionsForTransition — gating and atomic claim", () => {
@@ -217,7 +240,7 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
 
     expect(result).toBeNull();
     expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(updateManyMock).not.toHaveBeenCalled();
   });
 
   it("returns null when no core question set has been stored yet", async () => {
@@ -244,7 +267,7 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
     const result = await generateVacancySpecificHrQuestions("app_1", "user_1");
 
     expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(updateManyMock).not.toHaveBeenCalled();
     expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toHaveLength(1);
   });
 
@@ -254,7 +277,7 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
     const result = await generateVacancySpecificHrQuestions("app_1", "user_1");
 
     expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(updateManyMock).not.toHaveBeenCalled();
     expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toHaveLength(0);
   });
 
@@ -278,7 +301,7 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
     const result = await generateVacancySpecificHrQuestions("app_1", "user_1");
 
     expect(generateAdditionalQuestionsMock).toHaveBeenCalledTimes(1);
-    expect(updateManyMock).toHaveBeenCalledTimes(1);
+    expect(updateManyMock).toHaveBeenCalledTimes(2);
     expect(updateManyMock).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "app_1", userId: "user_1" } }),
     );
@@ -287,7 +310,77 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
     ]);
   });
 
-  it("keeps only the core set and does not persist when the provider throws", async () => {
+  it("gates the mock provider behind AI access approval even though it consumes no quota", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+    generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: [] });
+
+    await generateVacancySpecificHrQuestions("app_1", "user_1");
+
+    expect(requireAiAccessApprovedMock).toHaveBeenCalledWith("user_1");
+    expect(runGatedAiCallMock).not.toHaveBeenCalled();
+  });
+
+  it("propagates AiAccessError instead of swallowing it, and releases the claim it holds", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+    requireAiAccessApprovedMock.mockRejectedValue(
+      new AiAccessError("AI_ACCESS_REQUIRED", "AI access has not been approved yet."),
+    );
+
+    await expect(generateVacancySpecificHrQuestions("app_1", "user_1")).rejects.toBeInstanceOf(AiAccessError);
+
+    expect(generateAdditionalQuestionsMock).not.toHaveBeenCalled();
+    expect(updateManyMock).toHaveBeenCalledTimes(2);
+    const claimCall = updateManyMock.mock.calls[0][0];
+    const releaseCall = updateManyMock.mock.calls[1][0];
+    expect(releaseCall).toEqual({
+      where: { id: "app_1", hrEnhancementClaimToken: claimCall.data.hrEnhancementClaimToken },
+      data: { hrEnhancementClaimedAt: null, hrEnhancementClaimToken: null },
+    });
+  });
+
+  it("routes a real provider through the quota-gated call instead of the direct access check", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+    const realGenerateMock = vi.fn().mockResolvedValue({ additionalQuestions: [] });
+    getHrQuestionsProviderMock.mockReturnValue({
+      name: "openai",
+      maxOutputTokens: 400,
+      countInputTokens: vi.fn().mockResolvedValue(42),
+      generateAdditionalQuestions: realGenerateMock,
+    });
+
+    await generateVacancySpecificHrQuestions("app_1", "user_1");
+
+    expect(runGatedAiCallMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user_1",
+        feature: "HR_GENERATION",
+        applicationId: "app_1",
+        maxOutputTokens: 400,
+      }),
+    );
+    expect(requireAiAccessApprovedMock).not.toHaveBeenCalled();
+  });
+
+  it("passes a countInputTokens callback that delegates to the real provider's own exact token counter", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+    const countInputTokensMock = vi.fn().mockResolvedValue(123);
+    getHrQuestionsProviderMock.mockReturnValue({
+      name: "openai",
+      maxOutputTokens: 400,
+      countInputTokens: countInputTokensMock,
+      generateAdditionalQuestions: vi.fn().mockResolvedValue({ additionalQuestions: [] }),
+    });
+
+    await generateVacancySpecificHrQuestions("app_1", "user_1");
+
+    const callArgs = runGatedAiCallMock.mock.calls[0][0];
+    await expect(callArgs.countInputTokens()).resolves.toBe(123);
+    expect(countInputTokensMock).toHaveBeenCalledWith(
+      expect.objectContaining({ company: "Acme", jobPostingText: "React role." }),
+    );
+  });
+
+  it("keeps only the core set and releases the claim (using its own lease token) when the provider throws", async () => {
     findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     generateAdditionalQuestionsMock.mockRejectedValue(new Error("boom"));
 
@@ -295,17 +388,23 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
 
     expect(result).not.toBeNull();
     expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(updateManyMock).toHaveBeenCalledTimes(2);
+    const claimCall = updateManyMock.mock.calls[0][0];
+    const releaseCall = updateManyMock.mock.calls[1][0];
+    expect(releaseCall).toEqual({
+      where: { id: "app_1", hrEnhancementClaimToken: claimCall.data.hrEnhancementClaimToken },
+      data: { hrEnhancementClaimedAt: null, hrEnhancementClaimToken: null },
+    });
   });
 
-  it("keeps only the core set when the provider returns zero questions", async () => {
+  it("keeps only the core set when the provider returns zero questions, and does not release the claim", async () => {
     findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     generateAdditionalQuestionsMock.mockResolvedValue({ additionalQuestions: [] });
 
     const result = await generateVacancySpecificHrQuestions("app_1", "user_1");
 
     expect(vacancyQuestions(result?.hrInterviewQuestions.questions)).toHaveLength(0);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(updateManyMock).toHaveBeenCalledTimes(1);
   });
 
   it("drops an AI-generated question that exceeds 140 characters, keeping valid ones", async () => {
@@ -334,7 +433,7 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
     ]);
   });
 
-  it("never throws when the configured provider is missing, and keeps the core set", async () => {
+  it("never throws when the configured provider is missing, releases the claim, and keeps the core set", async () => {
     findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
     getHrQuestionsProviderMock.mockImplementation(() => {
       throw new Error("AI_PROVIDER not configured");
@@ -344,6 +443,56 @@ describe("generateVacancySpecificHrQuestions — best-effort AI enhancement", ()
 
     expect(result).not.toBeNull();
     expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(updateManyMock).toHaveBeenCalledTimes(2);
+    const claimCall = updateManyMock.mock.calls[0][0];
+    const releaseCall = updateManyMock.mock.calls[1][0];
+    expect(releaseCall).toEqual({
+      where: { id: "app_1", hrEnhancementClaimToken: claimCall.data.hrEnhancementClaimToken },
+      data: { hrEnhancementClaimedAt: null, hrEnhancementClaimToken: null },
+    });
+  });
+
+  it("returns the current set without calling the provider when a concurrent request already claimed the enhancement slot", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+    updateManyMock.mockResolvedValue({ count: 0 });
+
+    const result = await generateVacancySpecificHrQuestions("app_1", "user_1");
+
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "app_1",
+          userId: "user_1",
+          OR: [{ hrEnhancementClaimToken: null }, { hrEnhancementClaimedAt: { lt: expect.any(Date) } }],
+        }),
+      }),
+    );
+    expect(getHrQuestionsProviderMock).not.toHaveBeenCalled();
+    expect(result?.hrInterviewQuestions.questions.every((q) => q.category === "CORE")).toBe(true);
+  });
+
+  it("scopes the enhancement claim by both applicationId and userId, and issues a fresh lease token", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+
+    await generateVacancySpecificHrQuestions("app_1", "user_1");
+
+    expect(updateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "app_1", userId: "user_1" }),
+        data: { hrEnhancementClaimedAt: expect.any(Date), hrEnhancementClaimToken: expect.any(String) },
+      }),
+    );
+  });
+
+  it("lets a fresh request recover a lease abandoned by a crashed holder (stale-claim OR clause)", async () => {
+    findFirstMock.mockResolvedValue(fakeApplication({ jobPostingText: "React role." }));
+
+    await generateVacancySpecificHrQuestions("app_1", "user_1");
+
+    const claimCall = updateManyMock.mock.calls[0][0];
+    const staleBranch = claimCall.where.OR.find((clause: Record<string, unknown>) =>
+      Object.prototype.hasOwnProperty.call(clause, "hrEnhancementClaimedAt"),
+    );
+    expect(staleBranch.hrEnhancementClaimedAt.lt.getTime()).toBeLessThan(Date.now());
   });
 });

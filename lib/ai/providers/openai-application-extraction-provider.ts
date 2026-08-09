@@ -11,6 +11,7 @@ import { inferPlatformFromLink } from "@/lib/platform-inference";
 import { ApplicationExtractionProviderError } from "@/lib/ai/application-extraction-provider";
 import type { ApplicationExtractionProvider } from "@/lib/ai/application-extraction-provider";
 import { getOpenAIClient, OpenAIConfigurationError } from "@/lib/ai/openai-client";
+import type { AiUsageReport } from "@/lib/ai/token-usage";
 
 // Pinned deliberately: switching models must be a conscious code change, not
 // an environment-variable typo that silently starts billing a pricier model.
@@ -62,6 +63,25 @@ function buildInput(input: ApplicationExtractionInput): string {
   }
 
   return parts.join("\n");
+}
+
+// Single source of truth for the request shape, used both to count input
+// tokens ahead of quota reservation and to actually generate — so the count
+// is always for the exact request that gets sent, not an approximation of it.
+function buildResponseParams(input: ApplicationExtractionInput) {
+  return {
+    model: OPENAI_EXTRACTION_MODEL,
+    instructions: EXTRACTION_INSTRUCTIONS,
+    input: buildInput(input),
+    store: false,
+    tools: [],
+    max_output_tokens: MAX_OUTPUT_TOKENS,
+    text: {
+      format: zodTextFormat(openAiExtractionWireSchema, RESPONSE_FORMAT_NAME),
+      verbosity: "low" as const,
+    },
+    reasoning: { effort: "minimal" as const },
+  };
 }
 
 function mapOpenAIError(error: unknown): never {
@@ -118,26 +138,27 @@ function mapOpenAIError(error: unknown): never {
 
 export class OpenAIApplicationExtractionProvider implements ApplicationExtractionProvider {
   readonly name = "openai";
+  readonly maxOutputTokens = MAX_OUTPUT_TOKENS;
+
+  async countInputTokens(input: ApplicationExtractionInput): Promise<number> {
+    let response;
+    try {
+      const client = getOpenAIClient();
+      response = await client.responses.inputTokens.count(buildResponseParams(input));
+    } catch (error) {
+      mapOpenAIError(error);
+    }
+    return response.input_tokens;
+  }
 
   async extractApplication(
     input: ApplicationExtractionInput,
+    options?: { onUsage?: (usage: AiUsageReport) => void },
   ): Promise<ApplicationExtractionResult> {
     let response;
     try {
       const client = getOpenAIClient();
-      response = await client.responses.parse({
-        model: OPENAI_EXTRACTION_MODEL,
-        instructions: EXTRACTION_INSTRUCTIONS,
-        input: buildInput(input),
-        store: false,
-        tools: [],
-        max_output_tokens: MAX_OUTPUT_TOKENS,
-        text: {
-          format: zodTextFormat(openAiExtractionWireSchema, RESPONSE_FORMAT_NAME),
-          verbosity: "low",
-        },
-        reasoning: { effort: "minimal" },
-      });
+      response = await client.responses.parse(buildResponseParams(input));
     } catch (error) {
       mapOpenAIError(error);
     }
@@ -164,6 +185,13 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
 
     const result = validated.data;
     const inferredPlatform = result.link ? inferPlatformFromLink(result.link) : null;
+
+    options?.onUsage?.({
+      model: OPENAI_EXTRACTION_MODEL,
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+      totalTokens: response.usage?.total_tokens ?? 0,
+    });
 
     return {
       ...result,

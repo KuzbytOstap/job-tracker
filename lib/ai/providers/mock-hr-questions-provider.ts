@@ -24,6 +24,14 @@ function haystack(input: HrQuestionsGenerationInput): string {
 
 export class MockHrQuestionsProvider implements HrQuestionsProvider {
   readonly name = "mock";
+  readonly maxOutputTokens = 400;
+
+  // Never actually called: mock calls are access-gated but bypass quota
+  // reservation entirely, so nothing ever asks the mock provider to count
+  // tokens. Implemented only to satisfy the provider interface.
+  async countInputTokens(): Promise<number> {
+    return 0;
+  }
 
   async generateAdditionalQuestions(
     input: HrQuestionsGenerationInput,
