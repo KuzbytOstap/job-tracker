@@ -641,6 +641,139 @@
   color: var(--destructive);
 }
 
+[data-job-tracker-theme="game-hub"] .gh-signin-bg {
+  background:
+    radial-gradient(60% 55% at 78% 28%, var(--gh-hero-bloom), transparent 70%),
+    radial-gradient(46% 42% at 80% 66%, var(--gh-hero-reflected), transparent 75%),
+    linear-gradient(155deg, var(--gh-bg) 0%, var(--gh-bg-secondary) 55%, var(--gh-bg) 100%),
+    radial-gradient(130% 95% at 50% 45%, transparent 55%, var(--gh-hero-falloff) 100%);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--gh-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gh-border) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity: 0.04;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-visual {
+  isolation: isolate;
+  animation: gh-signin-fade-in var(--gh-duration-deliberate) var(--gh-ease-entrance) both;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-core-glow {
+  filter: blur(20px);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gh-signin-orbit-drift 12s var(--gh-ease-standard) infinite;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, var(--gh-accent), var(--gh-accent-secondary));
+  color: oklch(0.99 0.01 85);
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: var(--gh-shadow);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-title {
+  color: var(--gh-text);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-description {
+  color: var(--gh-text-secondary);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-surface {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--gh-card-border);
+  background: var(--gh-surface);
+  box-shadow: var(--gh-card-shadow), inset 0 1px 0 oklch(1 0 0 / 0.35);
+  padding: 2rem 1.75rem;
+  animation: gh-signin-rise var(--gh-duration-deliberate) var(--gh-ease-entrance) both;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid oklch(0.75 0.08 30 / 0.5);
+  background: oklch(0.94 0.03 30 / 0.55);
+  color: var(--destructive);
+  padding: 0.625rem 0.75rem;
+  line-height: 1.4;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-error svg {
+  margin-top: 0.125rem;
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-surface [data-slot="button"] {
+  height: 2.75rem;
+  font-weight: 600;
+  background: var(--gh-accent);
+  color: oklch(0.99 0.01 85);
+  box-shadow: var(--gh-shadow);
+  transition:
+    background var(--gh-duration-fast) var(--gh-ease-standard),
+    box-shadow var(--gh-duration-fast) var(--gh-ease-standard);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-surface [data-slot="button"]:hover {
+  background: var(--gh-accent-secondary);
+  box-shadow: var(--gh-card-shadow-hover);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-signin-fade {
+  animation: gh-signin-fade-in var(--gh-duration-fast) var(--gh-ease-entrance) both;
+}
+
+@keyframes gh-signin-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gh-signin-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gh-signin-orbit-drift {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-job-tracker-theme="game-hub"] .kanban-card,
   [data-job-tracker-theme="game-hub"] .kanban-lane,
@@ -658,6 +791,15 @@
   }
 
   [data-job-tracker-theme="game-hub"] .focus-dock-row:active {
+    transform: none;
+  }
+
+  [data-job-tracker-theme="game-hub"] .gh-signin-visual,
+  [data-job-tracker-theme="game-hub"] .gh-signin-surface,
+  [data-job-tracker-theme="game-hub"] .gh-signin-fade,
+  [data-job-tracker-theme="game-hub"] .gh-signin-orbit {
+    animation: none;
+    opacity: 1;
     transform: none;
   }
 }
