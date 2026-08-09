@@ -70,7 +70,7 @@ export function ConfirmActionDialog({
         }
         className={cn(
           isGameHub &&
-            "sm:z-[60] sm:w-[460px] data-[size=default]:sm:max-w-[460px] sm:rounded-2xl sm:border sm:border-[var(--gh-border-strong)] sm:bg-[var(--gh-surface)] sm:text-[var(--gh-text)] sm:ring-0 sm:shadow-[var(--gh-shadow)] sm:data-open:duration-[var(--gh-duration-standard)] sm:data-open:ease-[var(--gh-ease-entrance)] sm:data-open:zoom-in-98 sm:data-closed:duration-[var(--gh-duration-fast)] sm:data-closed:ease-[var(--gh-ease-exit)] sm:data-closed:zoom-out-98 sm:motion-reduce:zoom-in-100 sm:motion-reduce:zoom-out-100 sm:motion-reduce:duration-0",
+            "sm:z-[60] sm:w-[400px] data-[size=default]:sm:max-w-[400px] sm:rounded-xl sm:border sm:border-[var(--gh-border-strong)] sm:bg-[var(--gh-surface)] sm:text-[var(--gh-text)] sm:shadow-[var(--gh-dock-panel-shadow)] sm:data-open:duration-[var(--gh-duration-standard)] sm:data-open:ease-[var(--gh-ease-entrance)] sm:data-open:zoom-in-98 sm:data-closed:duration-[var(--gh-duration-fast)] sm:data-closed:ease-[var(--gh-ease-exit)] sm:data-closed:zoom-out-98 sm:motion-reduce:zoom-in-100 sm:motion-reduce:zoom-out-100 sm:motion-reduce:duration-0",
         )}
       >
         <AlertDialogHeader>
@@ -89,7 +89,7 @@ export function ConfirmActionDialog({
         <AlertDialogFooter
           className={
             isGameHub
-              ? "sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface-secondary)] sm:rounded-b-2xl"
+              ? "sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface-secondary)] sm:rounded-b-xl"
               : undefined
           }
         >
@@ -108,11 +108,13 @@ export function ConfirmActionDialog({
             disabled={pending}
             aria-busy={pending}
             onClick={onConfirm}
-            className={
-              isGameHub && !destructive
-                ? "sm:bg-[var(--gh-accent)] sm:text-[oklch(0.99_0.01_85)] sm:hover:bg-[var(--gh-accent-secondary)]"
-                : undefined
-            }
+            className={cn(
+              destructive && "bg-destructive text-white hover:bg-destructive/90",
+              isGameHub &&
+                (destructive
+                  ? "sm:hover:bg-destructive/90"
+                  : "sm:bg-[var(--gh-accent)] sm:text-[oklch(0.99_0.01_85)] sm:hover:bg-[var(--gh-accent-secondary)]"),
+            )}
           >
             {pending ? "Working…" : confirmLabel}
           </AlertDialogAction>
