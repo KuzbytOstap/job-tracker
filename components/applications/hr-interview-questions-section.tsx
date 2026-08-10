@@ -1,5 +1,5 @@
 import { CopyButton } from "@/components/ui/copy-button";
-import { AiAccessNotice, type LockedAiAccessStatus } from "@/components/ai/ai-access-notice";
+import { AiAccessNotice } from "@/components/ai/ai-access-notice";
 import { AiQuotaNotice } from "@/components/ai/ai-quota-notice";
 import { hasVacancySpecificQuestions, type HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 import { resolveAiQuotaReason, quotaForReason } from "@/lib/ai-quota";
@@ -27,14 +27,14 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage
   // REJECTED hides AI entry points entirely (silently, like elsewhere), and
   // APPROVED users who still lack vacancy-specific questions are covered by
   // the automatic HR_CALL follow-up (and, if a quota is exhausted, the
-  // quota notice below), not this notice.
-  const lockedAiAccessStatus: LockedAiAccessStatus | null =
+  // quota notice below), not this notice. While the status is still loading
+  // (undefined), show the notice's own neutral loading state rather than
+  // nothing — AiAccessNotice renders a skeleton for undefined and never a
+  // clickable action until the real status resolves.
+  const showAiAccessNotice =
     missingVacancyQuestions &&
-    (aiAccessStatus === AiAccessStatus.NOT_REQUESTED ||
-      aiAccessStatus === AiAccessStatus.PENDING ||
-      aiAccessStatus === AiAccessStatus.SUSPENDED)
-      ? aiAccessStatus
-      : null;
+    aiAccessStatus !== AiAccessStatus.APPROVED &&
+    aiAccessStatus !== AiAccessStatus.REJECTED;
 
   // Same idea for an APPROVED user whose HR-generation or shared token quota
   // is exhausted: the automatic follow-up already ran (or will) and was
@@ -93,7 +93,7 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage
           </div>
         )}
 
-        {lockedAiAccessStatus && <AiAccessNotice status={lockedAiAccessStatus} />}
+        {showAiAccessNotice && <AiAccessNotice status={aiAccessStatus} />}
         {quotaReason && aiUsage && (
           <AiQuotaNotice reason={quotaReason} quota={quotaForReason(aiUsage, quotaReason)} resetAt={aiUsage.resetAt} />
         )}

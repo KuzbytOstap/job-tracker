@@ -56,10 +56,12 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
   const suspendMutation = useSuspendAdminUser();
   const restoreMutation = useRestoreAdminUser();
 
+  const isMutating = suspendMutation.isPending || restoreMutation.isPending;
   const canSuspend = user.aiAccessStatus === AiAccessStatus.APPROVED;
   const canRestore = user.aiAccessStatus === AiAccessStatus.SUSPENDED;
 
   function handleConfirm() {
+    if (isMutating) return;
     const mutation = confirmOpen === "suspend" ? suspendMutation : restoreMutation;
     mutation.mutate(user.id, {
       onSuccess: () => {
@@ -85,13 +87,25 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
             {AI_ACCESS_STATUS_LABELS[user.aiAccessStatus]}
           </Badge>
           {canSuspend && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmOpen("suspend")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isMutating}
+              onClick={() => setConfirmOpen("suspend")}
+            >
               <Pause data-icon="inline-start" />
               Suspend
             </Button>
           )}
           {canRestore && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmOpen("restore")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isMutating}
+              onClick={() => setConfirmOpen("restore")}
+            >
               <Play data-icon="inline-start" />
               Restore
             </Button>
@@ -121,7 +135,7 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
         confirmLabel={confirmOpen === "suspend" ? "Suspend" : "Restore"}
         intent={confirmOpen === "suspend" ? "warning" : "neutral"}
         visualVariant="gameHub"
-        pending={suspendMutation.isPending || restoreMutation.isPending}
+        pending={isMutating}
         onConfirm={handleConfirm}
       />
     </tr>

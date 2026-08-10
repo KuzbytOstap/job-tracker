@@ -5,6 +5,7 @@ import { LogOut, Plus, ShieldCheck } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 type AppHeaderProps = {
   total: number | undefined;
@@ -49,6 +50,7 @@ export function AppHeader({ total, onAddClick, playEntrance = false, isAdmin = f
               <ShieldCheck />
             </Link>
           )}
+          <ThemeToggle />
           <Button
             type="button"
             variant="ghost"

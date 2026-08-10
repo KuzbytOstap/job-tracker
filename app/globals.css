@@ -82,7 +82,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -115,6 +115,40 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+}
+
+:root[data-theme="dark"] {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
@@ -152,6 +186,45 @@
   --gh-dock-panel-shadow: 0 4px 10px oklch(0.24 0.02 50 / 0.08), 0 20px 40px -20px oklch(0.24 0.02 50 / 0.28);
 }
 
+/*
+ * Dark-mode equivalents of the :root Game Hub tokens above, for the same
+ * portaled-content reason. Without this block, --gh-* stayed pinned to the
+ * light warm-cream values in dark mode while components layered on top of
+ * them (Tabs labels, ghost/outline buttons, dialog secondary actions) use
+ * plain shadcn tokens that DO flip for prefers-color-scheme: dark — pairing
+ * dark-flipped near-white text/borders with a surface that never left its
+ * light value, which read as washed out or fully invisible.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gh-surface: oklch(0.198 0.016 257);
+    --gh-surface-secondary: oklch(0.228 0.018 256);
+    --gh-border: oklch(1 0 0 / 10%);
+    --gh-border-strong: oklch(1 0 0 / 18%);
+    --gh-text: oklch(0.97 0.003 248);
+    --gh-text-secondary: oklch(0.72 0.02 255);
+    --gh-accent: oklch(0.72 0.15 48);
+    --gh-accent-secondary: oklch(0.66 0.13 36);
+    --gh-accent-soft: oklch(0.32 0.06 50);
+    --gh-warning: oklch(0.75 0.13 70);
+    --gh-dock-panel-shadow: 0 4px 10px oklch(0 0 0 / 0.3), 0 20px 40px -20px oklch(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --gh-surface: oklch(0.198 0.016 257);
+  --gh-surface-secondary: oklch(0.228 0.018 256);
+  --gh-border: oklch(1 0 0 / 10%);
+  --gh-border-strong: oklch(1 0 0 / 18%);
+  --gh-text: oklch(0.97 0.003 248);
+  --gh-text-secondary: oklch(0.72 0.02 255);
+  --gh-accent: oklch(0.72 0.15 48);
+  --gh-accent-secondary: oklch(0.66 0.13 36);
+  --gh-accent-soft: oklch(0.32 0.06 50);
+  --gh-warning: oklch(0.75 0.13 70);
+  --gh-dock-panel-shadow: 0 4px 10px oklch(0 0 0 / 0.3), 0 20px 40px -20px oklch(0 0 0 / 0.5);
+}
+
 [data-job-tracker-theme="game-hub"] {
   --gh-bg: oklch(0.965 0.008 70);
   --gh-bg-secondary: oklch(0.945 0.012 65);
@@ -178,12 +251,19 @@
   --gh-lane-drop-border: oklch(0.68 0.14 50);
   --gh-lane-drop-shadow: inset 0 0 0 1px oklch(0.68 0.14 50 / 0.35), 0 0 0 4px oklch(0.93 0.08 55 / 0.35);
   --gh-lane-source-surface: oklch(0.96 0.005 65 / 0.4);
+  --gh-lane-header-hover-bg: oklch(1 0 0 / 0.5);
+  --gh-lane-count-bg: oklch(1 0 0 / 0.6);
+  --gh-empty-state-bg: oklch(1 0 0 / 0.35);
 
   --gh-card-surface: var(--gh-surface);
+  --gh-card-surface-rejected: oklch(0.97 0.012 30 / 0.7);
   --gh-card-border: oklch(0.885 0.014 60);
   --gh-card-shadow: 0 1px 2px oklch(0.3 0.03 45 / 0.07), 0 6px 14px -10px oklch(0.3 0.03 45 / 0.2);
   --gh-card-shadow-hover: 0 2px 6px oklch(0.3 0.03 45 / 0.1), 0 16px 28px -16px oklch(0.3 0.03 45 / 0.32);
   --gh-drag-elevation-shadow: 0 20px 44px -12px oklch(0.24 0.06 45 / 0.45), 0 4px 14px oklch(0.24 0.06 45 / 0.26);
+  --gh-danger-soft-border: oklch(0.75 0.08 30 / 0.5);
+  --gh-list-error-icon-bg: oklch(0.94 0.03 30 / 0.6);
+  --gh-signin-error-bg: oklch(0.94 0.03 30 / 0.55);
 
   --gh-status-applied: oklch(0.62 0.03 240);
   --gh-status-hr-replied: oklch(0.63 0.1 230);
@@ -237,6 +317,113 @@
   --gh-ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
+/*
+ * Dark-mode Game Hub surface/text/border/accent tokens. Everything derived
+ * from these via var() (kanban card surface, dock surface/selected/badge,
+ * stage headers, admin tables, tabs, etc.) picks the new values up
+ * automatically. The base surface/border/text hues moved from a warm
+ * chocolate cast (hue ~50-75) to a neutral graphite/cool-slate direction
+ * (hue ~254-258) so the dark UI reads as premium neutral rather than brown.
+ * Warm orange stays only on --gh-accent/--gh-accent-secondary/--gh-warning —
+ * the intentional limited brand accent — and on a few small, explicitly
+ * "rich"/"active" decorative highlights (lane-border-rich, lane-drop-*,
+ * hero bloom) that are meant to read as a warm glow, not a base surface.
+ *
+ * This block also fills in dark values for tokens that previously had none,
+ * which left them pinned to their light (near-white/cream) values in dark
+ * mode: the kanban lane/column tokens, the REJECTED card surface, the empty
+ * column state, the lane header hover/count pill, and the hero bloom
+ * gradients. Those were the source of the washed-out "beige on brown"
+ * columns and cards reported in dark mode.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-job-tracker-theme="game-hub"] {
+    --gh-bg: oklch(0.168 0.012 258);
+    --gh-bg-secondary: oklch(0.192 0.014 257);
+    --gh-surface: oklch(0.198 0.016 257);
+    --gh-surface-secondary: oklch(0.228 0.018 256);
+    --gh-surface-subtle: oklch(0.216 0.017 256);
+    --gh-border: oklch(1 0 0 / 10%);
+    --gh-border-strong: oklch(1 0 0 / 18%);
+    --gh-text: oklch(0.97 0.003 248);
+    --gh-text-secondary: oklch(0.72 0.02 255);
+    --gh-text-muted: oklch(0.56 0.03 257);
+    --gh-accent: oklch(0.72 0.15 48);
+    --gh-accent-secondary: oklch(0.66 0.13 36);
+    --gh-accent-soft: oklch(0.32 0.06 50);
+    --gh-warning: oklch(0.75 0.13 70);
+    --gh-shadow: 0 1px 2px oklch(0 0 0 / 0.24), 0 8px 20px -12px oklch(0 0 0 / 0.45);
+    --gh-dock-row-hover: oklch(1 0 0 / 8%);
+    --gh-dock-panel-shadow: 0 4px 10px oklch(0 0 0 / 0.3), 0 20px 40px -20px oklch(0 0 0 / 0.5);
+
+    --gh-lane-surface: oklch(0.228 0.018 256 / 0.9);
+    --gh-lane-surface-rich: oklch(0.245 0.02 254 / 0.92);
+    --gh-lane-border: oklch(1 0 0 / 10%);
+    --gh-lane-border-rich: oklch(0.55 0.09 45 / 0.4);
+    --gh-lane-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04);
+    --gh-lane-drop-bg: oklch(0.42 0.1 48 / 0.28);
+    --gh-lane-drop-border: oklch(0.72 0.15 48);
+    --gh-lane-drop-shadow: inset 0 0 0 1px oklch(0.72 0.15 48 / 0.4), 0 0 0 4px oklch(0.72 0.15 48 / 0.18);
+    --gh-lane-source-surface: oklch(0.185 0.014 257 / 0.7);
+    --gh-lane-header-hover-bg: oklch(1 0 0 / 6%);
+    --gh-lane-count-bg: oklch(1 0 0 / 8%);
+    --gh-empty-state-bg: oklch(1 0 0 / 4%);
+
+    --gh-card-surface-rejected: oklch(0.26 0.03 25 / 0.55);
+    --gh-danger-soft-border: oklch(0.5 0.12 25 / 0.55);
+    --gh-list-error-icon-bg: oklch(0.32 0.06 25 / 0.5);
+    --gh-signin-error-bg: oklch(0.28 0.05 25 / 0.45);
+
+    --gh-hero-bloom: oklch(0.42 0.09 55 / 0.35);
+    --gh-hero-bloom-strong: oklch(0.52 0.12 55 / 0.55);
+    --gh-hero-reflected: oklch(0.4 0.06 55 / 0.18);
+    --gh-hero-falloff: oklch(0.05 0.01 258 / 0.4);
+  }
+}
+
+:root[data-theme="dark"] [data-job-tracker-theme="game-hub"] {
+  --gh-bg: oklch(0.168 0.012 258);
+  --gh-bg-secondary: oklch(0.192 0.014 257);
+  --gh-surface: oklch(0.198 0.016 257);
+  --gh-surface-secondary: oklch(0.228 0.018 256);
+  --gh-surface-subtle: oklch(0.216 0.017 256);
+  --gh-border: oklch(1 0 0 / 10%);
+  --gh-border-strong: oklch(1 0 0 / 18%);
+  --gh-text: oklch(0.97 0.003 248);
+  --gh-text-secondary: oklch(0.72 0.02 255);
+  --gh-text-muted: oklch(0.56 0.03 257);
+  --gh-accent: oklch(0.72 0.15 48);
+  --gh-accent-secondary: oklch(0.66 0.13 36);
+  --gh-accent-soft: oklch(0.32 0.06 50);
+  --gh-warning: oklch(0.75 0.13 70);
+  --gh-shadow: 0 1px 2px oklch(0 0 0 / 0.24), 0 8px 20px -12px oklch(0 0 0 / 0.45);
+  --gh-dock-row-hover: oklch(1 0 0 / 8%);
+  --gh-dock-panel-shadow: 0 4px 10px oklch(0 0 0 / 0.3), 0 20px 40px -20px oklch(0 0 0 / 0.5);
+
+  --gh-lane-surface: oklch(0.228 0.018 256 / 0.9);
+  --gh-lane-surface-rich: oklch(0.245 0.02 254 / 0.92);
+  --gh-lane-border: oklch(1 0 0 / 10%);
+  --gh-lane-border-rich: oklch(0.55 0.09 45 / 0.4);
+  --gh-lane-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04);
+  --gh-lane-drop-bg: oklch(0.42 0.1 48 / 0.28);
+  --gh-lane-drop-border: oklch(0.72 0.15 48);
+  --gh-lane-drop-shadow: inset 0 0 0 1px oklch(0.72 0.15 48 / 0.4), 0 0 0 4px oklch(0.72 0.15 48 / 0.18);
+  --gh-lane-source-surface: oklch(0.185 0.014 257 / 0.7);
+  --gh-lane-header-hover-bg: oklch(1 0 0 / 6%);
+  --gh-lane-count-bg: oklch(1 0 0 / 8%);
+  --gh-empty-state-bg: oklch(1 0 0 / 4%);
+
+  --gh-card-surface-rejected: oklch(0.26 0.03 25 / 0.55);
+  --gh-danger-soft-border: oklch(0.5 0.12 25 / 0.55);
+  --gh-list-error-icon-bg: oklch(0.32 0.06 25 / 0.5);
+  --gh-signin-error-bg: oklch(0.28 0.05 25 / 0.45);
+
+  --gh-hero-bloom: oklch(0.42 0.09 55 / 0.35);
+  --gh-hero-bloom-strong: oklch(0.52 0.12 55 / 0.55);
+  --gh-hero-reflected: oklch(0.4 0.06 55 / 0.18);
+  --gh-hero-falloff: oklch(0.05 0.01 258 / 0.4);
+}
+
 [data-job-tracker-theme="game-hub"] .kanban-lane {
   background: var(--gh-lane-surface);
   border: 1px solid var(--gh-lane-border);
@@ -278,11 +465,11 @@
 }
 
 [data-job-tracker-theme="game-hub"] .kanban-lane-header:hover {
-  background: oklch(1 0 0 / 0.5);
+  background: var(--gh-lane-header-hover-bg);
 }
 
 [data-job-tracker-theme="game-hub"] .kanban-lane-count {
-  background: oklch(1 0 0 / 0.6);
+  background: var(--gh-lane-count-bg);
   color: var(--gh-text-secondary);
   font-weight: 600;
   transition: background var(--gh-duration-fast) var(--gh-ease-standard);
@@ -363,7 +550,7 @@
 }
 [data-job-tracker-theme="game-hub"] .kanban-card[data-status="REJECTED"] {
   --gh-status-rail: var(--gh-status-rejected);
-  background: oklch(0.97 0.012 30 / 0.7);
+  background: var(--gh-card-surface-rejected);
 }
 [data-job-tracker-theme="game-hub"] .kanban-card[data-status="IGNORED"] {
   --gh-status-rail: var(--gh-status-ignored);
@@ -382,7 +569,7 @@
 }
 
 [data-job-tracker-theme="game-hub"] .kanban-empty-state {
-  background: oklch(1 0 0 / 0.35);
+  background: var(--gh-empty-state-bg);
   border-color: var(--gh-border);
   color: var(--gh-text-muted);
   transition:
@@ -659,8 +846,8 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 9999px;
-  background: oklch(0.94 0.03 30 / 0.6);
-  border: 1px solid oklch(0.75 0.08 30 / 0.5);
+  background: var(--gh-list-error-icon-bg);
+  border: 1px solid var(--gh-danger-soft-border);
   color: var(--destructive);
 }
 
@@ -736,8 +923,8 @@
   align-items: flex-start;
   gap: 0.5rem;
   border-radius: 0.75rem;
-  border: 1px solid oklch(0.75 0.08 30 / 0.5);
-  background: oklch(0.94 0.03 30 / 0.55);
+  border: 1px solid var(--gh-danger-soft-border);
+  background: var(--gh-signin-error-bg);
   color: var(--destructive);
   padding: 0.625rem 0.75rem;
   line-height: 1.4;

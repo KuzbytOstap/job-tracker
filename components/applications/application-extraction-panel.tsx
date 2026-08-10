@@ -183,7 +183,7 @@ export function ApplicationExtractionPanel({
             </p>
           )}
 
-          {aiAccessStatus != null && aiAccessStatus !== AiAccessStatus.APPROVED ? (
+          {aiAccessStatus !== AiAccessStatus.APPROVED ? (
             <AiAccessNotice status={aiAccessStatus} />
           ) : quotaReason && aiUsage.data ? (
             <AiQuotaNotice

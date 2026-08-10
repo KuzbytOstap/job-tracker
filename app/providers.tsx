@@ -6,10 +6,16 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider, useTheme } from "@/components/theme/theme-provider";
 
 type ProvidersProps = {
   children: ReactNode;
 };
+
+function AppToaster() {
+  const { theme } = useTheme();
+  return <Toaster theme={theme} position="top-center" richColors />;
+}
 
 export function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(
@@ -26,13 +32,15 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MotionConfig reducedMotion="user">
-        <TooltipProvider>
-          {children}
-          <Toaster theme="system" position="top-center" richColors />
-        </TooltipProvider>
-      </MotionConfig>
-      {process.env.NODE_ENV === "development" && <ReactQueryDevtools initialIsOpen={false} />}
+      <ThemeProvider>
+        <MotionConfig reducedMotion="user">
+          <TooltipProvider>
+            {children}
+            <AppToaster />
+          </TooltipProvider>
+        </MotionConfig>
+        {process.env.NODE_ENV === "development" && <ReactQueryDevtools initialIsOpen={false} />}
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
