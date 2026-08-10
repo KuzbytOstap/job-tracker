@@ -65,17 +65,12 @@ function buildInput(input: ApplicationExtractionInput): string {
   return parts.join("\n");
 }
 
-// Single source of truth for the request shape, used both to count input
-// tokens ahead of quota reservation and to actually generate — so the count
-// is always for the exact request that gets sent, not an approximation of it.
-function buildResponseParams(input: ApplicationExtractionInput) {
+function buildBaseResponseParams(input: ApplicationExtractionInput) {
   return {
     model: OPENAI_EXTRACTION_MODEL,
     instructions: EXTRACTION_INSTRUCTIONS,
     input: buildInput(input),
-    store: false,
     tools: [],
-    max_output_tokens: MAX_OUTPUT_TOKENS,
     text: {
       format: zodTextFormat(openAiExtractionWireSchema, RESPONSE_FORMAT_NAME),
       verbosity: "low" as const,
@@ -84,10 +79,54 @@ function buildResponseParams(input: ApplicationExtractionInput) {
   };
 }
 
-function mapOpenAIError(error: unknown): never {
+function buildResponseParams(input: ApplicationExtractionInput) {
+  return {
+    ...buildBaseResponseParams(input),
+    store: false,
+    max_output_tokens: MAX_OUTPUT_TOKENS,
+  };
+}
+
+type ExtractionFailureStage =
+  | "input_token_count"
+  | "generation"
+  | "incomplete_response"
+  | "null_output"
+  | "validation_failure";
+
+
+function logOpenAIApiFailure(stage: ExtractionFailureStage, error: unknown): void {
+  if (error instanceof OpenAI.APIError) {
+    console.error("[application-extraction] OpenAI API failure", {
+      stage,
+      errorName: error.name,
+      status: error.status,
+      code: error.code,
+      type: error.type,
+      requestId: error.requestID,
+      message: error.message,
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.error("[application-extraction] failure", {
+      stage,
+      errorName: error.name,
+      message: error.message,
+    });
+    return;
+  }
+
+  console.error("[application-extraction] failure", { stage });
+}
+
+function mapOpenAIError(stage: "input_token_count" | "generation", error: unknown): never {
   if (error instanceof ApplicationExtractionProviderError) {
     throw error;
   }
+
+  logOpenAIApiFailure(stage, error);
 
   // Shared client-configuration failure (e.g. missing API key), re-mapped into
   // this feature's own error type.
@@ -144,9 +183,9 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
     let response;
     try {
       const client = getOpenAIClient();
-      response = await client.responses.inputTokens.count(buildResponseParams(input));
+      response = await client.responses.inputTokens.count(buildBaseResponseParams(input));
     } catch (error) {
-      mapOpenAIError(error);
+      mapOpenAIError("input_token_count", error);
     }
     return response.input_tokens;
   }
@@ -160,10 +199,17 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
       const client = getOpenAIClient();
       response = await client.responses.parse(buildResponseParams(input));
     } catch (error) {
-      mapOpenAIError(error);
+      mapOpenAIError("generation", error);
     }
 
     if (response.status !== "completed") {
+      console.error("[application-extraction] failure", {
+        stage: "incomplete_response" satisfies ExtractionFailureStage,
+        responseId: response.id,
+        status: response.status,
+        incompleteReason: response.incomplete_details?.reason,
+        errorCode: response.error?.code,
+      });
       throw new ApplicationExtractionProviderError(
         "Couldn't extract application details. You can retry or fill the form manually.",
       );
@@ -171,6 +217,11 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
 
     const parsed = response.output_parsed;
     if (parsed === null) {
+      console.error("[application-extraction] failure", {
+        stage: "null_output" satisfies ExtractionFailureStage,
+        responseId: response.id,
+        status: response.status,
+      });
       throw new ApplicationExtractionProviderError(
         "Couldn't extract application details. You can retry or fill the form manually.",
       );
@@ -178,6 +229,14 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
 
     const validated = applicationExtractionResultSchema.safeParse(parsed);
     if (!validated.success) {
+      console.error("[application-extraction] failure", {
+        stage: "validation_failure" satisfies ExtractionFailureStage,
+        responseId: response.id,
+        issues: validated.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          code: issue.code,
+        })),
+      });
       throw new ApplicationExtractionProviderError(
         "Couldn't extract application details. You can retry or fill the form manually.",
       );
