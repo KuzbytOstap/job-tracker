@@ -100,7 +100,7 @@ export function ResponsiveApplicationOverlay({
               <div className="flex shrink-0 items-center justify-end border-b border-[var(--gh-border)] px-3 py-2">
                 <DialogTitle className="sr-only">{title}</DialogTitle>
                 {description && <DialogDescription className="sr-only">{description}</DialogDescription>}
-                <DialogClose render={<Button type="button" variant="ghost" size="icon-sm" />}>
+                <DialogClose render={<Button type="button" variant="ghost" size="icon-touch" />}>
                   <XIcon />
                   <span className="sr-only">Close</span>
                 </DialogClose>
@@ -134,7 +134,7 @@ export function ResponsiveApplicationOverlay({
                     </DialogDescription>
                   )}
                 </div>
-                <DialogClose render={<Button type="button" variant="ghost" size="icon-sm" />}>
+                <DialogClose render={<Button type="button" variant="ghost" size="icon-touch" />}>
                   <XIcon />
                   <span className="sr-only">Close</span>
                 </DialogClose>
@@ -145,11 +145,20 @@ export function ResponsiveApplicationOverlay({
         </Dialog>
       ) : isDesktop ? (
         <Dialog open={open} onOpenChange={handlePrimitiveOpenChange}>
-          <DialogContent className={cn("max-h-[85vh] overflow-y-auto sm:max-w-lg", contentClassName)}>
-            <DialogHeader>
+          <DialogContent
+            showCloseButton={false}
+            className={cn("max-h-[85vh] overflow-y-auto sm:max-w-lg", contentClassName)}
+          >
+            <DialogHeader className="pr-11">
               <DialogTitle>{title}</DialogTitle>
               {description && <DialogDescription>{description}</DialogDescription>}
             </DialogHeader>
+            <DialogClose
+              render={<Button type="button" variant="ghost" size="icon-touch" className="absolute top-2 right-2" />}
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DialogClose>
             {children}
           </DialogContent>
         </Dialog>
@@ -166,7 +175,7 @@ export function ResponsiveApplicationOverlay({
               className="flex shrink-0 items-center gap-1 border-b bg-popover px-2 pb-3"
               style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
             >
-              <DialogClose render={<Button type="button" variant="ghost" size="icon-sm" />}>
+              <DialogClose render={<Button type="button" variant="ghost" size="icon-touch" />}>
                 <XIcon />
                 <span className="sr-only">Close</span>
               </DialogClose>
@@ -183,11 +192,11 @@ export function ResponsiveApplicationOverlay({
       ) : (
         <Drawer open={open} onOpenChange={handlePrimitiveOpenChange}>
           <DrawerContent className={cn("max-h-[92dvh]", contentClassName)}>
-            <DrawerHeader className="relative pt-[max(1rem,env(safe-area-inset-top))] pr-12">
+            <DrawerHeader className="relative pt-[max(1rem,env(safe-area-inset-top))] pr-16">
               <DrawerTitle>{title}</DrawerTitle>
               {description && <DrawerDescription>{description}</DrawerDescription>}
               <DrawerClose
-                render={<Button variant="ghost" size="icon-sm" className="absolute top-3 right-3" />}
+                render={<Button variant="ghost" size="icon-touch" className="absolute top-2 right-2" />}
               >
                 <XIcon />
                 <span className="sr-only">Close</span>

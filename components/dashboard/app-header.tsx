@@ -45,7 +45,7 @@ export function AppHeader({ total, onAddClick, playEntrance = false, isAdmin = f
               href="/admin"
               title="Admin"
               aria-label="Admin"
-              className={buttonVariants({ variant: "ghost", size: "icon" })}
+              className={buttonVariants({ variant: "ghost", size: "icon-touch" })}
             >
               <ShieldCheck />
             </Link>
@@ -54,7 +54,7 @@ export function AppHeader({ total, onAddClick, playEntrance = false, isAdmin = f
           <Button
             type="button"
             variant="ghost"
-            size="icon"
+            size="icon-touch"
             title="Sign out"
             aria-label="Sign out"
             onClick={() => signOut({ redirectTo: "/sign-in" })}
