@@ -78,22 +78,22 @@ export function ApplicationCard({
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-base leading-tight font-semibold">
+                <p className="kanban-card-company truncate font-heading text-base leading-tight font-semibold">
                   {application.company}
                 </p>
-                <p className="truncate text-sm text-muted-foreground">{application.position}</p>
+                <p className="kanban-card-position truncate text-sm text-muted-foreground">{application.position}</p>
               </div>
             </div>
-            <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground/50" />
+            <ChevronRight className="kanban-card-chevron mt-0.5 size-4 shrink-0 text-muted-foreground/50" />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="kanban-card-badges flex flex-wrap items-center gap-1.5">
             <PlatformBadge platform={application.platform} />
-            <StatusBadge status={application.effectiveStatus} />
+            <StatusBadge status={application.effectiveStatus} className="kanban-card-status-badge" />
             {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <div className="kanban-card-meta flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span title={formatExactDateTime(application.appliedAt)}>
               Applied {formatRelativeDate(application.appliedAt)}
             </span>
@@ -101,15 +101,23 @@ export function ApplicationCard({
               Last activity {formatRelativeDate(application.lastActivityAt)}
             </span>
           </div>
+          <p
+            className="kanban-card-meta-compact hidden truncate text-[0.7rem] text-muted-foreground"
+            title={application.isAutoIgnored ? undefined : formatExactDateTime(application.lastActivityAt)}
+          >
+            {application.isAutoIgnored
+              ? "Auto-ignored · 21d silence"
+              : `Active ${formatRelativeDate(application.lastActivityAt)}`}
+          </p>
 
           {application.isAutoIgnored && (
-            <p className="text-xs text-muted-foreground italic">
+            <p className="kanban-card-auto-ignored-note text-xs text-muted-foreground italic">
               Auto-ignored after 21 days of silence
             </p>
           )}
 
           {(application.salaryExpectation || application.link) && (
-            <div className="flex items-center justify-between gap-2 pt-0.5">
+            <div className="kanban-card-footer flex items-center justify-between gap-2 pt-0.5">
               <span className="truncate text-xs text-muted-foreground/80">
                 {application.salaryExpectation ?? ""}
               </span>
@@ -125,6 +133,20 @@ export function ApplicationCard({
                   <ExternalLink className="size-4" />
                 </a>
               )}
+            </div>
+          )}
+          {application.link && (
+            <div className="kanban-card-footer-compact hidden items-center justify-end">
+              <a
+                href={application.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+                aria-label="Open job posting in a new tab"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ExternalLink className="size-3.5" />
+              </a>
             </div>
           )}
         </CardContent>
