@@ -742,6 +742,15 @@
   background: var(--gh-action-primary-bg-hover);
 }
 
+[data-job-tracker-theme="game-hub"] .gh-console-cta[data-slot="button"] {
+  background: var(--gh-action-primary-bg);
+  color: var(--gh-action-primary-fg);
+}
+
+[data-job-tracker-theme="game-hub"] .gh-console-cta[data-slot="button"]:hover {
+  background: var(--gh-action-primary-bg-hover);
+}
+
 [data-job-tracker-theme="game-hub"] .gh-source-panel {
   border-color: var(--gh-border);
   background: var(--gh-surface-secondary);

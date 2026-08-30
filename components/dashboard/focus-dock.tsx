@@ -14,6 +14,7 @@ type FocusDockProps = {
   isLoading: boolean;
   detailOpen: boolean;
   onSelectApplication: (id: string) => void;
+  className?: string;
 };
 
 const PIPELINE_STATUSES = [
@@ -61,7 +62,7 @@ function formatDockDate(value: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
 }
 
-export function FocusDock({ applications, isLoading, detailOpen, onSelectApplication }: FocusDockProps) {
+export function FocusDock({ applications, isLoading, detailOpen, onSelectApplication, className }: FocusDockProps) {
   const [expanded, setExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<FocusSection>("pipeline");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -141,6 +142,7 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
       className={cn(
         "hidden shrink-0 self-start transition-opacity duration-200 ease-out lg:sticky lg:top-4 lg:flex lg:items-start",
         detailOpen ? "pointer-events-none opacity-0" : "opacity-100",
+        className,
       )}
     >
       <AnimatePresence initial={false}>

@@ -6,27 +6,42 @@ import { signOut } from "next-auth/react";
 import { motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { cn } from "@/lib/utils";
 
 type AppHeaderProps = {
   total: number | undefined;
   onAddClick: () => void;
   playEntrance?: boolean;
   isAdmin?: boolean;
+  className?: string;
+  titleAsHeading?: boolean;
 };
 
-export function AppHeader({ total, onAddClick, playEntrance = false, isAdmin = false }: AppHeaderProps) {
+export function AppHeader({
+  total,
+  onAddClick,
+  playEntrance = false,
+  isAdmin = false,
+  className,
+  titleAsHeading = true,
+}: AppHeaderProps) {
+  const TitleTag = titleAsHeading ? "h1" : "p";
+
   return (
     <motion.header
       initial={playEntrance ? { opacity: 0, y: -10 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)]/80"
+      className={cn(
+        "sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)]/80",
+        className,
+      )}
     >
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-2.5">
         <div className="min-w-0">
-          <h1 className="font-heading text-lg font-semibold tracking-tight sm:text-base sm:text-[var(--gh-text)]">
+          <TitleTag className="font-heading text-lg font-semibold tracking-tight sm:text-base sm:text-[var(--gh-text)]">
             Job Tracker
-          </h1>
+          </TitleTag>
           <p className="truncate text-sm text-muted-foreground sm:text-xs sm:text-[var(--gh-text-muted)]">
             Keep every opportunity moving
             {typeof total === "number" ? ` · ${total} application${total === 1 ? "" : "s"}` : ""}

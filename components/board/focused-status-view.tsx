@@ -9,6 +9,7 @@ import { ApplicationsView } from "@/components/dashboard/applications-view";
 import { FloatingAddButton } from "@/components/dashboard/floating-add-button";
 import { AddApplicationDialog } from "@/components/dashboard/add-application-dialog";
 import { ApplicationDetailDialog } from "@/components/dashboard/application-detail-dialog";
+import { PipelineTopbarActions } from "@/components/console/pipeline-topbar";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -52,18 +53,24 @@ export function FocusedStatusView({ slug }: FocusedStatusViewProps) {
   const headerEntranceInitial = reducedMotion ? false : { opacity: 0, y: -6 };
 
   return (
-    <div
-      data-job-tracker-theme="game-hub"
-      className="relative min-h-screen overflow-x-clip bg-background sm:bg-[var(--gh-bg)]"
-    >
+    <>
       <div
         aria-hidden
         className="pointer-events-none fixed top-[-160px] left-1/2 -z-10 h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl"
       />
 
-      <AppHeader total={statsQuery.data?.total} onAddClick={() => setAddDialogOpen(true)} />
+      <AppHeader
+        total={statsQuery.data?.total}
+        onAddClick={() => setAddDialogOpen(true)}
+        className="xl:hidden"
+        titleAsHeading={false}
+      />
 
-      <div className="mx-auto w-full max-w-[760px] px-4 pt-4 pb-24 sm:max-w-[960px] sm:px-6 sm:pb-16">
+      <div className="hidden xl:flex xl:shrink-0 xl:items-center xl:justify-end xl:gap-3 xl:border-b xl:border-[var(--gh-border)] xl:bg-[var(--gh-surface)] xl:px-6 xl:py-3">
+        <PipelineTopbarActions onAddClick={() => setAddDialogOpen(true)} />
+      </div>
+
+      <div className="mx-auto w-full max-w-[760px] px-4 pt-4 pb-24 sm:max-w-[960px] sm:px-6 sm:pb-16 xl:max-w-none xl:flex-1 xl:min-h-0 xl:overflow-y-auto">
         <Link
           href="/"
           className="mb-3 inline-flex items-center gap-1.5 rounded-md py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -112,6 +119,6 @@ export function FocusedStatusView({ slug }: FocusedStatusViewProps) {
         open={detail.open}
         onOpenChange={detail.setOpen}
       />
-    </div>
+    </>
   );
 }
