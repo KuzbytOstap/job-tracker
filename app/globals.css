@@ -5,7 +5,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -176,7 +176,7 @@
   --gh-surface: oklch(0.995 0.004 80);
   --gh-surface-secondary: oklch(0.975 0.008 70);
   --gh-border: oklch(0.89 0.012 65);
-  --gh-border-strong: oklch(0.82 0.016 60);
+  --gh-border-strong: #8d8883;
   --gh-text: oklch(0.24 0.02 50);
   --gh-text-secondary: oklch(0.42 0.02 50);
   --gh-accent: oklch(0.62 0.17 45);
@@ -200,7 +200,7 @@
     --gh-surface: oklch(0.198 0.016 257);
     --gh-surface-secondary: oklch(0.228 0.018 256);
     --gh-border: oklch(1 0 0 / 10%);
-    --gh-border-strong: oklch(1 0 0 / 18%);
+    --gh-border-strong: #6e6861;
     --gh-text: oklch(0.97 0.003 248);
     --gh-text-secondary: oklch(0.72 0.02 255);
     --gh-accent: oklch(0.72 0.15 48);
@@ -215,7 +215,7 @@
   --gh-surface: oklch(0.198 0.016 257);
   --gh-surface-secondary: oklch(0.228 0.018 256);
   --gh-border: oklch(1 0 0 / 10%);
-  --gh-border-strong: oklch(1 0 0 / 18%);
+  --gh-border-strong: #6e6861;
   --gh-text: oklch(0.97 0.003 248);
   --gh-text-secondary: oklch(0.72 0.02 255);
   --gh-accent: oklch(0.72 0.15 48);
@@ -232,7 +232,7 @@
   --gh-surface-secondary: oklch(0.975 0.008 70);
   --gh-surface-subtle: oklch(0.955 0.012 65);
   --gh-border: oklch(0.89 0.012 65);
-  --gh-border-strong: oklch(0.82 0.016 60);
+  --gh-border-strong: #8d8883;
   --gh-text: oklch(0.24 0.02 50);
   --gh-text-secondary: oklch(0.42 0.02 50);
   --gh-text-muted: oklch(0.55 0.02 55);
@@ -241,6 +241,10 @@
   --gh-accent-soft: oklch(0.93 0.05 60);
   --gh-warning: oklch(0.64 0.13 68);
   --gh-shadow: 0 1px 2px oklch(0.24 0.02 50 / 0.06), 0 8px 20px -12px oklch(0.24 0.02 50 / 0.18);
+
+  --gh-action-primary-bg: #2f241c;
+  --gh-action-primary-bg-hover: #41352d;
+  --gh-action-primary-fg: #fdfcf9;
 
   --gh-lane-surface: oklch(0.975 0.006 68 / 0.55);
   --gh-lane-surface-rich: oklch(0.96 0.02 55 / 0.6);
@@ -344,7 +348,7 @@
     --gh-surface-secondary: oklch(0.228 0.018 256);
     --gh-surface-subtle: oklch(0.216 0.017 256);
     --gh-border: oklch(1 0 0 / 10%);
-    --gh-border-strong: oklch(1 0 0 / 18%);
+    --gh-border-strong: #6e6861;
     --gh-text: oklch(0.97 0.003 248);
     --gh-text-secondary: oklch(0.72 0.02 255);
     --gh-text-muted: oklch(0.56 0.03 257);
@@ -355,6 +359,10 @@
     --gh-shadow: 0 1px 2px oklch(0 0 0 / 0.24), 0 8px 20px -12px oklch(0 0 0 / 0.45);
     --gh-dock-row-hover: oklch(1 0 0 / 8%);
     --gh-dock-panel-shadow: 0 4px 10px oklch(0 0 0 / 0.3), 0 20px 40px -20px oklch(0 0 0 / 0.5);
+
+    --gh-action-primary-bg: #ebe5de;
+    --gh-action-primary-bg-hover: #d0c9c1;
+    --gh-action-primary-fg: #1b150f;
 
     --gh-lane-surface: oklch(0.228 0.018 256 / 0.9);
     --gh-lane-surface-rich: oklch(0.245 0.02 254 / 0.92);
@@ -388,7 +396,7 @@
   --gh-surface-secondary: oklch(0.228 0.018 256);
   --gh-surface-subtle: oklch(0.216 0.017 256);
   --gh-border: oklch(1 0 0 / 10%);
-  --gh-border-strong: oklch(1 0 0 / 18%);
+  --gh-border-strong: #6e6861;
   --gh-text: oklch(0.97 0.003 248);
   --gh-text-secondary: oklch(0.72 0.02 255);
   --gh-text-muted: oklch(0.56 0.03 257);
@@ -399,6 +407,10 @@
   --gh-shadow: 0 1px 2px oklch(0 0 0 / 0.24), 0 8px 20px -12px oklch(0 0 0 / 0.45);
   --gh-dock-row-hover: oklch(1 0 0 / 8%);
   --gh-dock-panel-shadow: 0 4px 10px oklch(0 0 0 / 0.3), 0 20px 40px -20px oklch(0 0 0 / 0.5);
+
+  --gh-action-primary-bg: #ebe5de;
+  --gh-action-primary-bg-hover: #d0c9c1;
+  --gh-action-primary-fg: #1b150f;
 
   --gh-lane-surface: oklch(0.228 0.018 256 / 0.9);
   --gh-lane-surface-rich: oklch(0.245 0.02 254 / 0.92);
@@ -722,12 +734,12 @@
 }
 
 [data-job-tracker-theme="game-hub"] .gh-extraction-panel [data-slot="button"] {
-  background: var(--gh-accent);
-  color: oklch(0.99 0.01 85);
+  background: var(--gh-action-primary-bg);
+  color: var(--gh-action-primary-fg);
 }
 
 [data-job-tracker-theme="game-hub"] .gh-extraction-panel [data-slot="button"]:hover {
-  background: var(--gh-accent-secondary);
+  background: var(--gh-action-primary-bg-hover);
 }
 
 [data-job-tracker-theme="game-hub"] .gh-source-panel {
@@ -937,8 +949,8 @@
 [data-job-tracker-theme="game-hub"] .gh-signin-surface [data-slot="button"] {
   height: 2.75rem;
   font-weight: 600;
-  background: var(--gh-accent);
-  color: oklch(0.99 0.01 85);
+  background: var(--gh-action-primary-bg);
+  color: var(--gh-action-primary-fg);
   box-shadow: var(--gh-shadow);
   transition:
     background var(--gh-duration-fast) var(--gh-ease-standard),
@@ -946,7 +958,7 @@
 }
 
 [data-job-tracker-theme="game-hub"] .gh-signin-surface [data-slot="button"]:hover {
-  background: var(--gh-accent-secondary);
+  background: var(--gh-action-primary-bg-hover);
   box-shadow: var(--gh-card-shadow-hover);
 }
 
