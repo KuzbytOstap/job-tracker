@@ -1,19 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
+
+function supportsMatchMedia(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function";
+}
+
+function getServerSnapshot(): boolean {
+  return false;
+}
 
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(query).matches : false,
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (!supportsMatchMedia()) return () => {};
+      const mediaQueryList = window.matchMedia(query);
+      mediaQueryList.addEventListener("change", onStoreChange);
+      return () => mediaQueryList.removeEventListener("change", onStoreChange);
+    },
+    [query],
   );
 
-  useEffect(() => {
-    const mediaQueryList = window.matchMedia(query);
-    const listener = () => setMatches(mediaQueryList.matches);
-    listener();
-    mediaQueryList.addEventListener("change", listener);
-    return () => mediaQueryList.removeEventListener("change", listener);
-  }, [query]);
+  const getSnapshot = useCallback(
+    () => (supportsMatchMedia() ? window.matchMedia(query).matches : false),
+    [query],
+  );
 
-  return matches;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

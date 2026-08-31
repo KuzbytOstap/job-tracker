@@ -11,6 +11,7 @@ type DroppableKanbanColumnProps = {
   applications: ApplicationListItemDTO[];
   sort: SortOption;
   onSelectApplication: (application: ApplicationListItemDTO) => void;
+  variant?: "board" | "console";
 };
 
 export function DroppableKanbanColumn({
@@ -18,6 +19,7 @@ export function DroppableKanbanColumn({
   applications,
   sort,
   onSelectApplication,
+  variant = "board",
 }: DroppableKanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status, data: { status } });
   const { active } = useDndContext();
@@ -33,6 +35,7 @@ export function DroppableKanbanColumn({
       dropRef={setNodeRef}
       isDropTarget={isOver}
       isDragSource={isDragSource}
+      variant={variant}
     />
   );
 }

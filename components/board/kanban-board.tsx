@@ -2,7 +2,9 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { DroppableKanbanColumn } from "@/components/board/droppable-kanban-column";
+import { ConsoleKanbanBoard } from "@/components/board/console-kanban-board";
 import { distributeApplicationsIntoColumns } from "@/lib/board-columns";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { SortOption } from "@/lib/validation";
 
@@ -22,6 +24,19 @@ export function KanbanBoard({
   const columns = distributeApplicationsIntoColumns(applications);
   const reducedMotion = useReducedMotion();
   const animateEntrance = playEntrance && !reducedMotion;
+  const isConsoleDesktop = useMediaQuery("(min-width: 1280px)");
+
+  if (isConsoleDesktop) {
+    return (
+      <ConsoleKanbanBoard
+        activeColumns={columns.slice(0, 6)}
+        closedColumns={columns.slice(6)}
+        sort={sort}
+        onSelectApplication={onSelectApplication}
+        playEntrance={animateEntrance}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1600px] overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:thin]">

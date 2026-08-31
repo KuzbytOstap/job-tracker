@@ -16,6 +16,10 @@ import { MobilePipelineView } from "@/components/board/mobile-pipeline-view";
 import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { BoardStats } from "@/components/board/board-stats";
 import { FocusDock } from "@/components/dashboard/focus-dock";
+import { PipelineTopbarActions } from "@/components/console/pipeline-topbar";
+import { PipelineViewSwitcher, type ConsoleView } from "@/components/console/pipeline-view-switcher";
+import { ConsoleTableView } from "@/components/console/console-table-view";
+import { ConsoleFunnelView } from "@/components/console/console-funnel-view";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -34,7 +38,9 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [consoleView, setConsoleView] = useState<ConsoleView>("board");
   const isDesktop = useMediaQuery("(min-width: 640px)");
+  const isConsoleDesktop = useMediaQuery("(min-width: 1280px)");
   const reducedMotion = useReducedMotion();
 
   const detail = useApplicationDetailState();
@@ -54,10 +60,9 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
   const entranceInitial = reducedMotion ? false : { opacity: 0, y: -10 };
 
   return (
-    <div
-      data-job-tracker-theme="game-hub"
-      className="relative min-h-screen overflow-x-clip bg-background sm:bg-[var(--gh-bg)]"
-    >
+    <>
+      <h1 className="sr-only hidden xl:block">Job Tracker pipeline board</h1>
+
       <div
         aria-hidden
         className="pointer-events-none fixed top-[-160px] left-1/2 -z-10 h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl sm:hidden"
@@ -68,12 +73,14 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
         onAddClick={() => setAddDialogOpen(true)}
         playEntrance={!reducedMotion}
         isAdmin={isAdmin}
+        className="xl:hidden"
       />
 
       <motion.div
         initial={entranceInitial}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24, ease: ENTRANCE_EASE, delay: reducedMotion ? 0 : 0.04 }}
+        className="xl:hidden"
       >
         <GameHubHero
           applications={applications.map((application) => ({
@@ -88,21 +95,29 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
         initial={entranceInitial}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: ENTRANCE_EASE, delay: reducedMotion ? 0 : 0.1 }}
-        className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 sm:rounded-xl sm:border sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:py-3 sm:mt-4 sm:shadow-[var(--gh-shadow)]"
+        className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 sm:rounded-xl sm:border sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:py-3 sm:mt-4 sm:shadow-[var(--gh-shadow)] xl:mx-0 xl:mt-0 xl:flex xl:max-w-none xl:shrink-0 xl:items-center xl:gap-3 xl:rounded-none xl:border-t-0 xl:border-x-0 xl:border-b xl:border-[var(--gh-border)] xl:bg-[var(--gh-surface)] xl:px-6 xl:py-3 xl:shadow-none"
       >
-        <DashboardControls
-          search={search}
-          onSearchChange={setSearch}
-          sort={sort}
-          onSortChange={setSort}
-        />
+        <div className="xl:min-w-0 xl:max-w-xl xl:flex-1">
+          <DashboardControls
+            search={search}
+            onSearchChange={setSearch}
+            sort={sort}
+            onSortChange={setSort}
+          />
+        </div>
+        <div className="hidden xl:flex">
+          <PipelineViewSwitcher view={consoleView} onViewChange={setConsoleView} />
+        </div>
+        <div className="hidden xl:flex">
+          <PipelineTopbarActions onAddClick={() => setAddDialogOpen(true)} />
+        </div>
       </motion.div>
 
       <div className="sm:hidden">
         <BoardStats />
       </div>
 
-      <div className="pt-4 pb-24 sm:pb-16">
+      <div className="pt-4 pb-24 sm:pb-16 xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pt-4 xl:pb-6">
         {applicationsQuery.isError ? (
           <div className="mx-auto max-w-[1600px] px-4 sm:px-6">
             <DashboardErrorState onRetry={() => applicationsQuery.refetch()} />
@@ -121,12 +136,26 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
           <div className="flex items-start">
             <div className="min-w-0 flex-1">
               <KanbanDndContext>
-                <KanbanBoard
-                  applications={applications}
-                  sort={sort}
-                  onSelectApplication={(application) => detail.openDetail(application.id)}
-                  playEntrance={boardEntranceEligible}
-                />
+                {isConsoleDesktop && consoleView === "table" ? (
+                  <ConsoleTableView
+                    applications={applications}
+                    onSelectApplication={(application) => detail.openDetail(application.id)}
+                  />
+                ) : isConsoleDesktop && consoleView === "funnel" ? (
+                  <ConsoleFunnelView
+                    stats={statsQuery.data}
+                    isLoading={statsQuery.isPending}
+                    isError={statsQuery.isError}
+                    onRetry={() => statsQuery.refetch()}
+                  />
+                ) : (
+                  <KanbanBoard
+                    applications={applications}
+                    sort={sort}
+                    onSelectApplication={(application) => detail.openDetail(application.id)}
+                    playEntrance={boardEntranceEligible}
+                  />
+                )}
               </KanbanDndContext>
             </div>
             <FocusDock
@@ -134,6 +163,7 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
               isLoading={applicationsQuery.isPending}
               detailOpen={detail.open}
               onSelectApplication={(id) => detail.openDetail(id)}
+              className="xl:hidden"
             />
           </div>
         ) : (
@@ -155,6 +185,6 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
         open={detail.open}
         onOpenChange={detail.setOpen}
       />
-    </div>
+    </>
   );
 }

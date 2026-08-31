@@ -73,7 +73,7 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
                   tabIndex={interactive ? 0 : -1}
                   onClick={() => handleStepActivate(step)}
                   className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default",
+                    "flex size-11 shrink-0 items-center justify-center rounded-full border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default",
                     isCurrent &&
                       "border-[var(--gh-accent,var(--primary))] bg-[var(--gh-accent,var(--primary))] text-primary-foreground",
                     isPast &&
@@ -85,11 +85,11 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
                       "cursor-pointer hover:border-[var(--gh-accent,var(--primary))]/60",
                   )}
                 >
-                  {isPast && !isCurrent ? <Check className="size-3" /> : index + 1}
+                  {isPast && !isCurrent ? <Check className="size-5" /> : index + 1}
                 </button>
                 <span
                   className={cn(
-                    "max-w-14 text-center text-[0.65rem] leading-tight",
+                    "max-w-16 text-center text-xs leading-tight",
                     isCurrent
                       ? "font-medium text-[var(--gh-text,var(--foreground))]"
                       : "text-[var(--gh-text-muted,var(--muted-foreground))]",
@@ -102,7 +102,7 @@ export function StatusPipeline({ application }: StatusPipelineProps) {
                 <span
                   aria-hidden
                   className={cn(
-                    "mx-1 h-px flex-1 self-start mt-3",
+                    "mx-1 h-px flex-1 self-start mt-[22px]",
                     isPast ? "bg-[var(--gh-accent,var(--primary))]/40" : "bg-border",
                   )}
                 />

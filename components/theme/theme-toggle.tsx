@@ -13,7 +13,7 @@ export function ThemeToggle() {
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size="icon-touch"
       title={label}
       aria-label={label}
       onClick={() => setTheme(isDark ? "light" : "dark")}

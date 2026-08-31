@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { Role } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkSession } from "@/lib/auth";
@@ -33,3 +34,5 @@ export async function requireAdmin(): Promise<AdminCheck> {
 
   return { status: "authorized", userId: check.session.user.id };
 }
+
+export const getAdminCheckForRequest = cache(requireAdmin);

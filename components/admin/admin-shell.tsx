@@ -32,7 +32,7 @@ export function AdminShell() {
             <TabsTrigger value="requests" className="gap-1.5">
               Requests
               {pendingCount > 0 && (
-                <Badge className="h-4 min-w-4 justify-center bg-[var(--gh-accent)] px-1 text-[10px] text-[oklch(0.99_0.01_85)]">
+                <Badge className="h-4 min-w-4 justify-center bg-[var(--gh-action-primary-bg)] px-1 text-[10px] text-[var(--gh-action-primary-fg)]">
                   {pendingCount}
                 </Badge>
               )}
