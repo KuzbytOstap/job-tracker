@@ -17,6 +17,9 @@ import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { BoardStats } from "@/components/board/board-stats";
 import { FocusDock } from "@/components/dashboard/focus-dock";
 import { PipelineTopbarActions } from "@/components/console/pipeline-topbar";
+import { PipelineViewSwitcher, type ConsoleView } from "@/components/console/pipeline-view-switcher";
+import { ConsoleTableView } from "@/components/console/console-table-view";
+import { ConsoleFunnelView } from "@/components/console/console-funnel-view";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -35,7 +38,9 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [consoleView, setConsoleView] = useState<ConsoleView>("board");
   const isDesktop = useMediaQuery("(min-width: 640px)");
+  const isConsoleDesktop = useMediaQuery("(min-width: 1280px)");
   const reducedMotion = useReducedMotion();
 
   const detail = useApplicationDetailState();
@@ -101,6 +106,9 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
           />
         </div>
         <div className="hidden xl:flex">
+          <PipelineViewSwitcher view={consoleView} onViewChange={setConsoleView} />
+        </div>
+        <div className="hidden xl:flex">
           <PipelineTopbarActions onAddClick={() => setAddDialogOpen(true)} />
         </div>
       </motion.div>
@@ -128,12 +136,26 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
           <div className="flex items-start">
             <div className="min-w-0 flex-1">
               <KanbanDndContext>
-                <KanbanBoard
-                  applications={applications}
-                  sort={sort}
-                  onSelectApplication={(application) => detail.openDetail(application.id)}
-                  playEntrance={boardEntranceEligible}
-                />
+                {isConsoleDesktop && consoleView === "table" ? (
+                  <ConsoleTableView
+                    applications={applications}
+                    onSelectApplication={(application) => detail.openDetail(application.id)}
+                  />
+                ) : isConsoleDesktop && consoleView === "funnel" ? (
+                  <ConsoleFunnelView
+                    stats={statsQuery.data}
+                    isLoading={statsQuery.isPending}
+                    isError={statsQuery.isError}
+                    onRetry={() => statsQuery.refetch()}
+                  />
+                ) : (
+                  <KanbanBoard
+                    applications={applications}
+                    sort={sort}
+                    onSelectApplication={(application) => detail.openDetail(application.id)}
+                    playEntrance={boardEntranceEligible}
+                  />
+                )}
               </KanbanDndContext>
             </div>
             <FocusDock
