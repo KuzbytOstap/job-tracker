@@ -1,7 +1,8 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { getUrlLabel } from "@/lib/url-labels";
+import { getTranslatedUrlLabel } from "@/lib/i18n/url-label";
+import { useT } from "@/components/i18n/i18n-provider";
 import { CopyButton } from "@/components/ui/copy-button";
 
 type ApplicationLinksSectionProps = {
@@ -9,6 +10,8 @@ type ApplicationLinksSectionProps = {
 };
 
 export function ApplicationLinksSection({ urls }: ApplicationLinksSectionProps) {
+  const t = useT();
+
   if (urls.length === 0) {
     return null;
   }
@@ -16,7 +19,7 @@ export function ApplicationLinksSection({ urls }: ApplicationLinksSectionProps) 
   return (
     <div>
       <h3 className="mb-2 text-xs font-medium tracking-wide text-[var(--gh-text-muted,var(--muted-foreground))] uppercase">
-        Links
+        {t("detail.sections.links")}
       </h3>
       <ul className="flex flex-col gap-1.5">
         {urls.map((url) => (
@@ -32,13 +35,13 @@ export function ApplicationLinksSection({ urls }: ApplicationLinksSectionProps) 
             >
               <ExternalLink className="mt-0.5 size-3.5 shrink-0 text-[var(--gh-accent,var(--primary))]" />
               <span className="min-w-0 break-all">
-                <span className="font-medium text-[var(--gh-text,var(--foreground))]">{getUrlLabel(url)}</span>
+                <span className="font-medium text-[var(--gh-text,var(--foreground))]">{getTranslatedUrlLabel(t, url)}</span>
                 <span className="block text-xs break-all text-[var(--gh-text-muted,var(--muted-foreground))]">
                   {url}
                 </span>
               </span>
             </a>
-            <CopyButton text={url} label="Copy link" className="mt-0.5 shrink-0" />
+            <CopyButton text={url} label={t("source.copyLink")} className="mt-0.5 shrink-0" />
           </li>
         ))}
       </ul>

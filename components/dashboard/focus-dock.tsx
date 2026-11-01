@@ -3,6 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronsLeft, ChevronsRight, History, Target, Users } from "lucide-react";
+import { useI18n } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import type { Locale } from "@/lib/i18n/locales";
 import { cn } from "@/lib/utils";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 
@@ -34,17 +37,6 @@ const INTERVIEW_STAGE_RANK: Partial<Record<StatusValue, number>> = {
   TEST_TASK: 2,
 };
 
-const STATUS_LABELS: Record<StatusValue, string> = {
-  APPLIED: "Applied",
-  HR_REPLIED: "HR Replied",
-  HR_CALL: "HR Call",
-  TECH_INTERVIEW: "Technical Interview",
-  TEST_TASK: "Test Task",
-  OFFER: "Offer",
-  REJECTED: "Rejected",
-  IGNORED: "Ignored",
-};
-
 const STATUS_DOT_VARS: Record<StatusValue, string> = {
   APPLIED: "var(--gh-status-applied)",
   HR_REPLIED: "var(--gh-status-hr-replied)",
@@ -56,13 +48,14 @@ const STATUS_DOT_VARS: Record<StatusValue, string> = {
   IGNORED: "var(--gh-status-ignored)",
 };
 
-function formatDockDate(value: string) {
+function formatDockDate(value: string, locale: Locale) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(date);
 }
 
 export function FocusDock({ applications, isLoading, detailOpen, onSelectApplication, className }: FocusDockProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<FocusSection>("pipeline");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -159,13 +152,13 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
             <div style={{ width: panelWidth }} className="flex max-h-[calc(100vh-4rem)] flex-col overflow-y-auto p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-[var(--gh-text-muted)]">
-                  Focus
+                  {t("dashboard.dock.focus")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setExpanded(false)}
                   className="rounded-md p-1 text-[var(--gh-text-secondary)] hover:bg-[var(--gh-dock-row-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gh-accent)]"
-                  aria-label="Collapse focus panel"
+                  aria-label={t("dashboard.dock.collapsePanel")}
                 >
                   <ChevronsRight className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -193,8 +186,8 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
           aria-controls={panelId}
-          aria-label={expanded ? "Collapse focus dock" : "Expand focus dock"}
-          title={expanded ? "Collapse focus dock" : "Expand focus dock"}
+          aria-label={expanded ? t("dashboard.dock.collapse") : t("dashboard.dock.expand")}
+          title={expanded ? t("dashboard.dock.collapse") : t("dashboard.dock.expand")}
           className="focus-dock-icon flex h-9 w-9 items-center justify-center rounded-md text-[var(--gh-text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gh-accent)]"
         >
           {expanded ? (
@@ -208,7 +201,7 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
 
         <DockIconButton
           icon={<Target className="h-4 w-4" aria-hidden="true" />}
-          label="Pipeline focus"
+          label={t("dashboard.dock.pipelineFocus")}
           active={expanded && activeSection === "pipeline"}
           count={isLoading ? undefined : activePipelineTotal}
           onClick={() => openSection("pipeline")}
@@ -216,7 +209,7 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
         />
         <DockIconButton
           icon={<Users className="h-4 w-4" aria-hidden="true" />}
-          label="Interview stages"
+          label={t("dashboard.dock.interviewStages")}
           active={expanded && activeSection === "interviews"}
           count={isLoading ? undefined : interviewStageTotal}
           onClick={() => openSection("interviews")}
@@ -224,7 +217,7 @@ export function FocusDock({ applications, isLoading, detailOpen, onSelectApplica
         />
         <DockIconButton
           icon={<History className="h-4 w-4" aria-hidden="true" />}
-          label="Recent activity"
+          label={t("dashboard.dock.recentActivity")}
           active={expanded && activeSection === "activity"}
           onClick={() => openSection("activity")}
           panelId={panelId}
@@ -280,10 +273,12 @@ function PipelineSection({
   isLoading: boolean;
   pipelineCounts: Map<StatusValue, number>;
 }) {
+  const { t } = useI18n();
+
   return (
     <section className="mb-3">
       <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--gh-text-muted)]">
-        Pipeline focus
+        {t("dashboard.dock.pipelineFocus")}
       </h3>
       {isLoading ? (
         <div className="space-y-1.5">
@@ -299,7 +294,7 @@ function PipelineSection({
             return (
               <li key={status} className="flex items-center justify-between text-xs">
                 <span className={prominent ? "font-semibold text-[var(--gh-text)]" : "text-[var(--gh-text-secondary)]"}>
-                  {STATUS_LABELS[status]}
+                  {t(STATUS_LABEL_KEYS[status])}
                 </span>
                 <span
                   className={
@@ -328,10 +323,12 @@ function InterviewSection({
   applications: ApplicationListItemDTO[];
   onSelectApplication: (id: string) => void;
 }) {
+  const { t, locale } = useI18n();
+
   return (
     <section className="mb-3 border-t border-[var(--gh-dock-border)] pt-2.5">
       <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--gh-text-muted)]">
-        Interview stages
+        {t("dashboard.dock.interviewStages")}
       </h3>
       {isLoading ? (
         <div className="space-y-1.5">
@@ -340,7 +337,7 @@ function InterviewSection({
           ))}
         </div>
       ) : applications.length === 0 ? (
-        <p className="text-xs text-[var(--gh-text-muted)]">No applications in interview stages.</p>
+        <p className="text-xs text-[var(--gh-text-muted)]">{t("dashboard.dock.noInterviews")}</p>
       ) : (
         <ul className="space-y-0.5">
           {applications.map((application) => (
@@ -360,11 +357,11 @@ function InterviewSection({
                     {application.company}
                   </span>
                   <span className="block truncate text-[11px] text-[var(--gh-text-muted)]">
-                    {application.position} · {STATUS_LABELS[application.effectiveStatus]}
+                    {application.position} · {t(STATUS_LABEL_KEYS[application.effectiveStatus])}
                   </span>
                 </span>
                 <span className="shrink-0 text-[10px] text-[var(--gh-text-muted)]">
-                  {formatDockDate(application.lastActivityAt)}
+                  {formatDockDate(application.lastActivityAt, locale)}
                 </span>
               </button>
             </li>
@@ -384,10 +381,12 @@ function ActivitySection({
   applications: ApplicationListItemDTO[];
   onSelectApplication: (id: string) => void;
 }) {
+  const { t, locale } = useI18n();
+
   return (
     <section className="border-t border-[var(--gh-dock-border)] pt-2.5">
       <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--gh-text-muted)]">
-        Recent activity
+        {t("dashboard.dock.recentActivity")}
       </h3>
       {isLoading ? (
         <div className="space-y-1.5">
@@ -396,7 +395,7 @@ function ActivitySection({
           ))}
         </div>
       ) : applications.length === 0 ? (
-        <p className="text-xs text-[var(--gh-text-muted)]">No recent activity.</p>
+        <p className="text-xs text-[var(--gh-text-muted)]">{t("dashboard.dock.noRecent")}</p>
       ) : (
         <ul className="space-y-0.5">
           {applications.map((application) => (
@@ -416,11 +415,11 @@ function ActivitySection({
                     {application.company}
                   </span>
                   <span className="block truncate text-[11px] text-[var(--gh-text-muted)]">
-                    {STATUS_LABELS[application.effectiveStatus]}
+                    {t(STATUS_LABEL_KEYS[application.effectiveStatus])}
                   </span>
                 </span>
                 <span className="shrink-0 text-[10px] text-[var(--gh-text-muted)]">
-                  {formatDockDate(application.lastActivityAt)}
+                  {formatDockDate(application.lastActivityAt, locale)}
                 </span>
               </button>
             </li>

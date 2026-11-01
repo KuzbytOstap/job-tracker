@@ -9,8 +9,10 @@ import { ConfirmActionDialog } from "@/components/overlay/confirm-action-dialog"
 import { UserLimitsDialog } from "@/components/admin/users/user-limits-dialog";
 import { useSuspendAdminUser } from "@/hooks/use-suspend-admin-user";
 import { useRestoreAdminUser } from "@/hooks/use-restore-admin-user";
-import { ApiError } from "@/lib/api";
-import { AI_ACCESS_STATUS_BADGE_CLASSES, AI_ACCESS_STATUS_LABELS } from "@/lib/admin-labels";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { AI_ACCESS_STATUS_BADGE_CLASSES } from "@/lib/admin-labels";
+import { AI_ACCESS_STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import { useT } from "@/components/i18n/i18n-provider";
 import { describeUserLimit, type QuotaField } from "@/lib/admin-limits";
 import { cn } from "@/lib/utils";
 import { AiAccessStatus } from "@/app/generated/prisma/enums";
@@ -28,6 +30,7 @@ const GLOBAL_KEY: Record<QuotaField, Exclude<keyof AiGlobalLimitsDTO, "updatedAt
 };
 
 function QuotaCell({ user, globalLimits, field }: { user: AdminUserDTO; globalLimits: AiGlobalLimitsDTO | undefined; field: QuotaField }) {
+  const t = useT();
   const used = user.usage[field];
   const effective = user.limits[field];
   const override = user.overrides[field];
@@ -42,8 +45,8 @@ function QuotaCell({ user, globalLimits, field }: { user: AdminUserDTO; globalLi
       <span className="text-[var(--gh-text-muted)]"> / {effective}</span>
       {(hasOverride || hasBonus) && (
         <div className="text-[10px] leading-tight text-[var(--gh-text-muted)]">
-          {hasOverride ? `override ${base}` : `default ${base}`}
-          {hasBonus ? ` · +${bonus} today` : ""}
+          {hasOverride ? t("admin.users.quota.override", { base }) : t("admin.users.quota.default", { base })}
+          {hasBonus ? ` · ${t("admin.users.quota.bonus", { bonus })}` : ""}
         </div>
       )}
     </td>
@@ -51,6 +54,7 @@ function QuotaCell({ user, globalLimits, field }: { user: AdminUserDTO; globalLi
 }
 
 export function UserRow({ user, globalLimits }: UserRowProps) {
+  const t = useT();
   const [limitsOpen, setLimitsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState<"suspend" | "restore" | null>(null);
   const suspendMutation = useSuspendAdminUser();
@@ -65,11 +69,11 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
     const mutation = confirmOpen === "suspend" ? suspendMutation : restoreMutation;
     mutation.mutate(user.id, {
       onSuccess: () => {
-        toast.success(confirmOpen === "suspend" ? "AI access suspended" : "AI access restored");
+        toast.success(confirmOpen === "suspend" ? t("admin.users.suspended") : t("admin.users.restored"));
         setConfirmOpen(null);
       },
       onError: (error) => {
-        toast.error(error instanceof ApiError ? error.message : "Couldn't update AI access. Try again.");
+        toast.error(getApiErrorMessage(t, error, "admin.users.updateFailed"));
         setConfirmOpen(null);
       },
     });
@@ -84,7 +88,7 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
       <td className="px-3 py-2.5 align-top whitespace-nowrap">
         <div className="flex flex-col items-start gap-1.5">
           <Badge className={cn("border-transparent", AI_ACCESS_STATUS_BADGE_CLASSES[user.aiAccessStatus])}>
-            {AI_ACCESS_STATUS_LABELS[user.aiAccessStatus]}
+            {t(AI_ACCESS_STATUS_LABEL_KEYS[user.aiAccessStatus])}
           </Badge>
           {canSuspend && (
             <Button
@@ -95,7 +99,7 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
               onClick={() => setConfirmOpen("suspend")}
             >
               <Pause data-icon="inline-start" />
-              Suspend
+              {t("admin.users.suspend")}
             </Button>
           )}
           {canRestore && (
@@ -107,7 +111,7 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
               onClick={() => setConfirmOpen("restore")}
             >
               <Play data-icon="inline-start" />
-              Restore
+              {t("admin.users.restore")}
             </Button>
           )}
         </div>
@@ -118,7 +122,7 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
       <td className="px-3 py-2.5 align-top whitespace-nowrap">
         <Button type="button" variant="outline" size="sm" onClick={() => setLimitsOpen(true)}>
           <Settings2 data-icon="inline-start" />
-          Edit limits
+          {t("admin.users.editLimits")}
         </Button>
       </td>
 
@@ -126,13 +130,13 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
       <ConfirmActionDialog
         open={confirmOpen !== null}
         onOpenChange={(open) => !open && setConfirmOpen(null)}
-        title={confirmOpen === "suspend" ? "Suspend AI access?" : "Restore AI access?"}
+        title={confirmOpen === "suspend" ? t("admin.users.suspendTitle") : t("admin.users.restoreTitle")}
         description={
           confirmOpen === "suspend"
-            ? `${user.name ?? user.email ?? "This user"} will immediately lose access to AI features.`
-            : `${user.name ?? user.email ?? "This user"} will regain access to AI features, subject to their quotas.`
+            ? t("admin.users.suspendDescription", { user: user.name ?? user.email ?? t("admin.users.thisUser") })
+            : t("admin.users.restoreDescription", { user: user.name ?? user.email ?? t("admin.users.thisUser") })
         }
-        confirmLabel={confirmOpen === "suspend" ? "Suspend" : "Restore"}
+        confirmLabel={confirmOpen === "suspend" ? t("admin.users.suspend") : t("admin.users.restore")}
         intent={confirmOpen === "suspend" ? "warning" : "neutral"}
         visualVariant="gameHub"
         pending={isMutating}

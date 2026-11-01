@@ -6,6 +6,7 @@ import { ApplicationDetailSkeleton } from "@/components/applications/application
 import { ApplicationDetailView } from "@/components/applications/application-detail-view";
 import { ApplicationEditForm } from "@/components/applications/application-edit-form";
 import { useApplicationQuery } from "@/hooks/use-application";
+import { useT } from "@/components/i18n/i18n-provider";
 
 type ApplicationDetailProps = {
   applicationId: string;
@@ -20,6 +21,7 @@ export function ApplicationDetail({
   onDirtyChange,
   onPendingChange,
 }: ApplicationDetailProps) {
+  const t = useT();
   const query = useApplicationQuery(applicationId);
   const [mode, setMode] = useState<"view" | "edit">("view");
 
@@ -42,10 +44,10 @@ export function ApplicationDetail({
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 py-10 text-center">
         <p className="text-sm text-[var(--gh-text-muted,var(--muted-foreground))]">
-          Couldn&apos;t load this application.
+          {t("detail.loadFailed")}
         </p>
         <Button type="button" variant="outline" size="sm" onClick={() => query.refetch()}>
-          Retry
+          {t("common.retry")}
         </Button>
       </div>
     );

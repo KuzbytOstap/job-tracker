@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
+import { useT } from "@/components/i18n/i18n-provider";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { moveApplicationToStatus } from "@/lib/board-mutations";
 import { queryKeys } from "@/lib/query-keys";
 import { upsertApplicationInList } from "@/lib/cache-updates";
@@ -37,6 +39,7 @@ type MoveContext = {
  * recovering from 409 conflicts) and the HR_CALL question-generation follow-up.
  */
 export function useMoveApplicationToStatus() {
+  const t = useT();
   const queryClient = useQueryClient();
   const generateHrQuestions = useGenerateHrQuestions();
   const aiAccess = useAiAccessStatus();
@@ -120,11 +123,11 @@ export function useMoveApplicationToStatus() {
 
       if (error instanceof ApiError && error.status === 409) {
         invalidateApplicationCaches(queryClient, applicationId);
-        toast.error("This application was updated elsewhere. Refreshed to the latest version.");
+        toast.error(t("errors.updatedElsewhere"));
         return;
       }
 
-      toast.error(error instanceof ApiError ? error.message : "Couldn't update the status. Try again.");
+      toast.error(getApiErrorMessage(t, error, "errors.statusUpdateFailed"));
     },
     onSuccess: (updated) => {
       applyApplicationToCaches(queryClient, updated);

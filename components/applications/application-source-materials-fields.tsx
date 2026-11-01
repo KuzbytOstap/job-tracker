@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { getUrlLabel } from "@/lib/url-labels";
+import { getTranslatedUrlLabel } from "@/lib/i18n/url-label";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 import type { ApplicationEditFormValues } from "@/lib/application-form";
 
 export function ApplicationSourceMaterialsFields() {
+  const t = useT();
   const {
     register,
     control,
@@ -34,7 +36,7 @@ export function ApplicationSourceMaterialsFields() {
       <CollapsibleTrigger
         className="flex min-h-9 w-full items-center justify-between gap-2 text-left text-sm font-medium"
       >
-        Source materials
+        {t("source.title")}
         <ChevronDown
           aria-hidden
           className={cn(
@@ -46,7 +48,7 @@ export function ApplicationSourceMaterialsFields() {
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none data-[ending-style]:h-0 data-[starting-style]:h-0">
         <div className="flex flex-col gap-3 pt-3">
           <Field data-invalid={!!errors.jobPostingText}>
-            <FieldLabel htmlFor="application-job-posting-text">Job posting</FieldLabel>
+            <FieldLabel htmlFor="application-job-posting-text">{t("source.jobPosting")}</FieldLabel>
             <Textarea
               id="application-job-posting-text"
               rows={6}
@@ -58,7 +60,7 @@ export function ApplicationSourceMaterialsFields() {
           </Field>
 
           <Field data-invalid={!!errors.coverLetterText}>
-            <FieldLabel htmlFor="application-cover-letter-text">Cover letter</FieldLabel>
+            <FieldLabel htmlFor="application-cover-letter-text">{t("source.coverLetter")}</FieldLabel>
             <Textarea
               id="application-cover-letter-text"
               rows={3}
@@ -70,7 +72,7 @@ export function ApplicationSourceMaterialsFields() {
           </Field>
 
           <div className="flex flex-col gap-2">
-            <FieldLabel>Source URLs</FieldLabel>
+            <FieldLabel>{t("source.sourceUrls")}</FieldLabel>
             {fields.length > 0 && (
               <div className="flex flex-col gap-2">
                 {fields.map((field, index) => (
@@ -86,7 +88,7 @@ export function ApplicationSourceMaterialsFields() {
               onClick={() => append({ url: "" })}
             >
               <Plus data-icon="inline-start" />
-              Add source
+              {t("source.addSource")}
             </Button>
           </div>
         </div>
@@ -96,9 +98,10 @@ export function ApplicationSourceMaterialsFields() {
 }
 
 function SourceUrlRow({ index, onRemove }: { index: number; onRemove: () => void }) {
+  const t = useT();
   const { register, control, formState: { errors } } = useFormContext<ApplicationEditFormValues>();
   const url = useWatch({ control, name: `sourceUrls.${index}.url` }) ?? "";
-  const label = url.trim().length > 0 ? getUrlLabel(url.trim()) : "New source";
+  const label = url.trim().length > 0 ? getTranslatedUrlLabel(t, url.trim()) : t("source.newSource");
   const fieldError = errors.sourceUrls?.[index]?.url;
 
   return (
@@ -111,7 +114,7 @@ function SourceUrlRow({ index, onRemove }: { index: number; onRemove: () => void
           id={`application-source-url-${index}`}
           type="url"
           inputMode="url"
-          placeholder="https://…"
+          placeholder={t("form.fields.linkPlaceholder")}
           aria-invalid={!!fieldError}
           className="h-9 flex-1 sm:h-8"
           {...register(`sourceUrls.${index}.url`)}
@@ -122,7 +125,7 @@ function SourceUrlRow({ index, onRemove }: { index: number; onRemove: () => void
           size="icon-sm"
           className="shrink-0 text-[var(--gh-text-muted,var(--muted-foreground))] hover:text-destructive"
           onClick={onRemove}
-          aria-label={`Remove source ${index + 1}`}
+          aria-label={t("source.removeSource", { index: index + 1 })}
         >
           <Trash2 />
         </Button>

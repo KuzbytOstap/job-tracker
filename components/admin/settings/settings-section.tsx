@@ -8,16 +8,18 @@ import { Input } from "@/components/ui/input";
 import { AdminErrorState, AdminSkeletonList } from "@/components/admin/admin-state";
 import { useAdminSettings } from "@/hooks/use-admin-settings";
 import { useUpdateAdminSettings } from "@/hooks/use-update-admin-settings";
-import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { formatExactDateTime } from "@/lib/relative-date";
+import { useI18n } from "@/components/i18n/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/messages";
 import type { AiGlobalLimitsDTO } from "@/lib/api-types";
 
 type FieldKey = "vacancyGenerationLimit" | "hrGenerationLimit" | "tokenLimit";
 
-const FIELD_CONFIG: Array<{ key: FieldKey; label: string; description: string }> = [
-  { key: "vacancyGenerationLimit", label: "Vacancy generations / day", description: "Default daily limit for vacancy-analysis AI calls." },
-  { key: "hrGenerationLimit", label: "HR generations / day", description: "Default daily limit for HR question AI calls." },
-  { key: "tokenLimit", label: "Tokens / day", description: "Default daily limit for total AI tokens across both features." },
+const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; descriptionKey: MessageKey }> = [
+  { key: "vacancyGenerationLimit", labelKey: "admin.limits.vacancyField", descriptionKey: "admin.settings.vacancyDescription" },
+  { key: "hrGenerationLimit", labelKey: "admin.limits.hrField", descriptionKey: "admin.settings.hrDescription" },
+  { key: "tokenLimit", labelKey: "admin.limits.tokensField", descriptionKey: "admin.settings.tokensDescription" },
 ];
 
 function toValues(limits: AiGlobalLimitsDTO): Record<FieldKey, string> {
@@ -29,6 +31,7 @@ function toValues(limits: AiGlobalLimitsDTO): Record<FieldKey, string> {
 }
 
 export function SettingsSection() {
+  const { t, locale } = useI18n();
   const settingsQuery = useAdminSettings();
   const mutation = useUpdateAdminSettings();
   const [values, setValues] = useState<Record<FieldKey, string> | null>(null);
@@ -40,7 +43,7 @@ export function SettingsSection() {
   }, [settingsQuery.data, values]);
 
   if (settingsQuery.isError) {
-    return <AdminErrorState message="We couldn't load global settings." onRetry={() => settingsQuery.refetch()} />;
+    return <AdminErrorState message={t("admin.settings.loadFailed")} onRetry={() => settingsQuery.refetch()} />;
   }
 
   if (settingsQuery.isPending || !values) {
@@ -66,23 +69,23 @@ export function SettingsSection() {
       },
       {
         onSuccess: (updated) => {
-          toast.success("Global defaults updated");
+          toast.success(t("admin.settings.updated"));
           setValues(toValues(updated));
         },
         onError: (error) =>
-          toast.error(error instanceof ApiError ? error.message : "Couldn't update settings. Try again."),
+          toast.error(getApiErrorMessage(t, error, "admin.settings.updateFailed")),
       },
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="gh-form-surface flex max-w-lg flex-col gap-5">
-      {FIELD_CONFIG.map(({ key, label, description }) => {
+      {FIELD_CONFIG.map(({ key, labelKey, descriptionKey }) => {
         const raw = values[key].trim();
         const isInvalid = raw === "" || !Number.isInteger(Number(raw)) || Number(raw) < 0;
         return (
           <Field key={key} data-invalid={isInvalid}>
-            <FieldLabel htmlFor={`settings-${key}`}>{label}</FieldLabel>
+            <FieldLabel htmlFor={`settings-${key}`}>{t(labelKey)}</FieldLabel>
             <Input
               id={`settings-${key}`}
               type="number"
@@ -93,20 +96,20 @@ export function SettingsSection() {
               aria-invalid={isInvalid}
               onChange={(event) => setValues((prev) => (prev ? { ...prev, [key]: event.target.value } : prev))}
             />
-            <p className="text-xs text-[var(--gh-text-muted)]">{description}</p>
+            <p className="text-xs text-[var(--gh-text-muted)]">{t(descriptionKey)}</p>
           </Field>
         );
       })}
 
       <div className="flex flex-col gap-3 border-t border-[var(--gh-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-[var(--gh-text-muted)]">Last updated {formatExactDateTime(limits.updatedAt)}</p>
+        <p className="text-xs text-[var(--gh-text-muted)]">{t("admin.settings.lastUpdated", { when: formatExactDateTime(limits.updatedAt, { t, locale }) })}</p>
         <Button
           type="submit"
           disabled={!isDirty || invalidFields.length > 0 || mutation.isPending}
           aria-busy={mutation.isPending}
           className="self-start sm:self-auto"
         >
-          {mutation.isPending ? "Saving…" : "Save changes"}
+          {mutation.isPending ? t("common.saving") : t("form.actions.saveChanges")}
         </Button>
       </div>
     </form>

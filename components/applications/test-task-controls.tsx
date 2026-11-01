@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { useUpdateApplication } from "@/hooks/use-update-application";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { ApplicationDTO } from "@/lib/api-types";
 
 type TestTaskControlsProps = {
@@ -11,19 +12,20 @@ type TestTaskControlsProps = {
 };
 
 export function TestTaskControls({ application }: TestTaskControlsProps) {
+  const t = useT();
   const mutation = useUpdateApplication(application.id);
 
   function handleHasTestTaskChange(checked: boolean) {
     mutation.mutate(
       { hasTestTask: checked },
-      { onSuccess: () => toast.success(checked ? "Test task added" : "Test task removed") },
+      { onSuccess: () => toast.success(checked ? t("testTask.controls.added") : t("testTask.controls.removed")) },
     );
   }
 
   function handleTestTaskDoneChange(checked: boolean) {
     mutation.mutate(
       { testTaskDone: checked },
-      { onSuccess: () => toast.success(checked ? "Test task marked done" : "Test task marked pending") },
+      { onSuccess: () => toast.success(checked ? t("testTask.controls.markedDone") : t("testTask.controls.markedPending")) },
     );
   }
 
@@ -37,7 +39,7 @@ export function TestTaskControls({ application }: TestTaskControlsProps) {
           onCheckedChange={(checked) => handleHasTestTaskChange(checked === true)}
         />
         <FieldLabel htmlFor="has-test-task" className="font-normal">
-          A test task exists for this application
+          {t("testTask.controls.exists")}
         </FieldLabel>
       </Field>
       <Field orientation="horizontal">
@@ -48,7 +50,7 @@ export function TestTaskControls({ application }: TestTaskControlsProps) {
           onCheckedChange={(checked) => handleTestTaskDoneChange(checked === true)}
         />
         <FieldLabel htmlFor="test-task-done" className="font-normal">
-          The test task is complete
+          {t("testTask.controls.complete")}
         </FieldLabel>
       </Field>
     </div>

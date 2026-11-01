@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -20,7 +20,9 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useApplicationDragAndDrop } from "@/hooks/use-application-drag-and-drop";
 import { ApplicationDragOverlay } from "@/components/board/application-drag-overlay";
 import { PendingDropConfirmation } from "@/components/board/pending-drop-confirmation";
-import { BOARD_COLUMNS_BY_STATUS } from "@/lib/board-columns";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import type { Translator } from "@/lib/i18n/translate";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { Status } from "@/app/generated/prisma/enums";
 
@@ -29,45 +31,47 @@ const collisionDetection: CollisionDetection = (args) => {
   return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
 };
 
-function describeActive(active: Active): string {
+function describeActive(active: Active, t: Translator): string {
   const application = active.data.current?.application as ApplicationListItemDTO | undefined;
-  return application ? `${application.company} — ${application.position}` : "the application";
+  return application ? `${application.company}, ${application.position}` : t("dnd.theApplication");
 }
 
-function describeColumn(over: Over | null): string | undefined {
+function describeColumn(over: Over | null, t: Translator): string | undefined {
   const status = over?.data.current?.status as Status | undefined;
-  return status ? BOARD_COLUMNS_BY_STATUS[status].label : undefined;
+  return status ? t(STATUS_LABEL_KEYS[status]) : undefined;
 }
 
-const screenReaderInstructions: ScreenReaderInstructions = {
-  draggable:
-    "Press space or enter to pick up an application card. While dragging, use the arrow keys to move it to another status column, press space or enter to drop it there, or press escape to cancel.",
-};
-
-const announcements: Announcements = {
-  onDragStart({ active }) {
-    return `Picked up ${describeActive(active)}.`;
-  },
-  onDragOver({ active, over }) {
-    const column = describeColumn(over);
-    return column ? `${describeActive(active)} is over the ${column} column.` : undefined;
-  },
-  onDragEnd({ active, over }) {
-    const column = describeColumn(over);
-    return column
-      ? `Dropped ${describeActive(active)} on the ${column} column.`
-      : `${describeActive(active)} was dropped outside any column. No change was made.`;
-  },
-  onDragCancel({ active }) {
-    return `Moving ${describeActive(active)} was cancelled.`;
-  },
-};
+function buildAnnouncements(t: Translator): Announcements {
+  return {
+    onDragStart({ active }) {
+      return t("dnd.pickedUp", { subject: describeActive(active, t) });
+    },
+    onDragOver({ active, over }) {
+      const column = describeColumn(over, t);
+      return column ? t("dnd.over", { subject: describeActive(active, t), column }) : undefined;
+    },
+    onDragEnd({ active, over }) {
+      const column = describeColumn(over, t);
+      const subject = describeActive(active, t);
+      return column ? t("dnd.dropped", { subject, column }) : t("dnd.droppedOutside", { subject });
+    },
+    onDragCancel({ active }) {
+      return t("dnd.cancelled", { subject: describeActive(active, t) });
+    },
+  };
+}
 
 type KanbanDndContextProps = {
   children: ReactNode;
 };
 
 export function KanbanDndContext({ children }: KanbanDndContextProps) {
+  const t = useT();
+  const announcements = useMemo(() => buildAnnouncements(t), [t]);
+  const screenReaderInstructions = useMemo<ScreenReaderInstructions>(
+    () => ({ draggable: t("dnd.instructions") }),
+    [t],
+  );
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } });
   const keyboardSensor = useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates });

@@ -5,6 +5,8 @@ import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { buildStatSummaryCards } from "@/lib/stats";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STAT_SUMMARY_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 import { CareerCore, type CareerCoreApplication } from "@/components/dashboard/career-core";
 
@@ -15,6 +17,7 @@ export function GameHubHero({
   applications: CareerCoreApplication[];
   isLoading?: boolean;
 }) {
+  const t = useT();
   const statsQuery = useStatsQuery();
   const reducedMotion = useReducedMotion();
   const [flarePulse, setFlarePulse] = useState(0);
@@ -39,7 +42,7 @@ export function GameHubHero({
 
   return (
     <motion.section
-      aria-label="Workspace overview"
+      aria-label={t("dashboard.hero.overview")}
       className="gh-hero relative hidden overflow-hidden border-b border-[var(--gh-border)] bg-[var(--gh-bg-secondary)] sm:block"
       variants={heroVariants}
       initial="hidden"
@@ -82,13 +85,13 @@ export function GameHubHero({
       <div className="relative z-10 mx-auto flex max-w-[1600px] items-center gap-6 px-4 py-5 sm:px-6 sm:min-h-[130px]">
         <motion.div className="min-w-0 flex-1" variants={heroItemVariants}>
           <p className="text-xs font-medium tracking-wide text-[var(--gh-accent-secondary)] uppercase">
-            Your pipeline
+            {t("dashboard.hero.eyebrow")}
           </p>
           <h2 className="mt-1 font-heading text-xl font-semibold text-[var(--gh-text)] lg:text-2xl">
-            Every application, one clear board
+            {t("dashboard.hero.title")}
           </h2>
           <p className="mt-1 max-w-md text-sm text-[var(--gh-text-secondary)]">
-            Track momentum across every stage without losing the thread.
+            {t("dashboard.hero.subtitle")}
           </p>
         </motion.div>
 
@@ -103,7 +106,7 @@ export function GameHubHero({
 
               const content = (
                 <>
-                  <p className="truncate text-[11px] text-[var(--gh-text-muted)]">{card.label}</p>
+                  <p className="truncate text-[11px] text-[var(--gh-text-muted)]">{t(STAT_SUMMARY_LABEL_KEYS[card.key])}</p>
                   <p className="font-heading text-lg font-semibold tabular-nums text-[var(--gh-text)]">
                     {card.value}
                   </p>
@@ -123,7 +126,7 @@ export function GameHubHero({
                   key={card.key}
                   href={card.href}
                   className="block"
-                  aria-label={`${card.label}: ${card.value} application${card.value === 1 ? "" : "s"}. View list.`}
+                  aria-label={t("stats.cardAria", { label: t(STAT_SUMMARY_LABEL_KEYS[card.key]), count: card.value })}
                 >
                   <motion.div
                     variants={heroItemVariants}

@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type TestTaskChipProps = {
@@ -7,6 +10,8 @@ type TestTaskChipProps = {
 };
 
 export function TestTaskChip({ done, className }: TestTaskChipProps) {
+  const t = useT();
+
   return (
     <Badge
       variant="outline"
@@ -18,7 +23,7 @@ export function TestTaskChip({ done, className }: TestTaskChipProps) {
         className,
       )}
     >
-      {done ? "Test task done" : "Test task pending"}
+      {done ? t("testTask.chipDone") : t("testTask.chipPending")}
     </Badge>
   );
 }

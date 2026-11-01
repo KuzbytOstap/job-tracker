@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmActionDialog } from "@/components/overlay/confirm-action-dialog";
 import { useMoveApplicationToStatus } from "@/hooks/use-move-application-to-status";
-import { STATUS_LABELS } from "@/lib/labels";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import { useT } from "@/components/i18n/i18n-provider";
 import { resolveRestoreTargetStatus } from "@/lib/status-transitions";
 import { Status } from "@/app/generated/prisma/enums";
 import type { ApplicationDTO } from "@/lib/api-types";
@@ -17,12 +18,13 @@ type TerminalStatusActionsProps = {
 };
 
 export function TerminalStatusActions({ application }: TerminalStatusActionsProps) {
+  const t = useT();
   const moveMutation = useMoveApplicationToStatus();
   const [confirmKind, setConfirmKind] = useState<ConfirmKind | null>(null);
 
   const isStoredRejected = application.status === Status.REJECTED;
   const isStoredIgnored = application.status === Status.IGNORED;
-  const subject = `${application.company} — ${application.position}`;
+  const subject = `${application.company}, ${application.position}`;
 
   function commitMove(target: Status, successMessage: string) {
     moveMutation.mutate(
@@ -38,12 +40,12 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
 
   function handleConfirm() {
     if (confirmKind === "reject") {
-      commitMove(Status.REJECTED, `${subject} marked as rejected`);
+      commitMove(Status.REJECTED, t("terminal.reject.done", { subject }));
     } else if (confirmKind === "ignore") {
-      commitMove(Status.IGNORED, `${subject} marked as ignored`);
+      commitMove(Status.IGNORED, t("terminal.ignore.done", { subject }));
     } else if (confirmKind === "restore-rejected" || confirmKind === "restore-ignored") {
       const target = resolveRestoreTargetStatus(application);
-      commitMove(target, `${subject} restored to ${STATUS_LABELS[target]}`);
+      commitMove(target, t("terminal.restoreDialog.done", { subject, status: t(STATUS_LABEL_KEYS[target]) }));
     }
   }
 
@@ -52,30 +54,30 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
     { title: string; description: string; confirmLabel: string; destructive: boolean; intent: "neutral" | "warning" | "destructive" }
   > = {
     reject: {
-      title: "Mark as rejected?",
-      description: `${subject} will be moved to Rejected.`,
-      confirmLabel: "Reject",
+      title: t("terminal.reject.title"),
+      description: t("terminal.reject.description", { subject, status: t(STATUS_LABEL_KEYS.REJECTED) }),
+      confirmLabel: t("terminal.reject.button"),
       destructive: true,
       intent: "destructive",
     },
     ignore: {
-      title: "Mark as ignored?",
-      description: `${subject} will be moved to Ignored.`,
-      confirmLabel: "Ignore",
+      title: t("terminal.ignore.title"),
+      description: t("terminal.ignore.description", { subject, status: t(STATUS_LABEL_KEYS.IGNORED) }),
+      confirmLabel: t("terminal.ignore.button"),
       destructive: false,
       intent: "warning",
     },
     "restore-rejected": {
-      title: "Restore this application?",
-      description: `${subject} will be moved out of Rejected back to its previous status.`,
-      confirmLabel: "Restore",
+      title: t("terminal.restoreDialog.title"),
+      description: t("terminal.restoreDialog.description", { subject, status: t(STATUS_LABEL_KEYS.REJECTED) }),
+      confirmLabel: t("terminal.restoreDialog.confirm"),
       destructive: false,
       intent: "neutral",
     },
     "restore-ignored": {
-      title: "Restore this application?",
-      description: `${subject} will be moved out of Ignored back to its previous status.`,
-      confirmLabel: "Restore",
+      title: t("terminal.restoreDialog.title"),
+      description: t("terminal.restoreDialog.description", { subject, status: t(STATUS_LABEL_KEYS.IGNORED) }),
+      confirmLabel: t("terminal.restoreDialog.confirm"),
       destructive: false,
       intent: "neutral",
     },
@@ -87,7 +89,7 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
     <div className="flex flex-wrap gap-2 rounded-lg border border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 p-2.5">
       {isStoredRejected ? (
         <Button type="button" variant="outline" size="sm" onClick={() => setConfirmKind("restore-rejected")}>
-          Restore application
+          {t("terminal.restore")}
         </Button>
       ) : (
         <Button
@@ -97,13 +99,13 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
           disabled={moveMutation.isPending}
           onClick={() => setConfirmKind("reject")}
         >
-          Reject
+          {t("terminal.reject.button")}
         </Button>
       )}
 
       {isStoredIgnored ? (
         <Button type="button" variant="outline" size="sm" onClick={() => setConfirmKind("restore-ignored")}>
-          Restore application
+          {t("terminal.restore")}
         </Button>
       ) : (
         <Button
@@ -113,7 +115,7 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
           disabled={moveMutation.isPending}
           onClick={() => setConfirmKind("ignore")}
         >
-          Ignore
+          {t("terminal.ignore.button")}
         </Button>
       )}
 
@@ -122,7 +124,7 @@ export function TerminalStatusActions({ application }: TerminalStatusActionsProp
         onOpenChange={(open) => !open && setConfirmKind(null)}
         title={activeCopy?.title ?? ""}
         description={activeCopy?.description ?? ""}
-        confirmLabel={activeCopy?.confirmLabel ?? "Confirm"}
+        confirmLabel={activeCopy?.confirmLabel ?? t("common.confirm")}
         destructive={activeCopy?.destructive ?? false}
         visualVariant="gameHub"
         intent={activeCopy?.intent ?? "neutral"}

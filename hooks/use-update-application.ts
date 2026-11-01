@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError, updateApplication } from "@/lib/api";
+import { useT } from "@/components/i18n/i18n-provider";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import {
   applyApplicationToCaches,
   invalidateApplicationCaches,
@@ -12,6 +14,7 @@ import type { ApplicationDTO, UpdateApplicationPayload } from "@/lib/api-types";
 
 export function useUpdateApplication(id: string) {
   const queryClient = useQueryClient();
+  const t = useT();
 
   return useMutation<ApplicationDTO, unknown, UpdateApplicationPayload>({
     mutationFn: (input) =>
@@ -25,10 +28,10 @@ export function useUpdateApplication(id: string) {
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
         invalidateApplicationCaches(queryClient, id);
-        toast.error("This application was updated elsewhere. Refreshed to the latest version.");
+        toast.error(t("errors.updatedElsewhere"));
         return;
       }
-      toast.error(error instanceof ApiError ? error.message : "Couldn't save changes. Try again.");
+      toast.error(getApiErrorMessage(t, error, "errors.saveFailed"));
     },
   });
 }

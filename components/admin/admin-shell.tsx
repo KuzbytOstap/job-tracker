@@ -10,11 +10,13 @@ import { SettingsSection } from "@/components/admin/settings/settings-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAdminAiRequests } from "@/hooks/use-admin-ai-requests";
+import { useT } from "@/components/i18n/i18n-provider";
 import { useAdminPlatformProposals } from "@/hooks/use-admin-platform-proposals";
 
 const ENTRANCE_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function AdminShell() {
+  const t = useT();
   const [tab, setTab] = useState<string>("requests");
   const reducedMotion = useReducedMotion();
   const requestsQuery = useAdminAiRequests();
@@ -34,7 +36,7 @@ export function AdminShell() {
         <Tabs value={tab} onValueChange={(value) => setTab(value as string)}>
           <TabsList className="mb-6 bg-[var(--gh-surface-secondary)]">
             <TabsTrigger value="requests" className="gap-1.5">
-              Requests
+              {t("admin.tabs.requests")}
               {pendingCount > 0 && (
                 <Badge className="h-4 min-w-4 justify-center bg-[var(--gh-action-primary-bg)] px-1 text-[10px] text-[var(--gh-action-primary-fg)]">
                   {pendingCount}
@@ -42,15 +44,15 @@ export function AdminShell() {
               )}
             </TabsTrigger>
             <TabsTrigger value="platforms" className="gap-1.5">
-              Platforms
+              {t("admin.tabs.platforms")}
               {platformProposalCount > 0 && (
                 <Badge className="h-4 min-w-4 justify-center bg-[var(--gh-action-primary-bg)] px-1 text-[10px] text-[var(--gh-action-primary-fg)]">
                   {platformProposalCount}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="users">{t("admin.tabs.users")}</TabsTrigger>
+            <TabsTrigger value="settings">{t("admin.tabs.settings")}</TabsTrigger>
           </TabsList>
           <TabsContent value="requests">
             <RequestsSection />

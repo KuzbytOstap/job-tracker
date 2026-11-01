@@ -1,8 +1,13 @@
+"use client";
+
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/components/i18n/i18n-provider";
 
 export function ApplicationDetailSkeleton() {
+  const t = useT();
+
   return (
-    <div className="flex flex-col gap-5" aria-busy="true" aria-label="Loading application details">
+    <div className="flex flex-col gap-5" aria-busy="true" aria-label={t("detail.loadingAria")}>
       <div className="flex items-start gap-3">
         <Skeleton className="size-9 shrink-0 rounded-lg" />
         <div className="flex min-w-0 flex-1 flex-col gap-2">

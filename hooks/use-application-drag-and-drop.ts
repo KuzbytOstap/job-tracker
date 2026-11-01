@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { useMoveApplicationToStatus } from "@/hooks/use-move-application-to-status";
 import { decideDropTransition } from "@/lib/drag-drop-transitions";
-import { STATUS_LABELS } from "@/lib/labels";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { Status } from "@/app/generated/prisma/enums";
 
@@ -32,6 +33,7 @@ function readColumnStatus(data: Record<string, unknown> | undefined): Status | u
  */
 export function useApplicationDragAndDrop() {
   const moveMutation = useMoveApplicationToStatus();
+  const t = useT();
   const [activeApplication, setActiveApplication] = useState<ApplicationListItemDTO | null>(null);
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null);
 
@@ -66,10 +68,10 @@ export function useApplicationDragAndDrop() {
 
       moveMutation.mutate(
         { applicationId: application.id, targetStatus },
-        { onSuccess: () => toast.success(`Moved to ${STATUS_LABELS[targetStatus]}`) },
+        { onSuccess: () => toast.success(t("pipeline.movedTo", { status: t(STATUS_LABEL_KEYS[targetStatus]) })) },
       );
     },
-    [moveMutation],
+    [moveMutation, t],
   );
 
   const confirmPendingDrop = useCallback(() => {
@@ -78,12 +80,12 @@ export function useApplicationDragAndDrop() {
       { applicationId: pendingDrop.applicationId, targetStatus: pendingDrop.targetStatus },
       {
         onSuccess: () => {
-          toast.success(`Moved to ${STATUS_LABELS[pendingDrop.targetStatus]}`);
+          toast.success(t("pipeline.movedTo", { status: t(STATUS_LABEL_KEYS[pendingDrop.targetStatus]) }));
           setPendingDrop(null);
         },
       },
     );
-  }, [moveMutation, pendingDrop]);
+  }, [moveMutation, pendingDrop, t]);
 
   const cancelPendingDrop = useCallback(() => {
     setPendingDrop(null);

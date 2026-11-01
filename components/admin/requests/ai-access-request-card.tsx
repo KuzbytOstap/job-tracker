@@ -5,6 +5,7 @@ import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DecisionNoteDialog } from "@/components/admin/requests/decision-note-dialog";
 import { formatRelativeDate } from "@/lib/relative-date";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { AdminAiRequestDTO } from "@/lib/api-types";
 
 type AiAccessRequestCardProps = {
@@ -12,26 +13,27 @@ type AiAccessRequestCardProps = {
 };
 
 export function AiAccessRequestCard({ request }: AiAccessRequestCardProps) {
+  const t = useT();
   const [pendingDecision, setPendingDecision] = useState<"APPROVED" | "REJECTED" | null>(null);
 
   return (
     <div className="gh-list-skeleton-card flex flex-col gap-3 rounded-xl border border-l-[3px] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-[var(--gh-text)]">
-          {request.user.name ?? request.user.email ?? "Unknown user"}
+          {request.user.name ?? request.user.email ?? t("admin.requests.unknownUser")}
         </p>
         <p className="truncate text-xs text-[var(--gh-text-muted)]">
-          {request.user.email} · requested {formatRelativeDate(request.createdAt)}
+          {request.user.email} · {t("admin.requests.requestedWhen", { when: formatRelativeDate(request.createdAt, new Date(), t) })}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setPendingDecision("REJECTED")}>
           <X data-icon="inline-start" />
-          Reject
+          {t("admin.requests.reject")}
         </Button>
         <Button type="button" size="sm" onClick={() => setPendingDecision("APPROVED")}>
           <Check data-icon="inline-start" />
-          Approve
+          {t("admin.requests.approve")}
         </Button>
       </div>
       {pendingDecision && (

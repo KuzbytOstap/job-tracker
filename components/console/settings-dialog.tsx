@@ -23,7 +23,7 @@ import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { useT } from "@/components/i18n/i18n-provider";
 import { useAutoIgnoreSettings } from "@/hooks/use-auto-ignore-settings";
 import { useUpdateAutoIgnoreSettings } from "@/hooks/use-update-auto-ignore-settings";
-import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import {
   AUTO_IGNORE_AFTER_DAYS,
   AUTO_IGNORE_MAX_DAYS,
@@ -60,7 +60,7 @@ function AutoIgnoreForm({ initialDays, onDone }: AutoIgnoreFormProps) {
           onDone();
         },
         onError: (error) =>
-          toast.error(error instanceof ApiError ? error.message : t("settings.autoIgnore.saveFailed")),
+          toast.error(getApiErrorMessage(t, error, "settings.autoIgnore.saveFailed")),
       },
     );
   }

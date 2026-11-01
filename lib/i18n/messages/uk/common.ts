@@ -17,4 +17,6 @@ export const common: Messages["common"] = {
   back: "Назад",
   unknown: "Невідомо",
   genericError: "Щось пішло не так. Спробуйте ще раз.",
+  copied: "Скопійовано в буфер обміну",
+  copyFailed: "Не вдалося скопіювати",
 };

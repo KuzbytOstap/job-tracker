@@ -7,6 +7,7 @@ import { SimilarPlatformPrompt } from "@/components/applications/similar-platfor
 import { useCreatePlatform } from "@/hooks/use-create-platform";
 import { useUpdateApplication } from "@/hooks/use-update-application";
 import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { useT } from "@/components/i18n/i18n-provider";
 import { REVIEW_REASON_LABEL_KEYS, platformOptionLabel } from "@/lib/i18n/label-keys";
 import { similarPlatformFromErrorDetails } from "@/lib/platforms";
@@ -65,7 +66,7 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
             setSimilar(similarPlatform);
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : t("form.platform.addFailed"));
+          toast.error(getApiErrorMessage(t, error, "form.platform.addFailed"));
         },
       },
     );

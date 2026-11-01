@@ -2,7 +2,9 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ApiError, deleteApplication } from "@/lib/api";
+import { deleteApplication } from "@/lib/api";
+import { useT } from "@/components/i18n/i18n-provider";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { queryKeys } from "@/lib/query-keys";
 import { applyApplicationDeletionToCaches, removeApplicationFromListCaches } from "@/lib/sync-application-caches";
 import type { ApplicationsListResponse, DeleteResponse } from "@/lib/api-types";
@@ -13,6 +15,7 @@ type DeleteContext = {
 
 export function useDeleteApplication() {
   const queryClient = useQueryClient();
+  const t = useT();
 
   return useMutation<DeleteResponse, unknown, string, DeleteContext>({
     mutationFn: (id) => deleteApplication(id),
@@ -33,7 +36,7 @@ export function useDeleteApplication() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error(error instanceof ApiError ? error.message : "Couldn't delete the application. Try again.");
+      toast.error(getApiErrorMessage(t, error, "errors.deleteFailed"));
     },
     onSuccess: (_result, id) => {
       applyApplicationDeletionToCaches(queryClient, id);

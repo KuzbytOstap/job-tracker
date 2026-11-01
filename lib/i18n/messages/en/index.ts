@@ -14,6 +14,15 @@ import { stats } from "./stats";
 import { table } from "./table";
 import { time } from "./time";
 import { validation } from "./validation";
+import { detail } from "./detail";
+import { pipeline } from "./pipeline";
+import { terminal } from "./terminal";
+import { testTask } from "./testTask";
+import { source } from "./source";
+import { ai } from "./ai";
+import { admin } from "./admin";
+import { errors } from "./errors";
+import { dnd } from "./dnd";
 
 export const en = {
   common,
@@ -32,4 +41,13 @@ export const en = {
   form,
   dialogs,
   extraction,
+  detail,
+  pipeline,
+  terminal,
+  testTask,
+  source,
+  ai,
+  admin,
+  errors,
+  dnd,
 } as const;

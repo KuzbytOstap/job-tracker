@@ -1,4 +1,7 @@
+"use client";
+
 import { CopyButton } from "@/components/ui/copy-button";
+import { useT } from "@/components/i18n/i18n-provider";
 import { AiAccessNotice } from "@/components/ai/ai-access-notice";
 import { AiQuotaNotice } from "@/components/ai/ai-quota-notice";
 import { hasVacancySpecificQuestions, type HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
@@ -13,6 +16,8 @@ type HrInterviewQuestionsSectionProps = {
 };
 
 export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage }: HrInterviewQuestionsSectionProps) {
+  const t = useT();
+
   if (!questions) {
     return null;
   }
@@ -46,9 +51,9 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage
       : null;
 
   const allQuestionsText = [
-    coreQuestions.length > 0 && "Common questions",
+    coreQuestions.length > 0 && t("detail.hr.common"),
     ...coreQuestions.map((question) => question.text),
-    vacancyQuestions.length > 0 && "For this vacancy",
+    vacancyQuestions.length > 0 && t("detail.hr.forVacancy"),
     ...vacancyQuestions.map((question) => question.text),
   ]
     .filter((line): line is string => Boolean(line))
@@ -58,15 +63,15 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-xs font-medium tracking-wide text-[var(--gh-text-muted,var(--muted-foreground))] uppercase">
-          HR interview questions
+          {t("detail.sections.hrQuestions")}
         </h3>
-        <CopyButton text={allQuestionsText} label="Copy all questions" />
+        <CopyButton text={allQuestionsText} label={t("detail.hr.copyAll")} />
       </div>
       <div className="flex flex-col gap-4 rounded-xl border border-[var(--gh-border,var(--border))] bg-[var(--gh-surface-secondary,var(--muted))]/60 p-3">
         {coreQuestions.length > 0 && (
           <div>
             <p className="mb-1.5 text-xs font-medium tracking-wide text-[var(--gh-text-secondary,var(--muted-foreground))] uppercase">
-              Common questions
+              {t("detail.hr.common")}
             </p>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--gh-text,var(--foreground))]">
               {coreQuestions.map((question) => (
@@ -81,7 +86,7 @@ export function HrInterviewQuestionsSection({ questions, aiAccessStatus, aiUsage
         {vacancyQuestions.length > 0 && (
           <div>
             <p className="mb-1.5 text-xs font-medium tracking-wide text-[var(--gh-text-secondary,var(--muted-foreground))] uppercase">
-              For this vacancy
+              {t("detail.hr.forVacancy")}
             </p>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--gh-text,var(--foreground))]">
               {vacancyQuestions.map((question) => (

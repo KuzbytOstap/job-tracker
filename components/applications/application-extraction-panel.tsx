@@ -21,6 +21,7 @@ import { AiAccessNotice } from "@/components/ai/ai-access-notice";
 import { AiQuotaNotice } from "@/components/ai/ai-quota-notice";
 import { inferPlatformFromLink } from "@/lib/platform-inference";
 import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { queryKeys } from "@/lib/query-keys";
 import { extractAiQuotaReasonFromError, quotaForReason, resolveAiQuotaReason } from "@/lib/ai-quota";
 import { cn } from "@/lib/utils";
@@ -122,7 +123,7 @@ export function ApplicationExtractionPanel({
             setSimilarPlatform(similar);
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : t("form.platform.addFailed"));
+          toast.error(getApiErrorMessage(t, error, "form.platform.addFailed"));
         },
       },
     );
@@ -157,7 +158,7 @@ export function ApplicationExtractionPanel({
             queryClient.invalidateQueries({ queryKey: queryKeys.aiUsage() });
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : t("extraction.genericError"));
+          toast.error(getApiErrorMessage(t, error, "extraction.genericError"));
         },
       },
     );
@@ -258,7 +259,7 @@ export function ApplicationExtractionPanel({
 
           {mutation.isError && !quotaReason && (
             <p role="alert" className="text-sm text-destructive">
-              {mutation.error instanceof ApiError ? mutation.error.message : t("extraction.genericError")}
+              {getApiErrorMessage(t, mutation.error, "extraction.genericError")}
             </p>
           )}
 

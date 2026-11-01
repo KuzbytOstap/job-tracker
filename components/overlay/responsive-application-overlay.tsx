@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type ChangeEventDetails = { cancel: () => void };
@@ -57,6 +58,7 @@ export function ResponsiveApplicationOverlay({
   mobileFullScreen = false,
   desktopPresentation = "dialog",
 }: ResponsiveApplicationOverlayProps) {
+  const t = useT();
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
@@ -102,7 +104,7 @@ export function ResponsiveApplicationOverlay({
                 {description && <DialogDescription className="sr-only">{description}</DialogDescription>}
                 <DialogClose render={<Button type="button" variant="ghost" size="icon-touch" />}>
                   <XIcon />
-                  <span className="sr-only">Close</span>
+                  <span className="sr-only">{t("common.close")}</span>
                 </DialogClose>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
@@ -136,7 +138,7 @@ export function ResponsiveApplicationOverlay({
                 </div>
                 <DialogClose render={<Button type="button" variant="ghost" size="icon-touch" />}>
                   <XIcon />
-                  <span className="sr-only">Close</span>
+                  <span className="sr-only">{t("common.close")}</span>
                 </DialogClose>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
@@ -157,7 +159,7 @@ export function ResponsiveApplicationOverlay({
               render={<Button type="button" variant="ghost" size="icon-touch" className="absolute top-2 right-2" />}
             >
               <XIcon />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{t("common.close")}</span>
             </DialogClose>
             {children}
           </DialogContent>
@@ -177,7 +179,7 @@ export function ResponsiveApplicationOverlay({
             >
               <DialogClose render={<Button type="button" variant="ghost" size="icon-touch" />}>
                 <XIcon />
-                <span className="sr-only">Close</span>
+                <span className="sr-only">{t("common.close")}</span>
               </DialogClose>
               <DialogTitle className="text-base font-medium">{title}</DialogTitle>
             </div>
@@ -199,7 +201,7 @@ export function ResponsiveApplicationOverlay({
                 render={<Button variant="ghost" size="icon-touch" className="absolute top-2 right-2" />}
               >
                 <XIcon />
-                <span className="sr-only">Close</span>
+                <span className="sr-only">{t("common.close")}</span>
               </DrawerClose>
             </DrawerHeader>
             <div

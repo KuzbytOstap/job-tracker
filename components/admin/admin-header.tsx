@@ -5,8 +5,10 @@ import { ArrowLeft, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n/i18n-provider";
 
 export function AdminHeader() {
+  const t = useT();
   const reducedMotion = useReducedMotion();
 
   return (
@@ -20,25 +22,25 @@ export function AdminHeader() {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/"
-            title="Back to board"
-            aria-label="Back to board"
+            title={t("admin.header.backToBoard")}
+            aria-label={t("admin.header.backToBoard")}
             className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[var(--gh-text-muted)] transition-colors hover:bg-[var(--gh-surface-secondary)] hover:text-[var(--gh-text)]"
           >
             <ArrowLeft className="size-4" />
           </Link>
           <div className="min-w-0">
             <h1 className="font-heading text-lg font-semibold tracking-tight text-[var(--gh-text)]">
-              Admin
+              {t("admin.header.title")}
             </h1>
-            <p className="truncate text-xs text-[var(--gh-text-muted)]">AI access &amp; quota management</p>
+            <p className="truncate text-xs text-[var(--gh-text-muted)]">{t("admin.header.subtitle")}</p>
           </div>
         </div>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          title="Sign out"
-          aria-label="Sign out"
+          title={t("nav.signOut")}
+          aria-label={t("nav.signOut")}
           onClick={() => signOut({ redirectTo: "/sign-in" })}
           className="transition-transform duration-100 motion-safe:active:scale-[0.94]"
         >

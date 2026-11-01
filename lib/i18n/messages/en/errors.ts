@@ -1,0 +1,22 @@
+export const errors = {
+  unauthorized: "Your session expired. Sign in again.",
+  forbidden: "You don't have access to this.",
+  notFound: "This item no longer exists.",
+  conflict: "This was updated elsewhere. Refresh and try again.",
+  rateLimited: "Too many requests. Try again in a moment.",
+  unavailable: "The service is temporarily unavailable. Try again.",
+  updatedElsewhere: "This application was updated elsewhere. Refreshed to the latest version.",
+  createFailed: "Couldn't create the application. Try again.",
+  deleteFailed: "Couldn't delete the application. Try again.",
+  saveFailed: "Couldn't save changes. Try again.",
+  statusUpdateFailed: "Couldn't update the status. Try again.",
+  reactivateFailed: "Couldn't mark this application as active. Try again.",
+  codes: {
+    aiAccessRequired: "AI access isn't approved yet.",
+    aiSuspended: "AI access is suspended.",
+    vacancyLimit: "The daily vacancy analysis limit is reached.",
+    hrLimit: "The daily HR question limit is reached.",
+    tokenLimit: "The daily AI token limit is reached.",
+    platformLimit: "You've reached the limit of custom platforms. Pick an existing one instead.",
+  },
+} as const;

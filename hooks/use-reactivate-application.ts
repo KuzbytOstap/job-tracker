@@ -2,7 +2,9 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ApiError, updateApplication } from "@/lib/api";
+import { updateApplication } from "@/lib/api";
+import { useT } from "@/components/i18n/i18n-provider";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { applyApplicationToCaches } from "@/lib/sync-application-caches";
 import type { ApplicationDTO } from "@/lib/api-types";
 
@@ -14,6 +16,7 @@ import type { ApplicationDTO } from "@/lib/api-types";
  */
 export function useReactivateApplication() {
   const queryClient = useQueryClient();
+  const t = useT();
 
   return useMutation<ApplicationDTO, unknown, string>({
     mutationFn: (id) => updateApplication(id, {}),
@@ -21,9 +24,7 @@ export function useReactivateApplication() {
       applyApplicationToCaches(queryClient, updated);
     },
     onError: (error) => {
-      toast.error(
-        error instanceof ApiError ? error.message : "Couldn't mark this application as active. Try again.",
-      );
+      toast.error(getApiErrorMessage(t, error, "errors.reactivateFailed"));
     },
   });
 }

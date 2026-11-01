@@ -15,7 +15,9 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useSetAdminUserLimits } from "@/hooks/use-set-admin-user-limits";
-import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { useT } from "@/components/i18n/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/messages";
 import type { AdminUserDTO, AiGlobalLimitsDTO } from "@/lib/api-types";
 
 type UserLimitsDialogProps = {
@@ -27,10 +29,10 @@ type UserLimitsDialogProps = {
 
 type FieldKey = "vacancy" | "hr" | "tokens";
 
-const FIELD_CONFIG: Array<{ key: FieldKey; label: string; globalKey: keyof AiGlobalLimitsDTO }> = [
-  { key: "vacancy", label: "Vacancy generations / day", globalKey: "vacancyGenerationLimit" },
-  { key: "hr", label: "HR generations / day", globalKey: "hrGenerationLimit" },
-  { key: "tokens", label: "Tokens / day", globalKey: "tokenLimit" },
+const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; globalKey: keyof AiGlobalLimitsDTO }> = [
+  { key: "vacancy", labelKey: "admin.limits.vacancyField", globalKey: "vacancyGenerationLimit" },
+  { key: "hr", labelKey: "admin.limits.hrField", globalKey: "hrGenerationLimit" },
+  { key: "tokens", labelKey: "admin.limits.tokensField", globalKey: "tokenLimit" },
 ];
 
 function toInputValue(value: number | null): string {
@@ -38,6 +40,7 @@ function toInputValue(value: number | null): string {
 }
 
 export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: UserLimitsDialogProps) {
+  const t = useT();
   const [values, setValues] = useState<Record<FieldKey, string>>({
     vacancy: toInputValue(user.overrides.vacancy),
     hr: toInputValue(user.overrides.hr),
@@ -76,11 +79,11 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
       },
       {
         onSuccess: () => {
-          toast.success("Limits updated");
+          toast.success(t("admin.limits.updated"));
           onOpenChange(false);
         },
         onError: (error) =>
-          toast.error(error instanceof ApiError ? error.message : "Couldn't update limits. Try again."),
+          toast.error(getApiErrorMessage(t, error, "admin.limits.updateFailed")),
       },
     );
   }
@@ -89,18 +92,18 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Permanent limit overrides</DialogTitle>
+          <DialogTitle>{t("admin.limits.title")}</DialogTitle>
           <DialogDescription>
-            {user.name ?? user.email ?? "This user"} — leave a field empty to fall back to the global default.
+            {t("admin.limits.description", { user: user.name ?? user.email ?? t("admin.users.thisUser") })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {FIELD_CONFIG.map(({ key, label, globalKey }) => {
+          {FIELD_CONFIG.map(({ key, labelKey, globalKey }) => {
             const raw = values[key].trim();
             const isInvalid = raw !== "" && (!Number.isInteger(Number(raw)) || Number(raw) < 0);
             return (
               <Field key={key} data-invalid={isInvalid}>
-                <FieldLabel htmlFor={`limit-${key}`}>{label}</FieldLabel>
+                <FieldLabel htmlFor={`limit-${key}`}>{t(labelKey)}</FieldLabel>
                 <div className="flex items-center gap-2">
                   <Input
                     id={`limit-${key}`}
@@ -108,7 +111,11 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
                     inputMode="numeric"
                     min={0}
                     step={1}
-                    placeholder={globalLimits ? `Default: ${globalLimits[globalKey]}` : "Default"}
+                    placeholder={
+                      globalLimits
+                        ? t("admin.limits.placeholder", { value: globalLimits[globalKey] as number })
+                        : t("admin.limits.placeholderEmpty")
+                    }
                     value={values[key]}
                     aria-invalid={isInvalid}
                     onChange={(event) => setValues((prev) => ({ ...prev, [key]: event.target.value }))}
@@ -120,7 +127,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
                       size="sm"
                       onClick={() => setValues((prev) => ({ ...prev, [key]: "" }))}
                     >
-                      Use default
+                      {t("admin.limits.useDefault")}
                     </Button>
                   )}
                 </div>
@@ -129,14 +136,14 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
           })}
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" disabled={mutation.isPending} />}>
-              Cancel
+              {t("common.cancel")}
             </DialogClose>
             <Button
               type="submit"
               disabled={invalidFields.length > 0 || mutation.isPending}
               aria-busy={mutation.isPending}
             >
-              {mutation.isPending ? "Saving…" : "Save"}
+              {mutation.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

@@ -3,12 +3,15 @@
 import { motion } from "motion/react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n/i18n-provider";
 
 type FloatingAddButtonProps = {
   onClick: () => void;
 };
 
 export function FloatingAddButton({ onClick }: FloatingAddButtonProps) {
+  const t = useT();
+
   return (
     <motion.div
       className="fixed right-5 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem))] z-30 sm:hidden"
@@ -20,7 +23,7 @@ export function FloatingAddButton({ onClick }: FloatingAddButtonProps) {
       <Button
         onClick={onClick}
         size="icon-lg"
-        aria-label="Add application"
+        aria-label={t("nav.addApplication")}
         className="size-13 rounded-full shadow-lg shadow-primary/20"
       >
         <Plus className="size-5" />

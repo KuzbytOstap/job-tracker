@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CopyButton } from "@/components/ui/copy-button";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type SourceMaterialsSectionProps = {
@@ -12,6 +13,8 @@ type SourceMaterialsSectionProps = {
 };
 
 export function SourceMaterialsSection({ jobPostingText, coverLetterText }: SourceMaterialsSectionProps) {
+  const t = useT();
+
   if (!jobPostingText && !coverLetterText) {
     return null;
   }
@@ -19,17 +22,18 @@ export function SourceMaterialsSection({ jobPostingText, coverLetterText }: Sour
   return (
     <div>
       <h3 className="mb-2 text-xs font-medium tracking-wide text-[var(--gh-text-muted,var(--muted-foreground))] uppercase">
-        Source materials
+        {t("source.title")}
       </h3>
       <div className="flex flex-col gap-2">
-        {jobPostingText && <SourceMaterialItem label="Job posting" text={jobPostingText} />}
-        {coverLetterText && <SourceMaterialItem label="Cover letter" text={coverLetterText} />}
+        {jobPostingText && <SourceMaterialItem label={t("source.jobPosting")} copyLabel={t("source.copyJobPosting")} text={jobPostingText} />}
+        {coverLetterText && <SourceMaterialItem label={t("source.coverLetter")} copyLabel={t("source.copyCoverLetter")} text={coverLetterText} />}
       </div>
     </div>
   );
 }
 
-function SourceMaterialItem({ label, text }: { label: string; text: string }) {
+function SourceMaterialItem({ label, copyLabel, text }: { label: string; copyLabel: string; text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -42,7 +46,7 @@ function SourceMaterialItem({ label, text }: { label: string; text: string }) {
         <CollapsibleTrigger className="flex min-h-9 flex-1 items-center justify-between gap-2 text-left text-sm font-medium text-[var(--gh-text,var(--foreground))]">
           {label}
           <span className="flex items-center gap-1 text-xs font-normal text-[var(--gh-text-muted,var(--muted-foreground))]">
-            {open ? "Hide" : "View"}
+            {open ? t("source.hide") : t("source.view")}
             <ChevronDown
               aria-hidden
               className={cn(
@@ -52,7 +56,7 @@ function SourceMaterialItem({ label, text }: { label: string; text: string }) {
             />
           </span>
         </CollapsibleTrigger>
-        <CopyButton text={text} label={`Copy ${label.toLowerCase()}`} />
+        <CopyButton text={text} label={copyLabel} />
       </div>
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none data-[ending-style]:h-0 data-[starting-style]:h-0">
         <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-[var(--gh-text,var(--foreground))]">

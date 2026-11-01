@@ -12,6 +12,7 @@ import { useT } from "@/components/i18n/i18n-provider";
 import { useCreatePlatform } from "@/hooks/use-create-platform";
 import { usePlatforms } from "@/hooks/use-platforms";
 import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { platformOptionLabel } from "@/lib/i18n/label-keys";
 import { translateValidationMessage } from "@/lib/i18n/validation-keys";
 import {
@@ -99,7 +100,7 @@ export function PlatformField() {
             setSimilar(similarPlatform);
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : t("form.platform.addFailed"));
+          toast.error(getApiErrorMessage(t, error, "form.platform.addFailed"));
         },
       },
     );

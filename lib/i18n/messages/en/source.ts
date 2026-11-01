@@ -1,0 +1,15 @@
+export const source = {
+  title: "Source materials",
+  jobPosting: "Job posting",
+  coverLetter: "Cover letter",
+  hide: "Hide",
+  view: "View",
+  copyJobPosting: "Copy job posting",
+  copyCoverLetter: "Copy cover letter",
+  sourceUrls: "Source URLs",
+  addSource: "Add source",
+  newSource: "New source",
+  removeSource: "Remove source {index}",
+  copyLink: "Copy link",
+  applicationForm: "Application form",
+} as const;

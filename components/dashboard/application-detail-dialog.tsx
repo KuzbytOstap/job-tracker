@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ResponsiveApplicationOverlay } from "@/components/overlay/responsive-application-overlay";
 import { ApplicationDetail } from "@/components/applications/application-detail";
+import { useT } from "@/components/i18n/i18n-provider";
 
 type ApplicationDetailDialogProps = {
   applicationId: string | null;
@@ -11,6 +12,7 @@ type ApplicationDetailDialogProps = {
 };
 
 export function ApplicationDetailDialog({ applicationId, open, onOpenChange }: ApplicationDetailDialogProps) {
+  const t = useT();
   const [isDirty, setIsDirty] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
@@ -18,7 +20,7 @@ export function ApplicationDetailDialog({ applicationId, open, onOpenChange }: A
     <ResponsiveApplicationOverlay
       open={open}
       onOpenChange={onOpenChange}
-      title="Application details"
+      title={t("detail.title")}
       isDirty={isDirty}
       isPending={isPending}
       desktopPresentation="side-panel"

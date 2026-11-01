@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { useAdminUsers } from "@/hooks/use-admin-users";
 import { useAdminSettings } from "@/hooks/use-admin-settings";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useT } from "@/components/i18n/i18n-provider";
 
 export function UsersSection() {
+  const t = useT();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 200);
   const usersQuery = useAdminUsers();
@@ -20,7 +22,7 @@ export function UsersSection() {
   }
 
   if (usersQuery.isError) {
-    return <AdminErrorState message="We couldn't load users." onRetry={() => usersQuery.refetch()} />;
+    return <AdminErrorState message={t("admin.users.loadFailed")} onRetry={() => usersQuery.refetch()} />;
   }
 
   const query = debouncedSearch.trim().toLowerCase();
@@ -35,29 +37,29 @@ export function UsersSection() {
     <div className="flex flex-col gap-3">
       <Input
         type="search"
-        placeholder="Search by name or email…"
+        placeholder={t("admin.users.searchPlaceholder")}
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         className="gh-list-control-input max-w-sm"
-        aria-label="Search users"
+        aria-label={t("admin.users.searchLabel")}
       />
 
       {users.length === 0 ? (
         <AdminEmptyState
           icon={query ? SearchX : UsersIcon}
-          title={query ? `No results for "${debouncedSearch}"` : "No users yet"}
+          title={query ? t("admin.users.noResults", { query: debouncedSearch }) : t("admin.users.empty")}
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--gh-border)] bg-[var(--gh-surface)] shadow-[var(--gh-shadow)]">
           <table className="w-full min-w-[840px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[var(--gh-border)] bg-[var(--gh-surface-secondary)] text-xs font-semibold tracking-wide text-[var(--gh-text-muted)] uppercase">
-                <th className="px-3 py-2.5 font-semibold">User</th>
-                <th className="px-3 py-2.5 font-semibold">AI access</th>
-                <th className="px-3 py-2.5 font-semibold">Vacancy</th>
-                <th className="px-3 py-2.5 font-semibold">HR</th>
-                <th className="px-3 py-2.5 font-semibold">Tokens</th>
-                <th className="px-3 py-2.5 font-semibold">Actions</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.user")}</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.aiAccess")}</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.vacancy")}</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.hr")}</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.tokens")}</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.actions")}</th>
               </tr>
             </thead>
             <tbody>

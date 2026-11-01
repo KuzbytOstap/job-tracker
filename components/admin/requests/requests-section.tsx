@@ -9,6 +9,7 @@ import { useAdminAiRequests } from "@/hooks/use-admin-ai-requests";
 import { useAdminUsers } from "@/hooks/use-admin-users";
 import { AiRequestStatus, AiRequestType } from "@/app/generated/prisma/enums";
 import { isUsageRequestType } from "@/lib/admin-labels";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { AdminAiRequestDTO } from "@/lib/api-types";
 
 const HISTORY_LIMIT = 20;
@@ -20,6 +21,7 @@ function sortByDecidedAtDesc(a: AdminAiRequestDTO, b: AdminAiRequestDTO): number
 }
 
 export function RequestsSection() {
+  const t = useT();
   const requestsQuery = useAdminAiRequests();
   const usersQuery = useAdminUsers();
 
@@ -34,7 +36,7 @@ export function RequestsSection() {
   }
 
   if (requestsQuery.isError) {
-    return <AdminErrorState message="We couldn't load the request queue." onRetry={() => requestsQuery.refetch()} />;
+    return <AdminErrorState message={t("admin.requests.loadFailed")} onRetry={() => requestsQuery.refetch()} />;
   }
 
   const requests = requestsQuery.data.requests;
@@ -54,9 +56,9 @@ export function RequestsSection() {
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
-        <AdminSectionHeading>Pending AI access requests</AdminSectionHeading>
+        <AdminSectionHeading>{t("admin.requests.pendingAccess")}</AdminSectionHeading>
         {pendingAiAccess.length === 0 ? (
-          <AdminEmptyState icon={ShieldQuestion} title="No pending AI access requests" />
+          <AdminEmptyState icon={ShieldQuestion} title={t("admin.requests.noPendingAccess")} />
         ) : (
           <div className="flex flex-col gap-2.5">
             {pendingAiAccess.map((request) => (
@@ -67,9 +69,9 @@ export function RequestsSection() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <AdminSectionHeading>Pending usage-limit requests</AdminSectionHeading>
+        <AdminSectionHeading>{t("admin.requests.pendingUsage")}</AdminSectionHeading>
         {pendingUsage.length === 0 ? (
-          <AdminEmptyState icon={ShieldQuestion} title="No pending usage-limit requests" />
+          <AdminEmptyState icon={ShieldQuestion} title={t("admin.requests.noPendingUsage")} />
         ) : (
           <div className="flex flex-col gap-2.5">
             {pendingUsage.map((request) => (
@@ -80,9 +82,9 @@ export function RequestsSection() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <AdminSectionHeading>Recent history</AdminSectionHeading>
+        <AdminSectionHeading>{t("admin.requests.history")}</AdminSectionHeading>
         {history.length === 0 ? (
-          <AdminEmptyState icon={Inbox} title="No decided requests yet" />
+          <AdminEmptyState icon={Inbox} title={t("admin.requests.noHistory")} />
         ) : (
           <div className="flex flex-col gap-2">
             {history.map((request) => (

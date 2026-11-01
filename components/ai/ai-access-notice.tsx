@@ -5,29 +5,29 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRequestAiAccess } from "@/hooks/use-request-ai-access";
-import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { useT } from "@/components/i18n/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 import { AiAccessStatus } from "@/app/generated/prisma/enums";
 
 export type LockedAiAccessStatus = Exclude<AiAccessStatus, "APPROVED" | "REJECTED">;
 
-const REQUEST_ERROR_MESSAGE = "Couldn't request AI access. Try again.";
-
-const COPY: Record<LockedAiAccessStatus, { icon: typeof Lock; title: string; description: string }> = {
+const COPY: Record<LockedAiAccessStatus, { icon: typeof Lock; title: MessageKey; description: MessageKey }> = {
   NOT_REQUESTED: {
     icon: Lock,
-    title: "AI features are locked",
-    description: "Request access to unlock AI-powered posting analysis and HR question suggestions.",
+    title: "ai.access.locked.title",
+    description: "ai.access.locked.description",
   },
   PENDING: {
     icon: Clock,
-    title: "AI access request pending",
-    description: "Your request is awaiting admin approval.",
+    title: "ai.access.pending.title",
+    description: "ai.access.pending.description",
   },
   SUSPENDED: {
     icon: Ban,
-    title: "AI access is suspended",
-    description: "AI features have been disabled for your account.",
+    title: "ai.access.suspended.title",
+    description: "ai.access.suspended.description",
   },
 };
 
@@ -41,6 +41,7 @@ type AiAccessNoticeProps = {
 };
 
 export function AiAccessNotice({ status, className }: AiAccessNoticeProps) {
+  const t = useT();
   const mutation = useRequestAiAccess();
 
   if (status === undefined) {
@@ -70,8 +71,8 @@ export function AiAccessNotice({ status, className }: AiAccessNoticeProps) {
 
   function handleRequest() {
     mutation.mutate(undefined, {
-      onSuccess: () => toast.success("AI access requested."),
-      onError: (error) => toast.error(error instanceof ApiError ? error.message : REQUEST_ERROR_MESSAGE),
+      onSuccess: () => toast.success(t("ai.access.requested")),
+      onError: (error) => toast.error(getApiErrorMessage(t, error, "ai.access.requestFailed")),
     });
   }
 
@@ -87,8 +88,8 @@ export function AiAccessNotice({ status, className }: AiAccessNoticeProps) {
         aria-hidden="true"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">{copy.title}</p>
-        <p className="text-xs text-[var(--gh-text-muted,var(--muted-foreground))]">{copy.description}</p>
+        <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">{t(copy.title)}</p>
+        <p className="text-xs text-[var(--gh-text-muted,var(--muted-foreground))]">{t(copy.description)}</p>
         {status === AiAccessStatus.NOT_REQUESTED && (
           <Button
             type="button"
@@ -99,7 +100,7 @@ export function AiAccessNotice({ status, className }: AiAccessNoticeProps) {
             aria-busy={mutation.isPending}
             onClick={handleRequest}
           >
-            {mutation.isPending ? "Requesting…" : "Request AI access"}
+            {mutation.isPending ? t("ai.access.requesting") : t("ai.access.request")}
           </Button>
         )}
       </div>

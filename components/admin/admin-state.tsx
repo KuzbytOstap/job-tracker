@@ -5,6 +5,7 @@ import { AlertTriangle, Inbox } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type AdminEmptyStateProps = {
@@ -44,11 +45,8 @@ type AdminErrorStateProps = {
   className?: string;
 };
 
-export function AdminErrorState({
-  message = "We couldn't load this. Please try again.",
-  onRetry,
-  className,
-}: AdminErrorStateProps) {
+export function AdminErrorState({ message, onRetry, className }: AdminErrorStateProps) {
+  const t = useT();
   const reducedMotion = useReducedMotion();
 
   return (
@@ -66,11 +64,11 @@ export function AdminErrorState({
         <AlertTriangle className="size-5" />
       </span>
       <div className="max-w-sm space-y-1 px-6">
-        <p className="text-sm font-medium text-[var(--gh-text)]">Something went wrong</p>
-        <p className="text-sm text-[var(--gh-text-muted)]">{message}</p>
+        <p className="text-sm font-medium text-[var(--gh-text)]">{t("admin.state.errorTitle")}</p>
+        <p className="text-sm text-[var(--gh-text-muted)]">{message ?? t("admin.state.defaultError")}</p>
       </div>
       <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        Retry
+        {t("common.retry")}
       </Button>
     </motion.div>
   );

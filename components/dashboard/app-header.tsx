@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type AppHeaderProps = {
@@ -25,6 +26,7 @@ export function AppHeader({
   className,
   titleAsHeading = true,
 }: AppHeaderProps) {
+  const t = useT();
   const TitleTag = titleAsHeading ? "h1" : "p";
 
   return (
@@ -40,11 +42,11 @@ export function AppHeader({
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-2.5">
         <div className="min-w-0">
           <TitleTag className="font-heading text-lg font-semibold tracking-tight sm:text-base sm:text-[var(--gh-text)]">
-            Job Tracker
+            {t("common.appName")}
           </TitleTag>
           <p className="truncate text-sm text-muted-foreground sm:text-xs sm:text-[var(--gh-text-muted)]">
-            Keep every opportunity moving
-            {typeof total === "number" ? ` · ${total} application${total === 1 ? "" : "s"}` : ""}
+            {t("dashboard.header.tagline")}
+            {typeof total === "number" ? ` · ${t("nav.applicationsCount", { count: total })}` : ""}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -53,13 +55,13 @@ export function AppHeader({
             className="hidden transition-transform duration-100 motion-safe:active:scale-[0.96] sm:inline-flex"
           >
             <Plus data-icon="inline-start" />
-            Add
+            {t("dashboard.header.add")}
           </Button>
           {isAdmin && (
             <Link
               href="/admin"
-              title="Admin"
-              aria-label="Admin"
+              title={t("nav.admin")}
+              aria-label={t("nav.admin")}
               className={buttonVariants({ variant: "ghost", size: "icon-touch" })}
             >
               <ShieldCheck />
@@ -70,8 +72,8 @@ export function AppHeader({
             type="button"
             variant="ghost"
             size="icon-touch"
-            title="Sign out"
-            aria-label="Sign out"
+            title={t("nav.signOut")}
+            aria-label={t("nav.signOut")}
             onClick={() => signOut({ redirectTo: "/sign-in" })}
             className="transition-transform duration-100 motion-safe:active:scale-[0.94]"
           >

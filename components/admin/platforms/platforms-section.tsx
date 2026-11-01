@@ -12,16 +12,18 @@ import {
 } from "@/components/admin/admin-state";
 import { useAdminPlatformProposals } from "@/hooks/use-admin-platform-proposals";
 import { useDecideAdminPlatformProposal } from "@/hooks/use-decide-admin-platform-proposal";
-import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { formatRelativeDate } from "@/lib/relative-date";
+import { useT } from "@/components/i18n/i18n-provider";
 import { Platform } from "@/app/generated/prisma/enums";
 import type { AdminPlatformProposalDTO } from "@/lib/api-types";
 
-function ownersLabel(proposal: AdminPlatformProposalDTO): string {
-  return proposal.owners.map((owner) => owner.name ?? owner.email ?? "Unknown user").join(", ");
+function ownersLabel(proposal: AdminPlatformProposalDTO, unknownUser: string): string {
+  return proposal.owners.map((owner) => owner.name ?? owner.email ?? unknownUser).join(", ");
 }
 
 function PlatformProposalCard({ proposal }: { proposal: AdminPlatformProposalDTO }) {
+  const t = useT();
   const mutation = useDecideAdminPlatformProposal();
 
   function decide(decision: "APPROVED" | "REJECTED") {
@@ -33,11 +35,11 @@ function PlatformProposalCard({ proposal }: { proposal: AdminPlatformProposalDTO
         onSuccess: () =>
           toast.success(
             decision === "APPROVED"
-              ? `${proposal.name} is now available to everyone`
-              : `${proposal.name} stays private to its users`,
+              ? t("admin.platforms.madePublic", { name: proposal.name })
+              : t("admin.platforms.stayedPrivate", { name: proposal.name }),
           ),
         onError: (error) =>
-          toast.error(error instanceof ApiError ? error.message : "Couldn't save the decision. Try again."),
+          toast.error(getApiErrorMessage(t, error, "admin.requests.toasts.decisionFailed")),
       },
     );
   }
@@ -51,11 +53,14 @@ function PlatformProposalCard({ proposal }: { proposal: AdminPlatformProposalDTO
             customPlatform={{ id: proposal.id, name: proposal.name, colorKey: proposal.colorKey }}
           />
           <span className="text-xs text-[var(--gh-text-muted)]">
-            {proposal.applicationCount} application{proposal.applicationCount === 1 ? "" : "s"}
+            {t("nav.applicationsCount", { count: proposal.applicationCount })}
           </span>
         </div>
         <p className="mt-1 truncate text-xs text-[var(--gh-text-muted)]">
-          Added by {ownersLabel(proposal)} · {formatRelativeDate(proposal.createdAt)}
+          {t("admin.platforms.addedBy", {
+            owners: ownersLabel(proposal, t("admin.requests.unknownUser")),
+            when: formatRelativeDate(proposal.createdAt, new Date(), t),
+          })}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
@@ -67,7 +72,7 @@ function PlatformProposalCard({ proposal }: { proposal: AdminPlatformProposalDTO
           onClick={() => decide("REJECTED")}
         >
           <X data-icon="inline-start" />
-          Keep private
+          {t("admin.platforms.keepPrivate")}
         </Button>
         <Button
           type="button"
@@ -77,7 +82,7 @@ function PlatformProposalCard({ proposal }: { proposal: AdminPlatformProposalDTO
           onClick={() => decide("APPROVED")}
         >
           <Check data-icon="inline-start" />
-          Add for everyone
+          {t("admin.platforms.addForEveryone")}
         </Button>
       </div>
     </div>
@@ -85,6 +90,7 @@ function PlatformProposalCard({ proposal }: { proposal: AdminPlatformProposalDTO
 }
 
 export function PlatformsSection() {
+  const t = useT();
   const query = useAdminPlatformProposals();
 
   if (query.isPending) {
@@ -92,16 +98,16 @@ export function PlatformsSection() {
   }
 
   if (query.isError) {
-    return <AdminErrorState message="We couldn't load platform proposals." onRetry={() => query.refetch()} />;
+    return <AdminErrorState message={t("admin.platforms.loadFailed")} onRetry={() => query.refetch()} />;
   }
 
   const proposals = query.data.proposals;
 
   return (
     <section className="flex flex-col gap-3">
-      <AdminSectionHeading>Platforms added by users</AdminSectionHeading>
+      <AdminSectionHeading>{t("admin.platforms.heading")}</AdminSectionHeading>
       {proposals.length === 0 ? (
-        <AdminEmptyState icon={Globe} title="No platforms waiting for review" />
+        <AdminEmptyState icon={Globe} title={t("admin.platforms.empty")} />
       ) : (
         <div className="flex flex-col gap-2.5">
           {proposals.map((proposal) => (

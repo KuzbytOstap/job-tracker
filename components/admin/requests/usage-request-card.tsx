@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { DecisionNoteDialog } from "@/components/admin/requests/decision-note-dialog";
 import { GrantAmountDialog } from "@/components/admin/requests/grant-amount-dialog";
 import { useDecideAdminAiRequest } from "@/hooks/use-decide-admin-ai-request";
-import { ApiError } from "@/lib/api";
-import { AI_REQUEST_TYPE_LABELS, USAGE_REQUEST_QUOTA_FIELD } from "@/lib/admin-labels";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { USAGE_REQUEST_QUOTA_FIELD } from "@/lib/admin-labels";
+import { AI_REQUEST_TYPE_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { isUsageRequestStale } from "@/lib/admin-quota";
 import { formatRelativeDate } from "@/lib/relative-date";
 import type { AdminAiRequestDTO, AdminUserDTO, AiUsageRequestType } from "@/lib/api-types";
@@ -22,6 +24,7 @@ type UsageRequestCardProps = {
 const QUICK_AMOUNTS = [5, 10] as const;
 
 export function UsageRequestCard({ request, user }: UsageRequestCardProps) {
+  const { t, rich, locale } = useI18n();
   const [customOpen, setCustomOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const mutation = useDecideAdminAiRequest();
@@ -35,9 +38,9 @@ export function UsageRequestCard({ request, user }: UsageRequestCardProps) {
     mutation.mutate(
       { requestId: request.id, decision: "APPROVED", grantedAmount: amount },
       {
-        onSuccess: () => toast.success(`Approved +${amount}`),
+        onSuccess: () => toast.success(t("admin.requests.toasts.approvedAmount", { amount })),
         onError: (error) =>
-          toast.error(error instanceof ApiError ? error.message : "Couldn't approve the request. Try again."),
+          toast.error(getApiErrorMessage(t, error, "admin.requests.toasts.approveFailed")),
       },
     );
   }
@@ -48,37 +51,41 @@ export function UsageRequestCard({ request, user }: UsageRequestCardProps) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="truncate text-sm font-medium text-[var(--gh-text)]">
-              {request.user.name ?? request.user.email ?? "Unknown user"}
+              {request.user.name ?? request.user.email ?? t("admin.requests.unknownUser")}
             </p>
             <Badge variant="outline" className="border-[var(--gh-border-strong)] text-[var(--gh-text-secondary)]">
-              {AI_REQUEST_TYPE_LABELS[request.type]}
+              {t(AI_REQUEST_TYPE_LABEL_KEYS[request.type])}
             </Badge>
             {stale && (
               <Badge variant="destructive">
                 <Clock data-icon="inline-start" />
-                Stale
+                {t("admin.requests.stale")}
               </Badge>
             )}
           </div>
           <p className="truncate text-xs text-[var(--gh-text-muted)]">{request.user.email}</p>
         </div>
         <p className="shrink-0 text-xs text-[var(--gh-text-muted)]">
-          Quota day{" "}
-          {request.quotaDate
-            ? new Date(request.quotaDate).toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })
-            : "unknown"}{" "}
-          · requested {formatRelativeDate(request.createdAt)}
+          {t("admin.requests.quotaDay", {
+            date: request.quotaDate
+              ? new Date(request.quotaDate).toLocaleDateString(locale, { dateStyle: "medium", timeZone: "UTC" })
+              : t("admin.requests.unknownDate"),
+            when: formatRelativeDate(request.createdAt, new Date(), t),
+          })}
         </p>
       </div>
 
       <p className="text-sm text-[var(--gh-text-secondary)]">
         {usage !== undefined && limit !== undefined ? (
           <>
-            Currently used <span className="font-medium text-[var(--gh-text)]">{usage}</span> of{" "}
-            <span className="font-medium text-[var(--gh-text)]">{limit}</span> today
+            {rich(
+              "admin.requests.currentlyUsed",
+              { b: (chunk) => <span className="font-medium text-[var(--gh-text)]">{chunk}</span> },
+              { used: usage, limit },
+            )}
           </>
         ) : (
-          "Current usage unavailable"
+          t("admin.requests.usageUnavailable")
         )}
       </p>
 
@@ -98,7 +105,7 @@ export function UsageRequestCard({ request, user }: UsageRequestCardProps) {
           ))}
         {!stale && (
           <Button type="button" size="sm" disabled={mutation.isPending} onClick={() => setCustomOpen(true)}>
-            Custom…
+            {t("admin.requests.custom")}
           </Button>
         )}
         <Button
@@ -109,7 +116,7 @@ export function UsageRequestCard({ request, user }: UsageRequestCardProps) {
           onClick={() => setRejectOpen(true)}
         >
           <X data-icon="inline-start" />
-          Reject
+          {t("admin.requests.reject")}
         </Button>
       </div>
 

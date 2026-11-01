@@ -2,7 +2,9 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ApiError, createApplication } from "@/lib/api";
+import { createApplication } from "@/lib/api";
+import { useT } from "@/components/i18n/i18n-provider";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { queryKeys } from "@/lib/query-keys";
 import { buildOptimisticListItem, upsertApplicationInList } from "@/lib/cache-updates";
 import { applyApplicationToCaches, parseApplicationsListQueryKey } from "@/lib/sync-application-caches";
@@ -20,6 +22,7 @@ type CreateContext = {
 
 export function useCreateApplication() {
   const queryClient = useQueryClient();
+  const t = useT();
 
   return useMutation<ApplicationDTO, unknown, CreateApplicationPayload, CreateContext>({
     mutationFn: (input) => createApplication(input),
@@ -63,7 +66,7 @@ export function useCreateApplication() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error(error instanceof ApiError ? error.message : "Couldn't create the application. Try again.");
+      toast.error(getApiErrorMessage(t, error, "errors.createFailed"));
     },
     onSuccess: (created, _input, context) => {
       if (context) {

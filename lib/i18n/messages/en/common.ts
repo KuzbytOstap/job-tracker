@@ -15,4 +15,6 @@ export const common = {
   back: "Back",
   unknown: "Unknown",
   genericError: "Something went wrong. Try again.",
+  copied: "Copied to clipboard",
+  copyFailed: "Couldn't copy to clipboard",
 } as const;

@@ -1,4 +1,4 @@
-import { Platform, Status } from "@/app/generated/prisma/enums";
+import { AiAccessStatus, AiRequestStatus, AiRequestType, Platform, Status } from "@/app/generated/prisma/enums";
 import type { DateGroupKey } from "@/lib/date-grouping";
 import type { PlatformOptionDTO } from "@/lib/api-types";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -81,4 +81,25 @@ export const REVIEW_REASON_LABEL_KEYS: Record<ReviewReason, MessageKey> = {
   position: "review.reasons.position",
   details: "review.reasons.details",
   not_vacancy: "review.reasons.notVacancy",
+};
+
+export const AI_ACCESS_STATUS_LABEL_KEYS: Record<AiAccessStatus, MessageKey> = {
+  NOT_REQUESTED: "admin.labels.accessStatus.notRequested",
+  PENDING: "admin.labels.accessStatus.pending",
+  APPROVED: "admin.labels.accessStatus.approved",
+  REJECTED: "admin.labels.accessStatus.rejected",
+  SUSPENDED: "admin.labels.accessStatus.suspended",
+};
+
+export const AI_REQUEST_TYPE_LABEL_KEYS: Record<AiRequestType, MessageKey> = {
+  AI_ACCESS: "admin.labels.requestType.aiAccess",
+  VACANCY_LIMIT: "admin.labels.requestType.vacancyLimit",
+  HR_LIMIT: "admin.labels.requestType.hrLimit",
+  TOKEN_LIMIT: "admin.labels.requestType.tokenLimit",
+};
+
+export const AI_REQUEST_STATUS_LABEL_KEYS: Record<AiRequestStatus, MessageKey> = {
+  PENDING: "admin.labels.requestStatus.pending",
+  APPROVED: "admin.labels.requestStatus.approved",
+  REJECTED: "admin.labels.requestStatus.rejected",
 };

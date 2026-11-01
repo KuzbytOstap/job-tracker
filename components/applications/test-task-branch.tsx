@@ -3,7 +3,8 @@
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useMoveApplicationToStatus } from "@/hooks/use-move-application-to-status";
-import { STATUS_LABELS } from "@/lib/labels";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import { useT } from "@/components/i18n/i18n-provider";
 import { TEST_TASK_RETURN_STATUS, canEnterTestTaskFrom } from "@/lib/status-transitions";
 import { Status } from "@/app/generated/prisma/enums";
 import type { ApplicationDTO } from "@/lib/api-types";
@@ -18,6 +19,7 @@ type TestTaskBranchProps = {
  * to Tech interview or forward to Offer — so these actions skip confirmation.
  */
 export function TestTaskBranch({ application }: TestTaskBranchProps) {
+  const t = useT();
   const moveMutation = useMoveApplicationToStatus();
 
   const canEnter = canEnterTestTaskFrom(application.status);
@@ -30,14 +32,14 @@ export function TestTaskBranch({ application }: TestTaskBranchProps) {
   function move(target: Status) {
     moveMutation.mutate(
       { applicationId: application.id, targetStatus: target },
-      { onSuccess: () => toast.success(`Moved to ${STATUS_LABELS[target]}`) },
+      { onSuccess: () => toast.success(t("pipeline.movedTo", { status: t(STATUS_LABEL_KEYS[target]) })) },
     );
   }
 
   return (
     <div className="rounded-lg border border-dashed border-amber-300/70 bg-amber-50/50 p-2.5 dark:border-amber-400/25 dark:bg-amber-400/5">
       <p className="mb-2 text-[0.7rem] font-medium tracking-wide text-amber-800 uppercase dark:text-amber-300">
-        Test task branch
+        {t("testTask.branch.title")}
       </p>
       {isInTestTask ? (
         <div className="flex flex-wrap gap-2">
@@ -48,7 +50,7 @@ export function TestTaskBranch({ application }: TestTaskBranchProps) {
             disabled={moveMutation.isPending}
             onClick={() => move(TEST_TASK_RETURN_STATUS)}
           >
-            Return to Tech interview
+            {t("testTask.branch.returnToTech")}
           </Button>
           <Button
             type="button"
@@ -56,7 +58,7 @@ export function TestTaskBranch({ application }: TestTaskBranchProps) {
             disabled={moveMutation.isPending}
             onClick={() => move(Status.OFFER)}
           >
-            Continue to Offer
+            {t("testTask.branch.continueToOffer")}
           </Button>
         </div>
       ) : (
@@ -67,7 +69,7 @@ export function TestTaskBranch({ application }: TestTaskBranchProps) {
           disabled={moveMutation.isPending}
           onClick={() => move(Status.TEST_TASK)}
         >
-          Move to test task
+          {t("testTask.branch.moveToTestTask")}
         </Button>
       )}
     </div>

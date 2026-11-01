@@ -3,6 +3,7 @@
 import { Inbox, SearchX } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 export type DashboardEmptyVariant = "all" | "filtered" | "search";
@@ -20,6 +21,7 @@ export function DashboardEmptyState({
   onAddClick,
   visualVariant = "default",
 }: DashboardEmptyStateProps) {
+  const t = useT();
   const isGameHub = visualVariant === "gameHub";
   const reducedMotion = useReducedMotion();
 
@@ -44,19 +46,19 @@ export function DashboardEmptyState({
       )}
       <div className="max-w-sm space-y-1 px-6">
         <p className="text-sm font-medium break-words">
-          {variant === "all" && "No applications yet"}
-          {variant === "filtered" && "Nothing here yet"}
-          {variant === "search" && `No results for "${searchQuery}"`}
+          {variant === "all" && t("dashboard.emptyState.allTitle")}
+          {variant === "filtered" && t("dashboard.emptyState.filteredTitle")}
+          {variant === "search" && t("dashboard.emptyState.searchTitle", { query: searchQuery ?? "" })}
         </p>
         <p className="text-sm text-muted-foreground">
-          {variant === "all" && "Start tracking your job search by adding your first application."}
-          {variant === "filtered" && "Applications matching this status will show up here."}
-          {variant === "search" && "Try a different company or position."}
+          {variant === "all" && t("dashboard.emptyState.allDescription")}
+          {variant === "filtered" && t("dashboard.emptyState.filteredDescription")}
+          {variant === "search" && t("dashboard.emptyState.searchDescription")}
         </p>
       </div>
       {variant === "all" && onAddClick && (
         <Button onClick={onAddClick} className="mt-1">
-          Add your first application
+          {t("dashboard.emptyState.addFirst")}
         </Button>
       )}
     </motion.div>

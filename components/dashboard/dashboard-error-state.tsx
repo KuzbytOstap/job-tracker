@@ -3,6 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type DashboardErrorStateProps = {
@@ -11,6 +12,7 @@ type DashboardErrorStateProps = {
 };
 
 export function DashboardErrorState({ onRetry, visualVariant = "default" }: DashboardErrorStateProps) {
+  const t = useT();
   const isGameHub = visualVariant === "gameHub";
   const reducedMotion = useReducedMotion();
 
@@ -33,13 +35,13 @@ export function DashboardErrorState({ onRetry, visualVariant = "default" }: Dash
         <AlertTriangle className="size-8 text-destructive/70" />
       )}
       <div className="space-y-1 px-6">
-        <p className="text-sm font-medium">Something went wrong</p>
+        <p className="text-sm font-medium">{t("dashboard.errorState.title")}</p>
         <p className="text-sm text-muted-foreground">
-          We couldn&apos;t load your applications. Please try again.
+          {t("dashboard.errorState.message")}
         </p>
       </div>
       <Button variant="outline" onClick={onRetry}>
-        Retry
+        {t("common.retry")}
       </Button>
     </motion.div>
   );

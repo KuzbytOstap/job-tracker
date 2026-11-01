@@ -4,18 +4,18 @@ import { Gauge } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useRequestMoreAiUsage } from "@/hooks/use-request-more-ai-usage";
-import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { useI18n } from "@/components/i18n/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { formatExactDateTime } from "@/lib/relative-date";
 import { AI_QUOTA_REQUEST_TYPE, type AiQuotaReasonCode } from "@/lib/ai-quota";
 import { cn } from "@/lib/utils";
 import type { AiQuotaStatus } from "@/lib/api-types";
 
-const REQUEST_ERROR_MESSAGE = "Couldn't request more usage. Try again.";
-
-const REASON_COPY: Record<AiQuotaReasonCode, { title: string }> = {
-  VACANCY_LIMIT_REACHED: { title: "Daily vacancy analysis limit reached" },
-  HR_LIMIT_REACHED: { title: "Daily HR question limit reached" },
-  TOKEN_LIMIT_REACHED: { title: "Daily AI token limit reached" },
+const REASON_COPY: Record<AiQuotaReasonCode, { title: MessageKey }> = {
+  VACANCY_LIMIT_REACHED: { title: "ai.quota.vacancyTitle" },
+  HR_LIMIT_REACHED: { title: "ai.quota.hrTitle" },
+  TOKEN_LIMIT_REACHED: { title: "ai.quota.tokenTitle" },
 };
 
 type AiQuotaNoticeProps = {
@@ -26,13 +26,14 @@ type AiQuotaNoticeProps = {
 };
 
 export function AiQuotaNotice({ reason, quota, resetAt, className }: AiQuotaNoticeProps) {
+  const { t, locale } = useI18n();
   const mutation = useRequestMoreAiUsage();
   const copy = REASON_COPY[reason];
 
   function handleRequest() {
     mutation.mutate(AI_QUOTA_REQUEST_TYPE[reason], {
-      onSuccess: () => toast.success("Requested more usage."),
-      onError: (error) => toast.error(error instanceof ApiError ? error.message : REQUEST_ERROR_MESSAGE),
+      onSuccess: () => toast.success(t("ai.quota.requested")),
+      onError: (error) => toast.error(getApiErrorMessage(t, error, "ai.quota.requestFailed")),
     });
   }
 
@@ -48,13 +49,17 @@ export function AiQuotaNotice({ reason, quota, resetAt, className }: AiQuotaNoti
         aria-hidden="true"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">{copy.title}</p>
+        <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">{t(copy.title)}</p>
         <p className="text-xs text-[var(--gh-text-muted,var(--muted-foreground))]">
-          Used {quota.used} / {quota.limit} today. Resets {formatExactDateTime(resetAt)}.
+          {t("ai.quota.usage", {
+            used: quota.used,
+            limit: quota.limit,
+            resetAt: formatExactDateTime(resetAt, { t, locale }),
+          })}
         </p>
         {quota.pendingRequest ? (
           <p className="mt-2 text-xs font-medium text-[var(--gh-text-secondary,var(--muted-foreground))]">
-            More usage requested — awaiting admin approval.
+            {t("ai.quota.pending")}
           </p>
         ) : (
           <Button
@@ -66,7 +71,7 @@ export function AiQuotaNotice({ reason, quota, resetAt, className }: AiQuotaNoti
             aria-busy={mutation.isPending}
             onClick={handleRequest}
           >
-            {mutation.isPending ? "Requesting…" : "Request more usage"}
+            {mutation.isPending ? t("ai.quota.requesting") : t("ai.quota.request")}
           </Button>
         )}
       </div>

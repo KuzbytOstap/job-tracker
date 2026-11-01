@@ -15,8 +15,9 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useDecideAdminAiRequest } from "@/hooks/use-decide-admin-ai-request";
-import { ApiError } from "@/lib/api";
-import { AI_REQUEST_TYPE_LABELS } from "@/lib/admin-labels";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { AI_REQUEST_TYPE_LABEL_KEYS } from "@/lib/i18n/label-keys";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { AdminAiRequestDTO } from "@/lib/api-types";
 
 type DecisionNoteDialogProps = {
@@ -27,10 +28,11 @@ type DecisionNoteDialogProps = {
 };
 
 export function DecisionNoteDialog({ request, decision, open, onOpenChange }: DecisionNoteDialogProps) {
+  const t = useT();
   const [note, setNote] = useState("");
   const mutation = useDecideAdminAiRequest();
   const isApprove = decision === "APPROVED";
-  const userLabel = request.user.email ?? request.user.name ?? "this user";
+  const userLabel = request.user.email ?? request.user.name ?? t("admin.requests.decision.thisUser");
 
   function handleOpenChange(next: boolean) {
     if (!next) setNote("");
@@ -45,11 +47,11 @@ export function DecisionNoteDialog({ request, decision, open, onOpenChange }: De
       { requestId: request.id, decision, decisionNote: note.trim() || null },
       {
         onSuccess: () => {
-          toast.success(isApprove ? "Request approved" : "Request rejected");
+          toast.success(isApprove ? t("admin.requests.toasts.approved") : t("admin.requests.toasts.rejected"));
           handleOpenChange(false);
         },
         onError: (error) =>
-          toast.error(error instanceof ApiError ? error.message : "Couldn't save this decision. Try again."),
+          toast.error(getApiErrorMessage(t, error, "admin.requests.toasts.decisionFailed")),
       },
     );
   }
@@ -58,26 +60,26 @@ export function DecisionNoteDialog({ request, decision, open, onOpenChange }: De
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isApprove ? "Approve request" : "Reject request"}</DialogTitle>
+          <DialogTitle>{isApprove ? t("admin.requests.decision.approveTitle") : t("admin.requests.decision.rejectTitle")}</DialogTitle>
           <DialogDescription>
-            {AI_REQUEST_TYPE_LABELS[request.type]} request from {userLabel}.
+            {t("admin.requests.decision.description", { type: t(AI_REQUEST_TYPE_LABEL_KEYS[request.type]), user: userLabel })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="decision-note">Decision note (optional)</FieldLabel>
+            <FieldLabel htmlFor="decision-note">{t("admin.requests.decision.noteLabel")}</FieldLabel>
             <Textarea
               id="decision-note"
               rows={3}
               autoFocus
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="Visible to the user, if you choose to explain your decision."
+              placeholder={t("admin.requests.decision.notePlaceholder")}
             />
           </Field>
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" disabled={mutation.isPending} />}>
-              Cancel
+              {t("common.cancel")}
             </DialogClose>
             <Button
               type="submit"
@@ -85,7 +87,7 @@ export function DecisionNoteDialog({ request, decision, open, onOpenChange }: De
               disabled={mutation.isPending}
               aria-busy={mutation.isPending}
             >
-              {mutation.isPending ? "Saving…" : isApprove ? "Approve" : "Reject"}
+              {mutation.isPending ? t("common.saving") : isApprove ? t("admin.requests.approve") : t("admin.requests.reject")}
             </Button>
           </DialogFooter>
         </form>
