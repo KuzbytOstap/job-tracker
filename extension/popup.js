@@ -161,6 +161,7 @@ async function postCapture(payload) {
 
   const body = await response.json().catch(() => null);
   if (!response.ok || !body) {
+    if (body && body.details && body.details.code === "SELF_URL") throw new AppError("errorOwnSite");
     if (body && body.error) throw new Error(body.error);
     throw new AppError("errorRequest", { status: response.status });
   }
@@ -463,6 +464,11 @@ async function init() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id || !/^https?:\/\//.test(tab.url || "")) {
     showError(new AppError("errorOpenPage"), false);
+    return;
+  }
+
+  if (new URL(tab.url).origin === new URL(TRACKER_URL).origin) {
+    showError(new AppError("errorOwnSite"), false);
     return;
   }
 

@@ -75,6 +75,10 @@ export async function POST(request: NextRequest) {
   }
 
   const capture = parsed.data;
+  if (new URL(capture.url).host === request.nextUrl.host) {
+    return jsonError(422, "This page is the tracker itself, not a job posting.", { code: "SELF_URL" });
+  }
+
   const userId = check.session.user.id;
   const cleanedUrl = cleanVacancyUrl(capture.url);
 
