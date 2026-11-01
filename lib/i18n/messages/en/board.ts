@@ -11,7 +11,7 @@ export const board = {
     hrCall: "No calls scheduled.",
     techInterview: "No interviews lined up.",
     testTask: "No test tasks pending.",
-    offer: "No offers yet. Keep going.",
+    offer: "No offers yet — keep going.",
     rejected: "Nothing here.",
     ignored: "Nothing has gone quiet.",
   },

@@ -22,7 +22,7 @@ export const ai = {
     hrTitle: "Daily HR question limit reached",
     tokenTitle: "Daily AI token limit reached",
     usage: "Used {used} / {limit} today. Resets {resetAt}.",
-    pending: "More usage requested. Awaiting admin approval.",
+    pending: "More usage requested — awaiting admin approval.",
     request: "Request more usage",
     requesting: "Requesting…",
     requested: "Requested more usage.",
