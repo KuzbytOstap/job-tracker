@@ -1,48 +1,50 @@
 import { TRACKER_URL } from "./config.js";
+import { createTranslator, detectLanguage } from "./strings.js";
 
 const REQUEST_TIMEOUT_MS = 90000;
 const MIN_MAIN_TEXT_CHARS = 800;
 const MIN_FRAME_TEXT_CHARS = 200;
 const MAX_PAGE_TEXT_CHARS = 120000;
 const MAX_JSON_LD = 5;
+const LOADING_STEP_MS = 2200;
+const SPARK_COUNT = 12;
+const LOADING_STEPS = ["loadingStep1", "loadingStep2", "loadingStep3"];
 const VIEWS = ["idle", "loading", "result", "confirm", "error"];
 
-const PLATFORM_LABELS = {
-  DJINNI: "Djinni",
-  DOU: "DOU",
-  LINKEDIN: "LinkedIn",
-  ROBOTA_UA: "Robota.ua",
-  DIRECT: "Direct",
-  OTHER: "Other",
-};
+class AppError extends Error {
+  constructor(key, params = {}) {
+    super(key);
+    this.key = key;
+    this.params = params;
+  }
+}
 
-const REASON_LABELS = {
-  salary: "Salary isn't specified",
-  platform: "Platform wasn't recognized",
-  company: "Company name is unclear",
-  position: "Position title is unclear",
-  details: "Saved without AI details, fill in the rest",
-  not_vacancy: "This may not be a vacancy",
-};
-
-const FALLBACK_LABELS = {
-  AI_ACCESS_REQUIRED: "AI access isn't approved yet",
-  AI_SUSPENDED: "AI access is suspended",
-  VACANCY_LIMIT_REACHED: "the daily AI limit is reached",
-  TOKEN_LIMIT_REACHED: "the daily AI limit is reached",
-  HR_LIMIT_REACHED: "the daily AI limit is reached",
-  page_text_too_short: "the page had too little text",
-  extraction_failed: "AI extraction failed",
-};
-
-class SignInRequiredError extends Error {}
+class SignInRequiredError extends AppError {
+  constructor() {
+    super("errorSignIn");
+  }
+}
 
 const $ = (id) => document.getElementById(id);
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+let lang = "en";
+let t = createTranslator("en");
 let currentTab = null;
 let capture = null;
 let lastConfirm = false;
-let createdId = null;
+let loadingTimer = null;
+
+const model = {
+  view: "idle",
+  response: null,
+  error: null,
+  retry: true,
+  undone: false,
+  undoFailed: false,
+  createdId: null,
+  loadingStepKey: LOADING_STEPS[0],
+};
 
 async function collectPage() {
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -142,10 +144,8 @@ async function request(path, init) {
       ...init,
     });
   } catch (error) {
-    if (error && error.name === "AbortError") {
-      throw new Error("The request took too long. Try again.");
-    }
-    throw new Error("Couldn't reach Job Tracker. Check your connection.");
+    if (error && error.name === "AbortError") throw new AppError("errorTimeout");
+    throw new AppError("errorNetwork");
   } finally {
     clearTimeout(timer);
   }
@@ -160,7 +160,8 @@ async function postCapture(payload) {
 
   const body = await response.json().catch(() => null);
   if (!response.ok || !body) {
-    throw new Error((body && body.error) || `Request failed (${response.status})`);
+    if (body && body.error) throw new Error(body.error);
+    throw new AppError("errorRequest", { status: response.status });
   }
   return body;
 }
@@ -169,31 +170,76 @@ async function deleteApplication(id) {
   const response = await request(`/api/applications/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
-  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  if (!response.ok) throw new AppError("errorRequest", { status: response.status });
 }
 
-function show(name) {
-  for (const view of VIEWS) {
-    $(`view-${view}`).hidden = view !== name;
+function stopLoadingSteps() {
+  if (loadingTimer !== null) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
   }
 }
 
-function renderApplication(application) {
-  $("result-title").textContent = `${application.company} · ${application.position}`;
-  const platform =
-    (application.customPlatform && application.customPlatform.name) ||
-    PLATFORM_LABELS[application.platform] ||
-    application.platform;
-  $("result-sub").textContent = [platform, application.salaryExpectation].filter(Boolean).join(" · ");
+function showLoadingStep(key) {
+  model.loadingStepKey = key;
+  const text = $("loading-text");
+  text.classList.remove("step-in");
+  void text.offsetWidth;
+  text.textContent = t(key);
+  text.classList.add("step-in");
+}
+
+function startLoadingSteps() {
+  stopLoadingSteps();
+  let index = 0;
+  showLoadingStep(LOADING_STEPS[0]);
+  loadingTimer = setInterval(() => {
+    index = Math.min(index + 1, LOADING_STEPS.length - 1);
+    showLoadingStep(LOADING_STEPS[index]);
+  }, LOADING_STEP_MS);
+}
+
+function show(view, state = view) {
+  model.view = view;
+  for (const name of VIEWS) {
+    $(`view-${name}`).hidden = name !== view;
+  }
+  $("app").dataset.state = state;
+  if (view === "loading") {
+    startLoadingSteps();
+  } else {
+    stopLoadingSteps();
+  }
+}
+
+function setStageCard(label, host) {
+  $("monogram").textContent = (label || "J").trim().charAt(0).toUpperCase() || "J";
+  $("card-host").textContent = host;
+}
+
+function platformLabel(application) {
+  if (application.customPlatform && application.customPlatform.name) {
+    return application.customPlatform.name;
+  }
+  const label = t(`platform.${application.platform}`);
+  return label === `platform.${application.platform}` ? application.platform : label;
+}
+
+function fallbackReasonLabel(reason) {
+  const key = `fallback.${reason}`;
+  const label = t(key);
+  return label === key ? t("fallback.default") : label;
 }
 
 function renderReasons(application) {
   const reasons = (application.reviewReasons || [])
-    .map((reason) =>
-      reason === "platform" && application.suggestedPlatformName
-        ? `Platform wasn't recognized (looks like ${application.suggestedPlatformName})`
-        : REASON_LABELS[reason],
-    )
+    .map((reason) => {
+      if (reason === "platform" && application.suggestedPlatformName) {
+        return t("reason.platformSuggested", { name: application.suggestedPlatformName });
+      }
+      const label = t(`reason.${reason}`);
+      return label === `reason.${reason}` ? null : label;
+    })
     .filter(Boolean);
 
   const list = $("result-reasons");
@@ -203,16 +249,51 @@ function renderReasons(application) {
     item.textContent = reason;
     list.append(item);
   }
-  $("result-review").hidden = reasons.length === 0;
+  $("result-review").hidden = reasons.length === 0 || model.undone;
 }
 
-function showError(error, options = {}) {
+function renderResult() {
+  const { response } = model;
+  const application = response.application;
+  const isDuplicate = response.status === "duplicate";
+
+  $("result-title").textContent = `${application.company} · ${application.position}`;
+  $("result-sub").textContent = [platformLabel(application), application.salaryExpectation]
+    .filter(Boolean)
+    .join(" · ");
+  $("open-tracker").href = `${TRACKER_URL}/`;
+
+  let status;
+  if (model.undoFailed) status = t("undoFailed");
+  else if (model.undone) status = t("statusRemoved");
+  else if (isDuplicate) status = t("statusDuplicate");
+  else if (response.extraction === "ai") status = t("statusAdded");
+  else status = t("statusAddedLimited", { reason: fallbackReasonLabel(response.fallbackReason) });
+  $("result-status").textContent = status;
+
+  $("undo").hidden = isDuplicate || model.undone;
+  $("undo").disabled = false;
+
+  if (isDuplicate) {
+    $("result-review").hidden = true;
+  } else {
+    renderReasons(application);
+  }
+}
+
+function renderError() {
+  const { error } = model;
   const signInRequired = error instanceof SignInRequiredError;
-  $("error-message").textContent = signInRequired
-    ? "You're not signed in to Job Tracker. Sign in, then try again."
-    : error.message || "Something went wrong.";
+  $("error-message").textContent =
+    error instanceof AppError ? t(error.key, error.params) : error.message || t("errorGeneric");
   $("sign-in").hidden = !signInRequired;
-  $("retry").hidden = options.retry === false;
+  $("retry").hidden = !model.retry;
+}
+
+function showError(error, retry = true) {
+  model.error = error;
+  model.retry = retry;
+  renderError();
   show("error");
 }
 
@@ -222,26 +303,21 @@ function handleResponse(response) {
     return;
   }
 
-  createdId = null;
-  renderApplication(response.application);
-  $("open-tracker").href = `${TRACKER_URL}/`;
-  $("undo").disabled = false;
+  model.response = response;
+  model.undone = false;
+  model.undoFailed = false;
+  model.createdId = response.status === "created" ? response.application.id : null;
+  setStageCard(response.application.company, hostOf(currentTab.url));
+  renderResult();
+  show("result", response.status === "duplicate" ? "duplicate" : "success");
+}
 
-  if (response.status === "duplicate") {
-    $("result-status").textContent = "Already in your tracker";
-    $("result-review").hidden = true;
-    $("undo").hidden = true;
-  } else {
-    createdId = response.application.id;
-    $("result-status").textContent =
-      response.extraction === "ai"
-        ? "Added to your tracker"
-        : `Added with limited details (${FALLBACK_LABELS[response.fallbackReason] || "AI was unavailable"})`;
-    renderReasons(response.application);
-    $("undo").hidden = false;
+function hostOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
   }
-
-  show("result");
 }
 
 async function run(confirmNotVacancy) {
@@ -258,38 +334,119 @@ async function run(confirmNotVacancy) {
 }
 
 async function undo() {
-  if (!createdId) return;
+  if (!model.createdId) return;
 
   $("undo").disabled = true;
   try {
-    await deleteApplication(createdId);
-    createdId = null;
-    $("result-status").textContent = "Removed from your tracker";
-    $("result-review").hidden = true;
-    $("undo").hidden = true;
+    await deleteApplication(model.createdId);
+    model.createdId = null;
+    model.undone = true;
+    model.undoFailed = false;
   } catch {
-    $("undo").disabled = false;
-    $("result-status").textContent = "Couldn't undo. Remove it in the tracker.";
+    model.undoFailed = true;
+  }
+  renderResult();
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = lang;
+  for (const element of document.querySelectorAll("[data-i18n]")) {
+    element.textContent = t(element.dataset.i18n);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-label]")) {
+    element.setAttribute("aria-label", t(element.dataset.i18nLabel));
+  }
+  for (const button of document.querySelectorAll("[data-lang]")) {
+    button.setAttribute("aria-pressed", String(button.dataset.lang === lang));
+  }
+}
+
+function setLanguage(next, persist) {
+  lang = next;
+  t = createTranslator(next);
+  applyStaticTranslations();
+
+  if (model.view === "result") renderResult();
+  if (model.view === "error") renderError();
+  if (model.view === "loading") $("loading-text").textContent = t(model.loadingStepKey);
+
+  if (persist) {
+    try {
+      chrome.storage.local.set({ lang: next });
+    } catch {
+      return;
+    }
+  }
+}
+
+function createSparks() {
+  const sparks = $("sparks");
+  for (let index = 0; index < SPARK_COUNT; index += 1) {
+    const spark = document.createElement("i");
+    spark.className = "spark";
+    spark.style.setProperty("--a", `${index * (360 / SPARK_COUNT)}deg`);
+    sparks.append(spark);
+  }
+}
+
+function setupTilt() {
+  if (reducedMotion.matches) return;
+
+  const stage = $("stage");
+  const deck = $("deck");
+  let frame = 0;
+
+  stage.addEventListener("pointermove", (event) => {
+    const rect = stage.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      deck.style.setProperty("--ry", `${x * 18}deg`);
+      deck.style.setProperty("--rx", `${-y * 14}deg`);
+    });
+  });
+
+  stage.addEventListener("pointerleave", () => {
+    cancelAnimationFrame(frame);
+    deck.style.setProperty("--ry", "0deg");
+    deck.style.setProperty("--rx", "0deg");
+  });
+}
+
+async function loadSavedLanguage() {
+  try {
+    const stored = await chrome.storage.local.get("lang");
+    return stored.lang;
+  } catch {
+    return undefined;
   }
 }
 
 async function init() {
+  setLanguage(detectLanguage(await loadSavedLanguage()), false);
+  createSparks();
+  setupTilt();
+
   $("sign-in").href = `${TRACKER_URL}/sign-in`;
   $("track").addEventListener("click", () => run(false));
   $("retry").addEventListener("click", () => run(lastConfirm));
   $("confirm-add").addEventListener("click", () => run(true));
   $("confirm-cancel").addEventListener("click", () => window.close());
   $("undo").addEventListener("click", undo);
+  for (const button of document.querySelectorAll("[data-lang]")) {
+    button.addEventListener("click", () => setLanguage(button.dataset.lang, true));
+  }
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id || !/^https?:\/\//.test(tab.url || "")) {
-    showError(new Error("Open a job posting page first, then click the extension."), { retry: false });
+    showError(new AppError("errorOpenPage"), false);
     return;
   }
 
   currentTab = tab;
   $("page-title").textContent = tab.title || tab.url;
-  $("page-host").textContent = new URL(tab.url).hostname;
+  setStageCard(hostOf(tab.url), hostOf(tab.url));
   show("idle");
 }
 

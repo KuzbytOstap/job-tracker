@@ -1,13 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Job Tracker Capture",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Add the job posting you are viewing to Job Tracker in two clicks.",
   "action": {
     "default_title": "Track this application",
     "default_popup": "popup.html"
   },
-  "permissions": ["activeTab", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
     "https://job-tracker-ebon-psi-47.vercel.app/*",
     "http://localhost:3000/*"
