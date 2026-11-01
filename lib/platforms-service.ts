@@ -139,6 +139,27 @@ export async function findVisibleCustomPlatform(
   });
 }
 
+export async function findVisiblePlatformByName(
+  userId: string,
+  name: string,
+): Promise<{ platform: Platform; customPlatformId: string | null } | null> {
+  const builtIn = matchBuiltInPlatform(name);
+  if (builtIn) {
+    return { platform: builtIn, customPlatformId: null };
+  }
+
+  const custom = await prisma.customPlatform.findFirst({
+    where: {
+      normalizedName: normalizePlatformName(name),
+      OR: [{ isGlobal: true }, { ownerId: userId }],
+    },
+    orderBy: { isGlobal: "desc" },
+    select: { id: true },
+  });
+
+  return custom ? { platform: Platform.OTHER, customPlatformId: custom.id } : null;
+}
+
 type PlatformWriteInput = {
   platform?: Platform;
   customPlatformId?: string | null;

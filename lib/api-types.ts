@@ -27,10 +27,14 @@ export type ApplicationDTO = Omit<
   | "userId"
   | "hrEnhancementClaimedAt"
   | "hrEnhancementClaimToken"
+  | "reviewReasons"
+  | "suggestedPlatformName"
 > & {
   effectiveStatus: Status;
   isAutoIgnored: boolean;
   customPlatform?: CustomPlatformRefDTO | null;
+  reviewReasons?: string[];
+  suggestedPlatformName?: string | null;
   statusChanges: StatusChangeDTO[];
   hrInterviewQuestions: HrInterviewQuestionSet | null;
   hrQuestionsGeneratedAt: string | null;
@@ -121,6 +125,16 @@ export type ApiErrorBody = {
 export type DeleteResponse = {
   success: true;
 };
+
+export type CapturePageResponse =
+  | {
+      status: "created";
+      application: ApplicationDTO;
+      extraction: "ai" | "fallback";
+      fallbackReason: string | null;
+    }
+  | { status: "duplicate"; application: ApplicationDTO }
+  | { status: "needs_confirmation"; reason: "not_vacancy" };
 
 export type PlatformOptionScope = "builtin" | "global" | "own";
 

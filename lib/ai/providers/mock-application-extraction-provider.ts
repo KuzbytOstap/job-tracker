@@ -76,7 +76,20 @@ function newPlatformFixture(): ApplicationExtractionResult {
   };
 }
 
+function notJobPostingFixture(): ApplicationExtractionResult {
+  return {
+    company: null,
+    position: null,
+    platform: null,
+    isJobPosting: false,
+    link: null,
+    salaryExpectation: null,
+    notes: null,
+  };
+}
+
 const FIXTURE_MARKERS: Record<string, () => ApplicationExtractionResult> = {
+  "[mock:notjob]": notJobPostingFixture,
   "[mock:newplatform]": newPlatformFixture,
   "[mock:complete]": completeFixture,
   "[mock:partial]": partialFixture,

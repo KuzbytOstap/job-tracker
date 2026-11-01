@@ -39,6 +39,7 @@ export const applicationExtractionResultSchema = z
     company: nullableTrimmedString(),
     position: nullableTrimmedString(),
     platform: z.enum(PLATFORM_VALUES).nullable(),
+    isJobPosting: z.boolean().optional(),
     suggestedPlatformName: z
       .string()
       .nullable()

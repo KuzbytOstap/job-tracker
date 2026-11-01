@@ -77,6 +77,8 @@ model JobApplication {
   platform                Platform
   customPlatformId        String?
   customPlatform          CustomPlatform? @relation(fields: [customPlatformId], references: [id], onDelete: SetNull)
+  suggestedPlatformName   String?
+  reviewReasons           String[]  @default([])
   link                    String?
   status                  Status    @default(APPLIED)
   hasTestTask             Boolean   @default(false)
