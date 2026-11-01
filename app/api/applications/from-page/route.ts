@@ -21,6 +21,7 @@ import {
   computeReviewReasons,
   fallbackCompany,
   fallbackPosition,
+  isPrivatePageHost,
   normalizePageText,
   pageCaptureSchema,
   tryCleanVacancyUrl,
@@ -77,6 +78,9 @@ export async function POST(request: NextRequest) {
   const capture = parsed.data;
   if (new URL(capture.url).host === request.nextUrl.host) {
     return jsonError(422, "This page is the tracker itself, not a job posting.", { code: "SELF_URL" });
+  }
+  if (isPrivatePageHost(capture.url)) {
+    return jsonError(422, "This looks like a private page and can't be captured.", { code: "PRIVATE_PAGE" });
   }
 
   const userId = check.session.user.id;

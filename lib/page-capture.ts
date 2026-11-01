@@ -38,6 +38,24 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
+const PRIVATE_PAGE_HOSTS = [
+  "instagram.com",
+  "facebook.com",
+  "messenger.com",
+  "web.whatsapp.com",
+  "web.telegram.org",
+  "mail.google.com",
+  "outlook.live.com",
+  "outlook.office.com",
+  "discord.com",
+  "app.slack.com",
+];
+
+export function isPrivatePageHost(url: string): boolean {
+  const host = new URL(url).hostname.toLowerCase();
+  return PRIVATE_PAGE_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+}
+
 export const pageCaptureSchema = z
   .object({
     url: z

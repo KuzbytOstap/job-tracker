@@ -11,6 +11,25 @@ const LOADING_STEP_MS = 2200;
 const SPARK_COUNT = 12;
 const LOADING_STEPS = ["loadingStep1", "loadingStep2", "loadingStep3"];
 const VIEWS = ["idle", "loading", "result", "confirm", "error"];
+const PRIVATE_PAGE_HOSTS = [
+  "instagram.com",
+  "facebook.com",
+  "messenger.com",
+  "web.whatsapp.com",
+  "web.telegram.org",
+  "mail.google.com",
+  "outlook.live.com",
+  "outlook.office.com",
+  "discord.com",
+  "app.slack.com",
+];
+const JOB_SIGNAL_PATTERNS = [
+  /vacanc|job description|responsibilit|requirements?|qualifications|we are looking|about the role|what you.ll do|apply now|full[- ]time|part[- ]time|salary|compensation|benefits/i,
+  /вакан|обов.язки|вимоги|шукаємо|пропонуємо|зарплат|оплата|кандидат|досвід/i,
+  /stanowisk|wymagania|obowiązki|oferta pracy|wynagrodzenie|poszukujemy/i,
+  /experience|remote|hybrid|on-site|team|skills|technolog/i,
+];
+const MIN_JOB_SIGNALS = 3;
 
 class AppError extends Error {
   constructor(key, params = {}) {
@@ -110,6 +129,18 @@ function mergeFrames(frames, tab) {
   };
 }
 
+function isPrivatePage(url) {
+  const host = new URL(url).hostname.toLowerCase();
+  return PRIVATE_PAGE_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+}
+
+function looksLikeJobPage(pageCapture) {
+  if (pageCapture.jsonLd.length > 0) return true;
+  const text = `${pageCapture.title} ${pageCapture.pageText}`;
+  const signals = JOB_SIGNAL_PATTERNS.filter((pattern) => pattern.test(text)).length;
+  return pageCapture.pageText.length >= 300 && signals >= MIN_JOB_SIGNALS;
+}
+
 async function readPage(tab) {
   let results = [];
   try {
@@ -162,6 +193,7 @@ async function postCapture(payload) {
   const body = await response.json().catch(() => null);
   if (!response.ok || !body) {
     if (body && body.details && body.details.code === "SELF_URL") throw new AppError("errorOwnSite");
+    if (body && body.details && body.details.code === "PRIVATE_PAGE") throw new AppError("errorPrivatePage");
     if (body && body.error) throw new Error(body.error);
     throw new AppError("errorRequest", { status: response.status });
   }
@@ -301,7 +333,7 @@ function showError(error, retry = true) {
 
 function handleResponse(response) {
   if (response.status === "needs_confirmation") {
-    show("confirm");
+    showConfirm("confirmBody");
     return;
   }
 
@@ -322,12 +354,23 @@ function hostOf(url) {
   }
 }
 
+function showConfirm(bodyKey) {
+  const body = $("confirm-body");
+  body.dataset.i18n = bodyKey;
+  body.textContent = t(bodyKey);
+  show("confirm");
+}
+
 async function run(confirmNotVacancy) {
   lastConfirm = confirmNotVacancy;
   show("loading");
 
   try {
     if (!capture) capture = await readPage(currentTab);
+    if (!confirmNotVacancy && !looksLikeJobPage(capture)) {
+      showConfirm("confirmBodyLocal");
+      return;
+    }
     const payload = confirmNotVacancy ? { ...capture, confirmNotVacancy: true } : capture;
     handleResponse(await postCapture(payload));
   } catch (error) {
@@ -464,6 +507,11 @@ async function init() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id || !/^https?:\/\//.test(tab.url || "")) {
     showError(new AppError("errorOpenPage"), false);
+    return;
+  }
+
+  if (isPrivatePage(tab.url)) {
+    showError(new AppError("errorPrivatePage"), false);
     return;
   }
 
