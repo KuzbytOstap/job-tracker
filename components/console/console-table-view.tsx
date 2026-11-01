@@ -3,6 +3,8 @@
 import { ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
+import { ReviewChip } from "@/components/applications/review-chip";
+import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
@@ -84,7 +86,10 @@ export function ConsoleTableView({ applications, onSelectApplication }: ConsoleT
                   {application.isAutoIgnored ? "Auto-ignored" : formatRelativeDate(application.lastActivityAt)}
                 </td>
                 <td className="px-3 py-2.5">
-                  {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
+                    <ReviewChip reasons={getVisibleReviewReasons(application)} />
+                  </div>
                 </td>
                 <td className="px-3 py-2.5 text-right">
                   {application.link && (

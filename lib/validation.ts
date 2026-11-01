@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Platform, Status } from "@/app/generated/prisma/enums";
+import { REVIEW_REASONS } from "@/lib/review-reasons";
 
 export const PLATFORM_VALUES = Object.values(Platform) as [Platform, ...Platform[]];
 export const STATUS_VALUES = Object.values(Status) as [Status, ...Status[]];
@@ -106,6 +107,8 @@ export const updateApplicationSchema = z
     platform: platformSchema.optional(),
     status: statusSchema.optional(),
     hrCallTranscript: optionalSourceText(50_000, "HR call transcript is too long"),
+    reviewReasons: z.array(z.enum(REVIEW_REASONS)).max(REVIEW_REASONS.length).optional(),
+    suggestedPlatformName: z.string().trim().min(1).max(100).nullable().optional(),
     sourceUrls: z.array(sourceUrlSchema).optional(),
     // Optimistic-concurrency token (not a stored column): the `updatedAt` the
     // client last saw. Stripped from the write and used only to guard against

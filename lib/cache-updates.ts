@@ -22,6 +22,8 @@ export function toApplicationListItem(application: ApplicationDTO): ApplicationL
     platform: application.platform,
     customPlatformId: application.customPlatformId,
     customPlatform: application.customPlatform,
+    reviewReasons: application.reviewReasons,
+    suggestedPlatformName: application.suggestedPlatformName,
     link: application.link,
     status: application.status,
     effectiveStatus: application.effectiveStatus,

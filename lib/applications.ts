@@ -41,6 +41,8 @@ export const APPLICATION_LIST_ITEM_SELECT = {
   platform: true,
   customPlatformId: true,
   customPlatform: { select: APPLICATION_CUSTOM_PLATFORM_SELECT },
+  reviewReasons: true,
+  suggestedPlatformName: true,
   link: true,
   status: true,
   hasTestTask: true,

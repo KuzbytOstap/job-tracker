@@ -52,6 +52,8 @@ export type ApplicationListItemDTO = {
   platform: Platform;
   customPlatformId?: string | null;
   customPlatform?: CustomPlatformRefDTO | null;
+  reviewReasons?: string[];
+  suggestedPlatformName?: string | null;
   link: string | null;
   status: Status;
   effectiveStatus: Status;
@@ -246,6 +248,8 @@ export type AiGlobalLimitsDTO = {
 export type UpdateApplicationPayload = Partial<CreateApplicationPayload> & {
   status?: Status;
   hrCallTranscript?: string | null;
+  reviewReasons?: string[];
+  suggestedPlatformName?: string | null;
   sourceUrls?: string[];
   // Optimistic-concurrency token: the `updatedAt` the client last saw. When
   // present, the server only applies the update if the stored row still

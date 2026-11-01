@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
+import { ReviewChip } from "@/components/applications/review-chip";
+import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import { cn } from "@/lib/utils";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
@@ -91,6 +93,7 @@ export function ApplicationCard({
             <PlatformBadge platform={application.platform} customPlatform={application.customPlatform} />
             <StatusBadge status={application.effectiveStatus} className="kanban-card-status-badge" />
             {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
+            <ReviewChip reasons={getVisibleReviewReasons(application)} />
           </div>
 
           <div className="kanban-card-meta flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

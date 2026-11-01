@@ -1,0 +1,125 @@
+"use client";
+
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { SimilarPlatformPrompt } from "@/components/applications/similar-platform-prompt";
+import { useCreatePlatform } from "@/hooks/use-create-platform";
+import { useUpdateApplication } from "@/hooks/use-update-application";
+import { ApiError } from "@/lib/api";
+import { similarPlatformFromErrorDetails } from "@/lib/platforms";
+import { REVIEW_REASON_LABELS, getVisibleReviewReasons } from "@/lib/review-reasons";
+import type { ApplicationDTO, PlatformOptionDTO } from "@/lib/api-types";
+
+type ReviewReminderProps = {
+  application: ApplicationDTO;
+};
+
+export function ReviewReminder({ application }: ReviewReminderProps) {
+  const updateMutation = useUpdateApplication(application.id);
+  const createPlatformMutation = useCreatePlatform();
+  const [similar, setSimilar] = useState<PlatformOptionDTO | null>(null);
+
+  const reasons = getVisibleReviewReasons(application);
+  if (reasons.length === 0) return null;
+
+  const suggestedName = reasons.includes("platform") ? (application.suggestedPlatformName ?? null) : null;
+  const isPending = updateMutation.isPending || createPlatformMutation.isPending;
+
+  function dismiss() {
+    updateMutation.mutate(
+      { reviewReasons: [], suggestedPlatformName: null },
+      { onSuccess: () => toast.success("Reminder hidden") },
+    );
+  }
+
+  function applyPlatform(option: Pick<PlatformOptionDTO, "label" | "platform" | "customPlatformId">) {
+    updateMutation.mutate(
+      {
+        platform: option.platform,
+        ...(option.customPlatformId ? { customPlatformId: option.customPlatformId } : {}),
+        suggestedPlatformName: null,
+      },
+      {
+        onSuccess: () => {
+          setSimilar(null);
+          toast.success(`Platform set to ${option.label}`);
+        },
+      },
+    );
+  }
+
+  function addSuggestedPlatform(confirmNew = false) {
+    if (!suggestedName || isPending) return;
+
+    createPlatformMutation.mutate(
+      { name: suggestedName, confirmNew },
+      {
+        onSuccess: ({ platform }) => applyPlatform(platform),
+        onError: (error) => {
+          const similarPlatform = error instanceof ApiError ? similarPlatformFromErrorDetails(error.details) : null;
+          if (similarPlatform) {
+            setSimilar(similarPlatform);
+            return;
+          }
+          toast.error(error instanceof ApiError ? error.message : "Couldn't add the platform. Try again.");
+        },
+      },
+    );
+  }
+
+  return (
+    <section
+      aria-label="Missing details"
+      className="rounded-lg border border-dashed border-[var(--gh-border-strong,var(--border))] bg-[var(--gh-surface-subtle,var(--muted))] p-3"
+    >
+      <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">A few details are still open</p>
+      <ul className="mt-1.5 list-disc pl-5 text-sm text-[var(--gh-text-secondary,var(--muted-foreground))]">
+        {reasons.map((reason) => (
+          <li key={reason}>
+            {reason === "platform" && suggestedName
+              ? `Platform isn't recognized (looks like ${suggestedName})`
+              : REVIEW_REASON_LABELS[reason]}
+          </li>
+        ))}
+      </ul>
+
+      {similar && suggestedName && (
+        <div className="mt-3">
+          <SimilarPlatformPrompt
+            name={suggestedName}
+            similar={similar}
+            pending={isPending}
+            onUseExisting={() => applyPlatform(similar)}
+            onCreateAnyway={() => addSuggestedPlatform(true)}
+          />
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {suggestedName && !similar && (
+          <Button
+            type="button"
+            size="sm"
+            className="h-10 sm:h-8"
+            disabled={isPending}
+            aria-busy={isPending}
+            onClick={() => addSuggestedPlatform()}
+          >
+            Add {suggestedName} as platform
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-10 sm:h-8"
+          disabled={isPending}
+          onClick={dismiss}
+        >
+          It&apos;s fine, hide this
+        </Button>
+      </div>
+    </section>
+  );
+}

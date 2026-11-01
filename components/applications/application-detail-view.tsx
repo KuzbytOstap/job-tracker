@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
+import { ReviewReminder } from "@/components/applications/review-reminder";
 import { StatusPipeline } from "@/components/applications/status-pipeline";
 import { TestTaskBranch } from "@/components/applications/test-task-branch";
 import { TerminalStatusActions } from "@/components/applications/terminal-status-actions";
@@ -122,6 +123,8 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
           Edit
         </Button>
       </div>
+
+      <ReviewReminder application={application} />
 
       {application.isAutoIgnored && (
         <div className="rounded-lg border border-dashed border-[var(--gh-border-strong,var(--border))] bg-[var(--gh-surface-subtle,var(--muted))] p-3">

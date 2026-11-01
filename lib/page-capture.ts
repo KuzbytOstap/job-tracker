@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Platform } from "@/app/generated/prisma/enums";
+import type { ReviewReason } from "@/lib/review-reasons";
 
 export const MIN_PAGE_TEXT_CHARS = 300;
 export const FALLBACK_POSITION = "Untitled position";
@@ -117,8 +118,6 @@ export function fallbackPosition(capture: PageCaptureInput): string {
   const title = capture.title?.trim();
   return title ? title.slice(0, FALLBACK_POSITION_MAX_CHARS) : FALLBACK_POSITION;
 }
-
-export type ReviewReason = "salary" | "platform" | "company" | "position" | "details" | "not_vacancy";
 
 export function computeReviewReasons(input: {
   aiUsed: boolean;

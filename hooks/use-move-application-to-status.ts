@@ -76,6 +76,8 @@ export function useMoveApplicationToStatus() {
           platform: source.platform,
           customPlatformId: source.customPlatformId,
           customPlatform: source.customPlatform,
+          reviewReasons: source.reviewReasons,
+          suggestedPlatformName: source.suggestedPlatformName,
           link: source.link,
           status: targetStatus,
           effectiveStatus: targetStatus,
