@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STAT_SUMMARY_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 import type { StatSummaryCardConfig } from "@/lib/stats";
 
@@ -10,9 +12,11 @@ type StatsSummaryCardProps = {
 };
 
 export function StatsSummaryCard({ card }: StatsSummaryCardProps) {
+  const t = useT();
+  const label = t(STAT_SUMMARY_LABEL_KEYS[card.key]);
   const content = (
     <>
-      <p className="truncate text-xs text-muted-foreground">{card.label}</p>
+      <p className="truncate text-xs text-muted-foreground">{label}</p>
       <motion.p
         key={card.value}
         initial={{ opacity: 0, y: -4 }}
@@ -39,7 +43,7 @@ export function StatsSummaryCard({ card }: StatsSummaryCardProps) {
     <Link
       href={card.href}
       className={className}
-      aria-label={`${card.label}: ${card.value} application${card.value === 1 ? "" : "s"}. View list.`}
+      aria-label={t("stats.cardAria", { label, count: card.value })}
     >
       {content}
     </Link>

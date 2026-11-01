@@ -2,6 +2,7 @@ import { TRACKER_URL } from "./config.js";
 import { createTranslator, detectLanguage } from "./strings.js";
 
 const REQUEST_TIMEOUT_MS = 90000;
+const LANGUAGE_REQUEST_TIMEOUT_MS = 2500;
 const MIN_MAIN_TEXT_CHARS = 800;
 const MIN_FRAME_TEXT_CHARS = 200;
 const MAX_PAGE_TEXT_CHARS = 120000;
@@ -133,9 +134,9 @@ async function readPage(tab) {
   );
 }
 
-async function request(path, init) {
+async function request(path, init, timeoutMs = REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(`${TRACKER_URL}${path}`, {
       credentials: "include",
@@ -371,6 +372,7 @@ function setLanguage(next, persist) {
   if (model.view === "loading") $("loading-text").textContent = t(model.loadingStepKey);
 
   if (persist) {
+    saveAccountLanguage(next);
     try {
       chrome.storage.local.set({ lang: next });
     } catch {
@@ -414,6 +416,25 @@ function setupTilt() {
   });
 }
 
+async function loadAccountLanguage() {
+  try {
+    const response = await request("/api/settings/locale", { method: "GET" }, LANGUAGE_REQUEST_TIMEOUT_MS);
+    if (!response.ok) return undefined;
+    const body = await response.json();
+    return body.locale === "en" || body.locale === "uk" ? body.locale : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function saveAccountLanguage(locale) {
+  try {
+    await request("/api/settings/locale", { method: "PATCH", body: JSON.stringify({ locale }) });
+  } catch {
+    return;
+  }
+}
+
 async function loadSavedLanguage() {
   try {
     const stored = await chrome.storage.local.get("lang");
@@ -424,7 +445,8 @@ async function loadSavedLanguage() {
 }
 
 async function init() {
-  setLanguage(detectLanguage(await loadSavedLanguage()), false);
+  const accountLanguage = await loadAccountLanguage();
+  setLanguage(detectLanguage(accountLanguage ?? (await loadSavedLanguage())), false);
   createSparks();
   setupTilt();
 

@@ -8,23 +8,25 @@ import { StatsFunnel } from "@/components/board/stats-funnel";
 import { StatsSkeleton } from "@/components/board/stats-skeleton";
 import { StatsError } from "@/components/board/stats-error";
 import { useStatsQuery } from "@/hooks/use-stats";
+import { useT } from "@/components/i18n/i18n-provider";
 import { buildStatSummaryCards } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 
 export function BoardStats() {
+  const t = useT();
   const [open, setOpen] = useState(true);
   const statsQuery = useStatsQuery();
 
   return (
     <section
-      aria-label="Application statistics"
+      aria-label={t("stats.ariaLabel")}
       className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6"
     >
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger
           className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-1 text-left text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Statistics
+          {t("stats.title")}
           <ChevronDown
             aria-hidden
             className={cn(

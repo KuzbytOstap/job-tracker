@@ -1,0 +1,18 @@
+export const common = {
+  appName: "Job Tracker",
+  cancel: "Cancel",
+  save: "Save",
+  saving: "Saving…",
+  close: "Close",
+  retry: "Retry",
+  tryAgain: "Try again",
+  loading: "Loading…",
+  dismiss: "Dismiss",
+  delete: "Delete",
+  edit: "Edit",
+  add: "Add",
+  confirm: "Confirm",
+  back: "Back",
+  unknown: "Unknown",
+  genericError: "Something went wrong. Try again.",
+} as const;

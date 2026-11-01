@@ -18,6 +18,9 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { useT } from "@/components/i18n/i18n-provider";
 import { useAutoIgnoreSettings } from "@/hooks/use-auto-ignore-settings";
 import { useUpdateAutoIgnoreSettings } from "@/hooks/use-update-auto-ignore-settings";
 import { ApiError } from "@/lib/api";
@@ -33,6 +36,7 @@ type AutoIgnoreFormProps = {
 };
 
 function AutoIgnoreForm({ initialDays, onDone }: AutoIgnoreFormProps) {
+  const t = useT();
   const [enabled, setEnabled] = useState(initialDays !== null);
   const [days, setDays] = useState(String(initialDays ?? AUTO_IGNORE_AFTER_DAYS));
   const mutation = useUpdateAutoIgnoreSettings();
@@ -52,13 +56,11 @@ function AutoIgnoreForm({ initialDays, onDone }: AutoIgnoreFormProps) {
       { autoIgnoreAfterDays: enabled ? parsedDays : null },
       {
         onSuccess: () => {
-          toast.success("Auto-ignore settings saved");
+          toast.success(t("settings.autoIgnore.saved"));
           onDone();
         },
         onError: (error) =>
-          toast.error(
-            error instanceof ApiError ? error.message : "Couldn't save settings. Try again.",
-          ),
+          toast.error(error instanceof ApiError ? error.message : t("settings.autoIgnore.saveFailed")),
       },
     );
   }
@@ -71,10 +73,10 @@ function AutoIgnoreForm({ initialDays, onDone }: AutoIgnoreFormProps) {
           checked={enabled}
           onCheckedChange={(checked) => setEnabled(checked === true)}
         />
-        <Label htmlFor="auto-ignore-enabled">Move inactive applications to Ignored</Label>
+        <Label htmlFor="auto-ignore-enabled">{t("settings.autoIgnore.enabled")}</Label>
       </div>
       <Field data-invalid={enabled && !isDaysValid}>
-        <FieldLabel htmlFor="auto-ignore-days">Days without activity</FieldLabel>
+        <FieldLabel htmlFor="auto-ignore-days">{t("settings.autoIgnore.days")}</FieldLabel>
         <Input
           id="auto-ignore-days"
           type="number"
@@ -90,17 +92,18 @@ function AutoIgnoreForm({ initialDays, onDone }: AutoIgnoreFormProps) {
       </Field>
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" disabled={mutation.isPending} />}>
-          Cancel
+          {t("common.cancel")}
         </DialogClose>
         <Button type="submit" disabled={!canSubmit} aria-busy={mutation.isPending}>
-          {mutation.isPending ? "Saving…" : "Save"}
+          {mutation.isPending ? t("common.saving") : t("common.save")}
         </Button>
       </DialogFooter>
     </form>
   );
 }
 
-export function AutoIgnoreSettingsButton() {
+export function SettingsButton() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const settings = useAutoIgnoreSettings();
 
@@ -112,8 +115,8 @@ export function AutoIgnoreSettingsButton() {
             type="button"
             variant="ghost"
             size="icon-touch"
-            title="Auto-ignore settings"
-            aria-label="Auto-ignore settings"
+            title={t("nav.settings")}
+            aria-label={t("nav.settings")}
           />
         }
       >
@@ -121,22 +124,32 @@ export function AutoIgnoreSettingsButton() {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Auto-ignore</DialogTitle>
-          <DialogDescription>
-            Applications with no activity for this many days are shown under Ignored. Stored statuses
-            are never changed.
-          </DialogDescription>
+          <DialogTitle>{t("settings.title")}</DialogTitle>
+          <DialogDescription>{t("settings.description")}</DialogDescription>
         </DialogHeader>
-        {settings.data ? (
-          <AutoIgnoreForm
-            initialDays={settings.data.autoIgnoreAfterDays}
-            onDone={() => setOpen(false)}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground" role="status">
-            {settings.isError ? "Couldn't load settings." : "Loading…"}
-          </p>
-        )}
+
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium">{t("settings.language.title")}</h3>
+          <LanguageSwitcher />
+          <p className="text-xs text-muted-foreground">{t("settings.language.hint")}</p>
+        </section>
+
+        <Separator />
+
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium">{t("settings.autoIgnore.title")}</h3>
+          <p className="text-xs text-muted-foreground">{t("settings.autoIgnore.description")}</p>
+          {settings.data ? (
+            <AutoIgnoreForm
+              initialDays={settings.data.autoIgnoreAfterDays}
+              onDone={() => setOpen(false)}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground" role="status">
+              {settings.isError ? t("settings.loadFailed") : t("common.loading")}
+            </p>
+          )}
+        </section>
       </DialogContent>
     </Dialog>
   );

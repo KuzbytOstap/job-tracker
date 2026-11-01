@@ -1,4 +1,8 @@
+"use client";
+
 import { KanbanColumnHeader } from "@/components/board/kanban-column-header";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { KanbanColumnContent } from "@/components/board/kanban-column-content";
 import { BOARD_COLUMNS_BY_STATUS } from "@/lib/board-columns";
 import { cn } from "@/lib/utils";
@@ -30,6 +34,7 @@ export function KanbanColumn({
   isDragSource,
   variant = "board",
 }: KanbanColumnProps) {
+  const t = useT();
   const column = BOARD_COLUMNS_BY_STATUS[status];
   const laneTier = RICH_LANE_STATUSES.includes(status)
     ? "rich"
@@ -41,7 +46,7 @@ export function KanbanColumn({
   return (
     <section
       ref={dropRef}
-      aria-label={`${column.label} column`}
+      aria-label={t("board.columnAria", { label: t(STATUS_LABEL_KEYS[status]) })}
       data-lane-tier={laneTier}
       data-drop-target={isDropTarget ? "true" : undefined}
       data-drag-source={isDragSource && !isDropTarget ? "true" : undefined}

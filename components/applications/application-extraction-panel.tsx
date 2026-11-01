@@ -11,6 +11,8 @@ import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useExtractApplication } from "@/hooks/use-extract-application";
 import { useCreatePlatform } from "@/hooks/use-create-platform";
+import { useI18n } from "@/components/i18n/i18n-provider";
+import { platformOptionLabel } from "@/lib/i18n/label-keys";
 import { SimilarPlatformPrompt } from "@/components/applications/similar-platform-prompt";
 import { similarPlatformFromErrorDetails } from "@/lib/platforms";
 import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
@@ -34,8 +36,6 @@ type ApplicationExtractionPanelProps = {
   onCoverLetterTextChange: (value: string) => void;
 };
 
-const GENERIC_ERROR_MESSAGE = "Couldn't analyze the posting. You can retry or fill the form manually.";
-
 type TextFieldName = "company" | "position" | "salaryExpectation" | "link" | "notes";
 
 export function ApplicationExtractionPanel({
@@ -44,6 +44,7 @@ export function ApplicationExtractionPanel({
   onJobPostingTextChange,
   onCoverLetterTextChange,
 }: ApplicationExtractionPanelProps) {
+  const { t, rich } = useI18n();
   const [open, setOpen] = useState(true);
   const [lastResultProvider, setLastResultProvider] = useState<"mock" | "openai" | null>(null);
   const [suggestedPlatformName, setSuggestedPlatformName] = useState<string | null>(null);
@@ -110,7 +111,10 @@ export function ApplicationExtractionPanel({
       {
         onSuccess: ({ platform, created }) => {
           selectPlatformOption(platform);
-          toast.success(created ? `Added ${platform.label}` : `${platform.label} already exists, selected it`);
+          const label = platformOptionLabel(t, platform);
+          toast.success(
+            created ? t("form.platform.added", { name: label }) : t("form.platform.alreadyExists", { name: label }),
+          );
         },
         onError: (error) => {
           const similar = error instanceof ApiError ? similarPlatformFromErrorDetails(error.details) : null;
@@ -118,7 +122,7 @@ export function ApplicationExtractionPanel({
             setSimilarPlatform(similar);
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : "Couldn't add the platform. Try again.");
+          toast.error(error instanceof ApiError ? error.message : t("form.platform.addFailed"));
         },
       },
     );
@@ -143,10 +147,9 @@ export function ApplicationExtractionPanel({
           setLastResultProvider(response.meta.provider);
           setSuggestedPlatformName(response.result.suggestedPlatformName ?? null);
           const { filled, kept } = applyExtractionResult(response.result);
+          const filledText = t("extraction.filledFields", { count: filled });
           const summary =
-            kept > 0
-              ? `Filled ${filled} field${filled === 1 ? "" : "s"}. ${kept} existing value${kept === 1 ? "" : "s"} were kept.`
-              : `Filled ${filled} field${filled === 1 ? "" : "s"}.`;
+            kept > 0 ? `${filledText} ${t("extraction.keptValues", { count: kept })}` : filledText;
           toast.success(summary);
         },
         onError: (error) => {
@@ -154,7 +157,7 @@ export function ApplicationExtractionPanel({
             queryClient.invalidateQueries({ queryKey: queryKeys.aiUsage() });
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : GENERIC_ERROR_MESSAGE);
+          toast.error(error instanceof ApiError ? error.message : t("extraction.genericError"));
         },
       },
     );
@@ -174,9 +177,9 @@ export function ApplicationExtractionPanel({
             <Sparkles className="size-4" aria-hidden="true" />
           </span>
           <span className="flex flex-col">
-            <span>Fill from job posting</span>
+            <span>{t("extraction.title")}</span>
             <span className="gh-extraction-subtitle hidden text-xs font-normal sm:block">
-              Optional — prefills the form below
+              {t("extraction.subtitle")}
             </span>
           </span>
         </span>
@@ -191,29 +194,28 @@ export function ApplicationExtractionPanel({
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none data-[ending-style]:h-0 data-[starting-style]:h-0">
         <div className="flex flex-col gap-3 pt-3">
           <FieldDescription>
-            Paste a job posting and optionally your cover letter. The extracted values will only prefill the form —
-            nothing is saved automatically.
+            {t("extraction.description")}
           </FieldDescription>
 
           <Field>
-            <FieldLabel htmlFor="extraction-job-posting">Job posting</FieldLabel>
+            <FieldLabel htmlFor="extraction-job-posting">{t("extraction.jobPosting")}</FieldLabel>
             <Textarea
               id="extraction-job-posting"
               rows={6}
               className="min-h-32"
-              placeholder="Paste the job posting text here…"
+              placeholder={t("extraction.jobPostingPlaceholder")}
               value={jobPostingText}
               onChange={(event) => onJobPostingTextChange(event.target.value)}
             />
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="extraction-cover-letter">Cover letter (optional)</FieldLabel>
+            <FieldLabel htmlFor="extraction-cover-letter">{t("extraction.coverLetter")}</FieldLabel>
             <Textarea
               id="extraction-cover-letter"
               rows={3}
               className="min-h-20"
-              placeholder="Paste your cover letter for extra context…"
+              placeholder={t("extraction.coverLetterPlaceholder")}
               value={coverLetterText}
               onChange={(event) => onCoverLetterTextChange(event.target.value)}
             />
@@ -235,8 +237,7 @@ export function ApplicationExtractionPanel({
               className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-dashed border-[var(--gh-border-strong,var(--border))] p-2.5 text-sm"
             >
               <span>
-                Platform not in your list: <strong>{suggestedPlatformName}</strong>. Add it and use it for this
-                application?
+                {rich("extraction.platformNotInList", { strong: (chunk) => <strong>{chunk}</strong> }, { name: suggestedPlatformName })}
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -246,10 +247,10 @@ export function ApplicationExtractionPanel({
                   aria-busy={createPlatformMutation.isPending}
                   onClick={() => handleAcceptSuggestedPlatform()}
                 >
-                  {createPlatformMutation.isPending ? "Adding…" : "Add platform"}
+                  {createPlatformMutation.isPending ? t("form.platform.adding") : t("extraction.addPlatform")}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSuggestedPlatformName(null)}>
-                  Dismiss
+                  {t("common.dismiss")}
                 </Button>
               </div>
             </div>
@@ -257,7 +258,7 @@ export function ApplicationExtractionPanel({
 
           {mutation.isError && !quotaReason && (
             <p role="alert" className="text-sm text-destructive">
-              {mutation.error instanceof ApiError ? mutation.error.message : GENERIC_ERROR_MESSAGE}
+              {mutation.error instanceof ApiError ? mutation.error.message : t("extraction.genericError")}
             </p>
           )}
 
@@ -284,13 +285,13 @@ export function ApplicationExtractionPanel({
                 aria-busy={mutation.isPending}
                 onClick={handleAnalyze}
               >
-                {mutation.isPending ? "Analyzing…" : "Analyze posting"}
+                {mutation.isPending ? t("extraction.analyzing") : t("extraction.analyze")}
               </Button>
               {mutation.isSuccess && lastResultProvider === "mock" && (
-                <p className="text-xs text-muted-foreground">Mock result — no external AI request was made.</p>
+                <p className="text-xs text-muted-foreground">{t("extraction.mockNotice")}</p>
               )}
               {mutation.isSuccess && lastResultProvider === "openai" && (
-                <p className="text-xs text-muted-foreground">Posting analyzed.</p>
+                <p className="text-xs text-muted-foreground">{t("extraction.analyzed")}</p>
               )}
             </div>
           )}

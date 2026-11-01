@@ -10,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SORT_LABELS, SORT_OPTIONS } from "@/lib/labels";
+import { useT } from "@/components/i18n/i18n-provider";
+import { SORT_OPTIONS } from "@/lib/labels";
+import { SORT_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 import type { SortOption } from "@/lib/validation";
 
@@ -29,7 +31,9 @@ export function DashboardControls({
   onSortChange,
   visualVariant = "default",
 }: DashboardControlsProps) {
+  const t = useT();
   const isGameHub = visualVariant === "gameHub";
+  const sortItems = SORT_OPTIONS.map((option) => ({ value: option, label: t(SORT_LABEL_KEYS[option]) }));
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -38,8 +42,8 @@ export function DashboardControls({
         <Input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search company or position"
-          aria-label="Search applications"
+          placeholder={t("dashboard.controls.searchPlaceholder")}
+          aria-label={t("dashboard.controls.searchLabel")}
           className={cn("pl-8", isGameHub && "gh-list-control-input")}
         />
         {search.length > 0 && (
@@ -48,24 +52,28 @@ export function DashboardControls({
             variant="ghost"
             size="icon-sm"
             onClick={() => onSearchChange("")}
-            aria-label="Clear search"
+            aria-label={t("dashboard.controls.clearSearch")}
             className="absolute top-1/2 right-1 -translate-y-1/2"
           >
             <X />
           </Button>
         )}
       </div>
-      <Select value={sort} onValueChange={(nextValue) => onSortChange(nextValue as SortOption)}>
+      <Select
+        value={sort}
+        items={sortItems}
+        onValueChange={(nextValue) => onSortChange(nextValue as SortOption)}
+      >
         <SelectTrigger
           className={cn("w-full sm:w-44", isGameHub && "gh-list-control-input")}
-          aria-label="Sort applications"
+          aria-label={t("dashboard.controls.sortLabel")}
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {SORT_OPTIONS.map((option) => (
-            <SelectItem key={option} value={option}>
-              {SORT_LABELS[option]}
+          {sortItems.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlatformField } from "@/components/applications/platform-field";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { ApplicationFormValues } from "@/lib/application-form";
 
 type ApplicationFormFieldsProps = {
@@ -30,16 +31,17 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
     control,
     formState: { errors },
   } = useFormContext<ApplicationFormValues>();
+  const t = useT();
 
   const groupClassName = sectioned ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "contents";
 
   return (
     <div className={sectioned ? "gh-form-surface flex flex-col gap-4" : "flex flex-col gap-4"}>
-      {sectioned && <SectionHeading>Main information</SectionHeading>}
+      {sectioned && <SectionHeading>{t("form.sections.main")}</SectionHeading>}
 
       <div className={groupClassName}>
         <Field data-invalid={!!errors.company}>
-          <FieldLabel htmlFor="application-company">Company</FieldLabel>
+          <FieldLabel htmlFor="application-company">{t("form.fields.company")}</FieldLabel>
           <Input
             id="application-company"
             autoFocus
@@ -51,7 +53,7 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
         </Field>
 
         <Field data-invalid={!!errors.position}>
-          <FieldLabel htmlFor="application-position">Position</FieldLabel>
+          <FieldLabel htmlFor="application-position">{t("form.fields.position")}</FieldLabel>
           <Input
             id="application-position"
             aria-invalid={!!errors.position}
@@ -66,12 +68,12 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
         <PlatformField />
 
         <Field data-invalid={!!errors.link}>
-          <FieldLabel htmlFor="application-link">Vacancy link</FieldLabel>
+          <FieldLabel htmlFor="application-link">{t("form.fields.vacancyLink")}</FieldLabel>
           <Input
             id="application-link"
             type="url"
             inputMode="url"
-            placeholder="https://…"
+            placeholder={t("form.fields.linkPlaceholder")}
             aria-invalid={!!errors.link}
             className={fieldInputClassName}
             {...register("link")}
@@ -80,21 +82,21 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
         </Field>
       </div>
 
-      {sectioned && <SectionHeading className="mt-2">Application details</SectionHeading>}
+      {sectioned && <SectionHeading className="mt-2">{t("form.sections.details")}</SectionHeading>}
 
       <div className={groupClassName}>
         <Field>
-          <FieldLabel htmlFor="application-salary">Salary expectation</FieldLabel>
+          <FieldLabel htmlFor="application-salary">{t("form.fields.salary")}</FieldLabel>
           <Input
             id="application-salary"
-            placeholder="e.g. $4000–5000"
+            placeholder={t("form.fields.salaryPlaceholder")}
             className={fieldInputClassName}
             {...register("salaryExpectation")}
           />
         </Field>
 
         <Field data-invalid={!!errors.appliedAt}>
-          <FieldLabel htmlFor="application-applied-at">Applied on</FieldLabel>
+          <FieldLabel htmlFor="application-applied-at">{t("form.fields.appliedOn")}</FieldLabel>
           <Input
             id="application-applied-at"
             type="date"
@@ -120,16 +122,16 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
             )}
           />
           <FieldLabel htmlFor="application-has-test-task" className="font-normal">
-            This application includes a test task
+            {t("form.fields.hasTestTask")}
           </FieldLabel>
         </Field>
       )}
 
-      {sectioned && <SectionHeading className="mt-2">Notes</SectionHeading>}
+      {sectioned && <SectionHeading className="mt-2">{t("form.sections.notes")}</SectionHeading>}
 
       <Field>
         <FieldLabel htmlFor="application-notes" className={sectioned ? "sr-only" : undefined}>
-          Notes
+          {t("form.fields.notes")}
         </FieldLabel>
         <Textarea id="application-notes" rows={3} className="min-h-24" {...register("notes")} />
       </Field>

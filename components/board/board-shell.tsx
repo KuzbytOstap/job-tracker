@@ -17,6 +17,7 @@ import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { BoardStats } from "@/components/board/board-stats";
 import { FocusDock } from "@/components/dashboard/focus-dock";
 import { PipelineTopbarActions } from "@/components/console/pipeline-topbar";
+import { useT } from "@/components/i18n/i18n-provider";
 import { PipelineViewSwitcher, type ConsoleView } from "@/components/console/pipeline-view-switcher";
 import { ConsoleTableView } from "@/components/console/console-table-view";
 import { ConsoleFunnelView } from "@/components/console/console-funnel-view";
@@ -34,6 +35,7 @@ type BoardShellProps = {
 };
 
 export function BoardShell({ isAdmin = false }: BoardShellProps) {
+  const t = useT();
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -61,7 +63,7 @@ export function BoardShell({ isAdmin = false }: BoardShellProps) {
 
   return (
     <>
-      <h1 className="sr-only hidden xl:block">Job Tracker pipeline board</h1>
+      <h1 className="sr-only hidden xl:block">{t("board.pipelineBoard")}</h1>
 
       <div
         aria-hidden

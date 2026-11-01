@@ -16,6 +16,7 @@ import type {
   ApplicationsListResponse,
   AutoIgnoreSettingsDTO,
   CreateApplicationPayload,
+  LocaleSettingsDTO,
   DeleteResponse,
   RequestMoreAiUsageResponse,
   StatsResponse,
@@ -150,6 +151,13 @@ export function decideAdminPlatformProposal(
   return request<{ success: true }>(`/api/admin/platforms/${encodeURIComponent(proposalId)}`, {
     method: "PATCH",
     body: JSON.stringify({ decision }),
+  });
+}
+
+export function updateLocaleSetting(locale: LocaleSettingsDTO["locale"]): Promise<LocaleSettingsDTO> {
+  return request<LocaleSettingsDTO>("/api/settings/locale", {
+    method: "PATCH",
+    body: JSON.stringify({ locale }),
   });
 }
 

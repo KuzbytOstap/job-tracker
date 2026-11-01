@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 import type { MobileStatusCount } from "@/lib/mobile-pipeline";
 import type { Status } from "@/app/generated/prisma/enums";
@@ -17,14 +19,16 @@ export function MobileStatusNavigation({
   selected,
   onSelect,
 }: MobileStatusNavigationProps) {
+  const t = useT();
+
   return (
     <div
       role="group"
-      aria-label="Filter applications by status"
+      aria-label={t("board.filterByStatus")}
       className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:thin]"
     >
       <StatusNavigationChip
-        label="All"
+        label={t("board.all")}
         count={totalCount}
         isSelected={selected === "ALL"}
         onClick={() => onSelect("ALL")}
@@ -32,7 +36,7 @@ export function MobileStatusNavigation({
       {statusCounts.map(({ column, count }) => (
         <StatusNavigationChip
           key={column.status}
-          label={column.label}
+          label={t(STATUS_LABEL_KEYS[column.status])}
           count={count}
           dotClassName={column.dotClassName}
           isSelected={selected === column.status}

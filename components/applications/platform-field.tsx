@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useT } from "@/components/i18n/i18n-provider";
 import { useCreatePlatform } from "@/hooks/use-create-platform";
 import { usePlatforms } from "@/hooks/use-platforms";
 import { ApiError } from "@/lib/api";
-import { PLATFORM_LABELS } from "@/lib/labels";
+import { platformOptionLabel } from "@/lib/i18n/label-keys";
+import { translateValidationMessage } from "@/lib/i18n/validation-keys";
 import {
   PLATFORM_NAME_MAX_LENGTH,
   platformNameSchema,
@@ -26,7 +28,7 @@ type SelectablePlatform = Pick<PlatformOptionDTO, "value" | "label" | "platform"
 
 const BUILT_IN_OPTIONS: SelectablePlatform[] = PLATFORM_VALUES.map((platform) => ({
   value: platform,
-  label: PLATFORM_LABELS[platform],
+  label: platform,
   platform,
   customPlatformId: null,
 }));
@@ -34,6 +36,7 @@ const BUILT_IN_OPTIONS: SelectablePlatform[] = PLATFORM_VALUES.map((platform) =>
 const setValueOptions = { shouldDirty: true, shouldTouch: true, shouldValidate: true } as const;
 
 export function PlatformField() {
+  const t = useT();
   const {
     control,
     setValue,
@@ -48,6 +51,10 @@ export function PlatformField() {
   const [similar, setSimilar] = useState<PlatformOptionDTO | null>(null);
 
   const options: SelectablePlatform[] = platformsQuery.data?.platforms ?? BUILT_IN_OPTIONS;
+  const labelledOptions = options.map((option) => ({
+    value: option.value,
+    label: platformOptionLabel(t, option),
+  }));
 
   function applyOption(option: Pick<SelectablePlatform, "platform" | "customPlatformId">) {
     setValue("platform", option.platform, setValueOptions);
@@ -71,7 +78,7 @@ export function PlatformField() {
 
     const parsed = platformNameSchema.safeParse(name);
     if (!parsed.success) {
-      setNameError(parsed.error.issues[0]?.message ?? "Enter a valid platform name");
+      setNameError(translateValidationMessage(t, parsed.error.issues[0]?.message ?? "Enter a valid platform name"));
       return;
     }
 
@@ -81,7 +88,10 @@ export function PlatformField() {
         onSuccess: ({ platform, created }) => {
           applyOption(platform);
           resetAddState();
-          toast.success(created ? `Added ${platform.label}` : `${platform.label} already exists, selected it`);
+          const label = platformOptionLabel(t, platform);
+          toast.success(
+            created ? t("form.platform.added", { name: label }) : t("form.platform.alreadyExists", { name: label }),
+          );
         },
         onError: (error) => {
           const similarPlatform = error instanceof ApiError ? similarPlatformFromErrorDetails(error.details) : null;
@@ -89,7 +99,7 @@ export function PlatformField() {
             setSimilar(similarPlatform);
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : "Couldn't add the platform. Try again.");
+          toast.error(error instanceof ApiError ? error.message : t("form.platform.addFailed"));
         },
       },
     );
@@ -103,21 +113,17 @@ export function PlatformField() {
 
   return (
     <Field data-invalid={!!errors.platform || nameError !== null}>
-      <FieldLabel htmlFor="application-platform">Platform</FieldLabel>
+      <FieldLabel htmlFor="application-platform">{t("form.fields.platform")}</FieldLabel>
       <Controller
         control={control}
         name="platform"
         render={({ field }) => (
-          <Select
-            value={customPlatformId ?? field.value}
-            items={options.map(({ value, label }) => ({ value, label }))}
-            onValueChange={handleSelect}
-          >
+          <Select value={customPlatformId ?? field.value} items={labelledOptions} onValueChange={handleSelect}>
             <SelectTrigger id="application-platform" aria-invalid={!!errors.platform} className="w-full">
-              <SelectValue placeholder="Select a platform" />
+              <SelectValue placeholder={t("form.platform.selectPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              {options.map((option) => (
+              {labelledOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -131,10 +137,10 @@ export function PlatformField() {
           <div className="flex items-center gap-2">
             <Input
               autoFocus
-              aria-label="New platform name"
+              aria-label={t("form.platform.newNameLabel")}
               aria-invalid={nameError !== null}
               maxLength={PLATFORM_NAME_MAX_LENGTH}
-              placeholder="Platform name"
+              placeholder={t("form.platform.newNamePlaceholder")}
               className="h-10 sm:h-8"
               value={name}
               onChange={(event) => {
@@ -156,10 +162,10 @@ export function PlatformField() {
               aria-busy={createMutation.isPending}
               onClick={() => handleAdd()}
             >
-              {createMutation.isPending ? "Adding…" : "Add"}
+              {createMutation.isPending ? t("form.platform.adding") : t("form.platform.add")}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={resetAddState}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
           {nameError && (
@@ -180,7 +186,7 @@ export function PlatformField() {
       ) : (
         <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setAdding(true)}>
           <Plus data-icon="inline-start" />
-          Add new platform
+          {t("form.platform.addNew")}
         </Button>
       )}
       <FieldError errors={[errors.platform]} />

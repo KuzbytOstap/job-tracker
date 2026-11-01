@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { LogIn, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { checkSession, signIn } from "@/lib/auth";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { getRequestLocale } from "@/lib/i18n/server";
+import { createTranslator } from "@/lib/i18n/translate";
 
 type SignInPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -15,6 +18,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
   const { error } = await searchParams;
   const accessDenied = error === "AccessDenied";
+  const t = createTranslator(await getRequestLocale());
 
   return (
     <div
@@ -80,14 +84,14 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             <div className="gh-signin-mark" aria-hidden="true">
               <span>J</span>
             </div>
-            <h1 className="gh-signin-title font-heading text-xl font-medium">Job Tracker</h1>
+            <h1 className="gh-signin-title font-heading text-xl font-medium">{t("common.appName")}</h1>
           </div>
 
           <p
             className="gh-signin-fade gh-signin-description mt-3 text-sm"
             style={{ animationDelay: "30ms" }}
           >
-            Sign in with your Google account to continue.
+            {t("auth.signIn.description")}
           </p>
 
           {accessDenied && (
@@ -97,7 +101,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               style={{ animationDelay: "60ms" }}
             >
               <ShieldAlert className="size-4" aria-hidden="true" />
-              <span>Access denied — sign-in was not completed. Please try again.</span>
+              <span>{t("auth.signIn.accessDenied")}</span>
             </p>
           )}
 
@@ -111,9 +115,13 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           >
             <Button type="submit" className="w-full">
               <LogIn data-icon="inline-start" />
-              Sign in with Google
+              {t("auth.signIn.cta")}
             </Button>
           </form>
+
+          <div className="gh-signin-fade mt-6" style={{ animationDelay: "120ms" }}>
+            <LanguageSwitcher />
+          </div>
         </div>
       </main>
     </div>

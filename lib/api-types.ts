@@ -93,6 +93,10 @@ export type StatsResponse = {
   };
 };
 
+export type LocaleSettingsDTO = {
+  locale: "en" | "uk" | null;
+};
+
 export type AutoIgnoreSettingsDTO = {
   autoIgnoreAfterDays: number | null;
 };

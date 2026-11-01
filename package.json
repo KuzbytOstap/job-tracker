@@ -13,8 +13,8 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "NODE_OPTIONS=--no-experimental-webstorage vitest",
+    "test:run": "NODE_OPTIONS=--no-experimental-webstorage vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

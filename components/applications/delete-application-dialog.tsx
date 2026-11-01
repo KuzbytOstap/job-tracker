@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmActionDialog } from "@/components/overlay/confirm-action-dialog";
+import { useT } from "@/components/i18n/i18n-provider";
 import { useDeleteApplication } from "@/hooks/use-delete-application";
 import type { ApplicationDTO } from "@/lib/api-types";
 
@@ -14,6 +15,7 @@ type DeleteApplicationDialogProps = {
 };
 
 export function DeleteApplicationDialog({ application, onDeleted }: DeleteApplicationDialogProps) {
+  const t = useT();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const mutation = useDeleteApplication();
 
@@ -21,7 +23,7 @@ export function DeleteApplicationDialog({ application, onDeleted }: DeleteApplic
     mutation.mutate(application.id, {
       onSuccess: () => {
         setConfirmOpen(false);
-        toast.success(`${application.company} — ${application.position} deleted`);
+        toast.success(t("dialogs.deleteApplication.deleted", { company: application.company, position: application.position }));
         onDeleted();
       },
     });
@@ -37,14 +39,14 @@ export function DeleteApplicationDialog({ application, onDeleted }: DeleteApplic
         onClick={() => setConfirmOpen(true)}
       >
         <Trash2 data-icon="inline-start" />
-        Delete application
+        {t("dialogs.deleteApplication.button")}
       </Button>
       <ConfirmActionDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Delete this application?"
-        description={`This permanently deletes ${application.company} — ${application.position}. This can't be undone.`}
-        confirmLabel="Delete"
+        title={t("dialogs.deleteApplication.title")}
+        description={t("dialogs.deleteApplication.description", { company: application.company, position: application.position })}
+        confirmLabel={t("dialogs.deleteApplication.confirm")}
         destructive
         visualVariant="gameHub"
         intent="destructive"

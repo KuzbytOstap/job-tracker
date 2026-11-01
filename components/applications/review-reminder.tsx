@@ -7,8 +7,10 @@ import { SimilarPlatformPrompt } from "@/components/applications/similar-platfor
 import { useCreatePlatform } from "@/hooks/use-create-platform";
 import { useUpdateApplication } from "@/hooks/use-update-application";
 import { ApiError } from "@/lib/api";
+import { useT } from "@/components/i18n/i18n-provider";
+import { REVIEW_REASON_LABEL_KEYS, platformOptionLabel } from "@/lib/i18n/label-keys";
 import { similarPlatformFromErrorDetails } from "@/lib/platforms";
-import { REVIEW_REASON_LABELS, getVisibleReviewReasons } from "@/lib/review-reasons";
+import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import type { ApplicationDTO, PlatformOptionDTO } from "@/lib/api-types";
 
 type ReviewReminderProps = {
@@ -16,6 +18,7 @@ type ReviewReminderProps = {
 };
 
 export function ReviewReminder({ application }: ReviewReminderProps) {
+  const t = useT();
   const updateMutation = useUpdateApplication(application.id);
   const createPlatformMutation = useCreatePlatform();
   const [similar, setSimilar] = useState<PlatformOptionDTO | null>(null);
@@ -29,7 +32,7 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
   function dismiss() {
     updateMutation.mutate(
       { reviewReasons: [], suggestedPlatformName: null },
-      { onSuccess: () => toast.success("Reminder hidden") },
+      { onSuccess: () => toast.success(t("review.reminder.hidden")) },
     );
   }
 
@@ -43,7 +46,7 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
       {
         onSuccess: () => {
           setSimilar(null);
-          toast.success(`Platform set to ${option.label}`);
+          toast.success(t("review.reminder.platformSet", { label: platformOptionLabel(t, option) }));
         },
       },
     );
@@ -62,7 +65,7 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
             setSimilar(similarPlatform);
             return;
           }
-          toast.error(error instanceof ApiError ? error.message : "Couldn't add the platform. Try again.");
+          toast.error(error instanceof ApiError ? error.message : t("form.platform.addFailed"));
         },
       },
     );
@@ -70,16 +73,16 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
 
   return (
     <section
-      aria-label="Missing details"
+      aria-label={t("review.reminder.ariaLabel")}
       className="rounded-lg border border-dashed border-[var(--gh-border-strong,var(--border))] bg-[var(--gh-surface-subtle,var(--muted))] p-3"
     >
-      <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">A few details are still open</p>
+      <p className="text-sm font-medium text-[var(--gh-text,var(--foreground))]">{t("review.reminder.title")}</p>
       <ul className="mt-1.5 list-disc pl-5 text-sm text-[var(--gh-text-secondary,var(--muted-foreground))]">
         {reasons.map((reason) => (
           <li key={reason}>
             {reason === "platform" && suggestedName
-              ? `Platform isn't recognized (looks like ${suggestedName})`
-              : REVIEW_REASON_LABELS[reason]}
+              ? t("review.reminder.platformSuggested", { name: suggestedName })
+              : t(REVIEW_REASON_LABEL_KEYS[reason])}
           </li>
         ))}
       </ul>
@@ -106,7 +109,7 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
             aria-busy={isPending}
             onClick={() => addSuggestedPlatform()}
           >
-            Add {suggestedName} as platform
+            {t("review.reminder.addPlatform", { name: suggestedName })}
           </Button>
         )}
         <Button
@@ -117,7 +120,7 @@ export function ReviewReminder({ application }: ReviewReminderProps) {
           disabled={isPending}
           onClick={dismiss}
         >
-          It&apos;s fine, hide this
+          {t("review.reminder.hide")}
         </Button>
       </div>
     </section>

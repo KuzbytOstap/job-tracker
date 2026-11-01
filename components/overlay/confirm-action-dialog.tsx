@@ -13,6 +13,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type ConfirmActionDialogVisualVariant = "default" | "gameHub";
@@ -50,18 +51,34 @@ export function ConfirmActionDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = "Cancel",
+  cancelLabel,
   destructive = false,
   pending = false,
   onConfirm,
   visualVariant = "default",
   intent = "neutral",
 }: ConfirmActionDialogProps) {
+  const t = useT();
   const isGameHub = visualVariant === "gameHub";
 
-  const displayedRef = useRef({ title, description, confirmLabel, cancelLabel, destructive, intent });
+  const resolvedCancelLabel = cancelLabel ?? t("common.cancel");
+  const displayedRef = useRef({
+    title,
+    description,
+    confirmLabel,
+    cancelLabel: resolvedCancelLabel,
+    destructive,
+    intent,
+  });
   if (open) {
-    displayedRef.current = { title, description, confirmLabel, cancelLabel, destructive, intent };
+    displayedRef.current = {
+      title,
+      description,
+      confirmLabel,
+      cancelLabel: resolvedCancelLabel,
+      destructive,
+      intent,
+    };
   }
   const shown = displayedRef.current;
   const IntentIcon = INTENT_ICON[shown.intent];

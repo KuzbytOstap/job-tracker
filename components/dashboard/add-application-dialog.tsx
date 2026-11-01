@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ResponsiveApplicationOverlay } from "@/components/overlay/responsive-application-overlay";
 import { ApplicationCreateForm } from "@/components/applications/application-create-form";
+import { useT } from "@/components/i18n/i18n-provider";
 
 type AddApplicationDialogProps = {
   open: boolean;
@@ -11,6 +12,7 @@ type AddApplicationDialogProps = {
 };
 
 export function AddApplicationDialog({ open, onOpenChange, currentStatusSlug }: AddApplicationDialogProps) {
+  const t = useT();
   const [isDirty, setIsDirty] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
@@ -18,8 +20,8 @@ export function AddApplicationDialog({ open, onOpenChange, currentStatusSlug }: 
     <ResponsiveApplicationOverlay
       open={open}
       onOpenChange={onOpenChange}
-      title="Add application"
-      description="Track a new job application. It starts in Applied."
+      title={t("form.addTitle")}
+      description={t("form.addDescription")}
       isDirty={isDirty}
       isPending={isPending}
       mobileFullScreen

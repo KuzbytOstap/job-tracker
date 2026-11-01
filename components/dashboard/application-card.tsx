@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { ReviewChip } from "@/components/applications/review-chip";
 import { useAutoIgnoreDays } from "@/components/applications/auto-ignore-days-context";
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import { cn } from "@/lib/utils";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
@@ -36,7 +37,10 @@ export function ApplicationCard({
 }: ApplicationCardProps) {
   const isIgnored = application.effectiveStatus === "IGNORED";
   const isGameHub = visualVariant === "gameHub";
+  const { t, locale } = useI18n();
   const autoIgnoreDays = useAutoIgnoreDays();
+  const relative = (value: string) => formatRelativeDate(value, new Date(), t);
+  const exact = (value: string) => formatExactDateTime(value, { t, locale });
 
   return (
     <motion.div
@@ -99,25 +103,25 @@ export function ApplicationCard({
           </div>
 
           <div className="kanban-card-meta flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span title={formatExactDateTime(application.appliedAt)}>
-              Applied {formatRelativeDate(application.appliedAt)}
+            <span title={exact(application.appliedAt)}>
+              {t("card.appliedWhen", { when: relative(application.appliedAt) })}
             </span>
-            <span title={formatExactDateTime(application.lastActivityAt)}>
-              Last activity {formatRelativeDate(application.lastActivityAt)}
+            <span title={exact(application.lastActivityAt)}>
+              {t("card.lastActivityWhen", { when: relative(application.lastActivityAt) })}
             </span>
           </div>
           <p
             className="kanban-card-meta-compact hidden truncate text-[0.7rem] text-muted-foreground"
-            title={application.isAutoIgnored ? undefined : formatExactDateTime(application.lastActivityAt)}
+            title={application.isAutoIgnored ? undefined : exact(application.lastActivityAt)}
           >
             {application.isAutoIgnored
-              ? `Auto-ignored · ${autoIgnoreDays}d silence`
-              : `Active ${formatRelativeDate(application.lastActivityAt)}`}
+              ? t("card.autoIgnoredCompact", { days: autoIgnoreDays })
+              : t("card.activeWhen", { when: relative(application.lastActivityAt) })}
           </p>
 
           {application.isAutoIgnored && (
             <p className="kanban-card-auto-ignored-note text-xs text-muted-foreground italic">
-              Auto-ignored after {autoIgnoreDays} days of silence
+              {t("card.autoIgnoredNote", { count: autoIgnoreDays })}
             </p>
           )}
 
@@ -132,7 +136,7 @@ export function ApplicationCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(event) => event.stopPropagation()}
-                  aria-label="Open job posting in a new tab"
+                  aria-label={t("card.openPosting")}
                   className="inline-flex shrink-0 items-center gap-1 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ExternalLink className="size-4" />
@@ -147,7 +151,7 @@ export function ApplicationCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(event) => event.stopPropagation()}
-                aria-label="Open job posting in a new tab"
+                aria-label={t("card.openPosting")}
                 className="inline-flex shrink-0 items-center gap-1 rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ExternalLink className="size-3.5" />

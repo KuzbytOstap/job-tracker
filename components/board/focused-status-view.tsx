@@ -10,6 +10,8 @@ import { FloatingAddButton } from "@/components/dashboard/floating-add-button";
 import { AddApplicationDialog } from "@/components/dashboard/add-application-dialog";
 import { ApplicationDetailDialog } from "@/components/dashboard/application-detail-dialog";
 import { PipelineTopbarActions } from "@/components/console/pipeline-topbar";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { useApplicationsQuery } from "@/hooks/use-applications";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -26,6 +28,7 @@ type FocusedStatusViewProps = {
 };
 
 export function FocusedStatusView({ slug }: FocusedStatusViewProps) {
+  const t = useT();
   const [sort, setSort] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -76,7 +79,7 @@ export function FocusedStatusView({ slug }: FocusedStatusViewProps) {
           className="mb-3 inline-flex items-center gap-1.5 rounded-md py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft className="size-4" />
-          Back to board
+          {t("board.backToBoard")}
         </Link>
 
         <motion.div
@@ -89,11 +92,11 @@ export function FocusedStatusView({ slug }: FocusedStatusViewProps) {
           <span className={cn("size-2.5 shrink-0 rounded-full", column.dotClassName)} />
           <Icon className="size-5 shrink-0 text-muted-foreground sm:text-[var(--gh-accent-secondary)]" />
           <h1 className="font-heading text-lg font-semibold tracking-tight sm:text-xl sm:text-[var(--gh-text)]">
-            {column.label}
+            {t(STATUS_LABEL_KEYS[column.status])}
           </h1>
           {typeof count === "number" && (
             <span className="text-sm text-muted-foreground sm:text-[var(--gh-text-muted)]">
-              · {count} application{count === 1 ? "" : "s"}
+              · {t("nav.applicationsCount", { count })}
             </span>
           )}
         </motion.div>

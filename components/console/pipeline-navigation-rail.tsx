@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { ShieldCheck, type LucideIcon } from "lucide-react";
 import { BOARD_COLUMNS, getStatusPageHref } from "@/lib/board-columns";
 import { useStatsQuery } from "@/hooks/use-stats";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 
 const PIPELINE_NAV_COLUMNS = BOARD_COLUMNS.slice(0, 6);
@@ -15,6 +17,7 @@ type PipelineNavigationRailProps = {
 };
 
 export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps) {
+  const t = useT();
   const pathname = usePathname();
   const statsQuery = useStatsQuery();
   const total = statsQuery.data?.total;
@@ -22,28 +25,28 @@ export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps)
   const isAllApplications = pathname === "/";
 
   return (
-    <nav aria-label="Pipeline navigation" className="flex h-full flex-col gap-4 px-3 py-4">
+    <nav aria-label={t("nav.pipelineNavigation")} className="flex h-full flex-col gap-4 px-3 py-4">
       <div className="flex items-center gap-2 px-2">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--gh-action-primary-bg)] text-xs font-bold text-[var(--gh-action-primary-fg)]">
           JT
         </span>
         <div className="min-w-0">
           <p className="truncate font-heading text-sm font-semibold tracking-tight text-[var(--gh-text)]">
-            Job Tracker
+            {t("common.appName")}
           </p>
           <p className="truncate font-mono text-xs text-[var(--gh-text-muted)] tabular-nums">
-            {typeof total === "number" ? `${total} application${total === 1 ? "" : "s"}` : "—"}
+            {typeof total === "number" ? t("nav.applicationsCount", { count: total }) : "…"}
           </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-0.5">
-        <RailLink href="/" label="All applications" active={isAllApplications} count={total} />
+        <RailLink href="/" label={t("nav.allApplications")} active={isAllApplications} count={total} />
       </div>
 
       <div className="flex flex-col gap-0.5">
         <p className="px-2 pb-1 text-[10px] font-medium tracking-[0.08em] text-[var(--gh-text-muted)] uppercase">
-          Pipeline
+          {t("nav.pipeline")}
         </p>
         {PIPELINE_NAV_COLUMNS.map((column) => {
           const href = getStatusPageHref(column.status);
@@ -51,7 +54,7 @@ export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps)
             <RailLink
               key={column.status}
               href={href}
-              label={column.label}
+              label={t(STATUS_LABEL_KEYS[column.status])}
               active={pathname === href}
               count={counts?.[column.status]}
               dotClassName={column.dotClassName}
@@ -62,7 +65,7 @@ export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps)
 
       <div className="flex flex-col gap-0.5">
         <p className="px-2 pb-1 text-[10px] font-medium tracking-[0.08em] text-[var(--gh-text-muted)] uppercase">
-          Closed
+          {t("nav.closed")}
         </p>
         {CLOSED_NAV_COLUMNS.map((column) => {
           const href = getStatusPageHref(column.status);
@@ -70,7 +73,7 @@ export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps)
             <RailLink
               key={column.status}
               href={href}
-              label={column.label}
+              label={t(STATUS_LABEL_KEYS[column.status])}
               active={pathname === href}
               count={counts?.[column.status]}
               dotClassName={column.dotClassName}
@@ -81,7 +84,7 @@ export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps)
 
       {isAdmin && (
         <div className="mt-auto flex flex-col gap-0.5 border-t border-[var(--gh-border)] pt-3">
-          <RailLink href="/admin" label="Admin" icon={ShieldCheck} />
+          <RailLink href="/admin" label={t("nav.admin")} icon={ShieldCheck} />
         </div>
       )}
     </nav>

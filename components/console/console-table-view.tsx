@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { ReviewChip } from "@/components/applications/review-chip";
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
@@ -15,11 +16,13 @@ type ConsoleTableViewProps = {
 };
 
 export function ConsoleTableView({ applications, onSelectApplication }: ConsoleTableViewProps) {
+  const { t, locale } = useI18n();
+
   return (
     <div className="px-4 pb-6 sm:px-6">
       <div
         role="region"
-        aria-label="Applications table"
+        aria-label={t("table.ariaLabel")}
         tabIndex={0}
         className="overflow-x-auto rounded-lg border border-[var(--gh-border)]"
       >
@@ -27,25 +30,25 @@ export function ConsoleTableView({ applications, onSelectApplication }: ConsoleT
           <thead className="bg-[var(--gh-surface-secondary)] text-xs tracking-wide text-[var(--gh-text-muted)] uppercase">
             <tr>
               <th scope="col" className="px-3 py-2.5 font-medium">
-                Company / position
+                {t("table.companyPosition")}
               </th>
               <th scope="col" className="px-3 py-2.5 font-medium">
-                Status
+                {t("table.status")}
               </th>
               <th scope="col" className="px-3 py-2.5 font-medium">
-                Platform
+                {t("table.platform")}
               </th>
               <th scope="col" className="px-3 py-2.5 font-medium">
-                Applied
+                {t("table.applied")}
               </th>
               <th scope="col" className="px-3 py-2.5 font-medium">
-                Last activity
+                {t("table.lastActivity")}
               </th>
               <th scope="col" className="px-3 py-2.5 font-medium">
-                Signals
+                {t("table.signals")}
               </th>
               <th scope="col" className="px-3 py-2.5 text-right font-medium">
-                Link
+                {t("table.link")}
               </th>
             </tr>
           </thead>
@@ -75,15 +78,17 @@ export function ConsoleTableView({ applications, onSelectApplication }: ConsoleT
                 </td>
                 <td
                   className="px-3 py-2.5 text-xs text-[var(--gh-text-muted)]"
-                  title={formatExactDateTime(application.appliedAt)}
+                  title={formatExactDateTime(application.appliedAt, { t, locale })}
                 >
-                  {formatRelativeDate(application.appliedAt)}
+                  {formatRelativeDate(application.appliedAt, new Date(), t)}
                 </td>
                 <td
                   className="px-3 py-2.5 text-xs text-[var(--gh-text-muted)]"
-                  title={formatExactDateTime(application.lastActivityAt)}
+                  title={formatExactDateTime(application.lastActivityAt, { t, locale })}
                 >
-                  {application.isAutoIgnored ? "Auto-ignored" : formatRelativeDate(application.lastActivityAt)}
+                  {application.isAutoIgnored
+                    ? t("table.autoIgnored")
+                    : formatRelativeDate(application.lastActivityAt, new Date(), t)}
                 </td>
                 <td className="px-3 py-2.5">
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -98,7 +103,7 @@ export function ConsoleTableView({ applications, onSelectApplication }: ConsoleT
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(event) => event.stopPropagation()}
-                      aria-label={`Open ${application.company} job posting in a new tab`}
+                      aria-label={t("card.openPostingFor", { company: application.company })}
                       className="inline-flex items-center justify-center rounded-md p-1 text-[var(--gh-text-muted)] transition-colors hover:text-[var(--gh-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <ExternalLink className="size-4" />

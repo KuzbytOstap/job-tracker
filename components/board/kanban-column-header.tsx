@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { useT } from "@/components/i18n/i18n-provider";
+import { STATUS_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 import { getStatusPageHref, type BoardColumnConfig } from "@/lib/board-columns";
 
@@ -9,6 +13,7 @@ type KanbanColumnHeaderProps = {
 };
 
 export function KanbanColumnHeader({ column, count }: KanbanColumnHeaderProps) {
+  const t = useT();
   const Icon = column.icon;
 
   return (
@@ -19,7 +24,7 @@ export function KanbanColumnHeader({ column, count }: KanbanColumnHeaderProps) {
     >
       <span className={cn("size-2 shrink-0 rounded-full", column.dotClassName)} />
       <Icon className="size-4 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{column.label}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t(STATUS_LABEL_KEYS[column.status])}</span>
       <span className="kanban-lane-count flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1 text-[0.7rem] tabular-nums text-muted-foreground transition-colors duration-200 group-hover:bg-background">
         {count}
       </span>

@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ApplicationCard } from "@/components/dashboard/application-card";
 import { DraggableApplicationCard } from "@/components/board/draggable-application-card";
+import { useT } from "@/components/i18n/i18n-provider";
+import { DATE_GROUP_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
 import type { DateGroup } from "@/lib/date-grouping";
@@ -20,6 +22,7 @@ export function DateGroupSection({
   enableDrag = false,
   visualVariant = "default",
 }: DateGroupSectionProps) {
+  const t = useT();
   const isGameHubList = visualVariant === "gameHub" && !enableDrag;
 
   return (
@@ -45,7 +48,7 @@ export function DateGroupSection({
             isGameHubList && "gh-list-date-label",
           )}
         >
-          {group.label}
+          {t(DATE_GROUP_LABEL_KEYS[group.key])}
         </h2>
         <span
           className={cn(

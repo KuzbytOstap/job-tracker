@@ -1,7 +1,11 @@
+"use client";
+
 import { PenLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/components/i18n/i18n-provider";
+import { REVIEW_REASON_LABEL_KEYS } from "@/lib/i18n/label-keys";
 import { cn } from "@/lib/utils";
-import { REVIEW_REASON_LABELS, type ReviewReason } from "@/lib/review-reasons";
+import type { ReviewReason } from "@/lib/review-reasons";
 
 type ReviewChipProps = {
   reasons: ReviewReason[];
@@ -9,9 +13,11 @@ type ReviewChipProps = {
 };
 
 export function ReviewChip({ reasons, className }: ReviewChipProps) {
+  const t = useT();
+
   if (reasons.length === 0) return null;
 
-  const summary = reasons.map((reason) => REVIEW_REASON_LABELS[reason]).join(", ");
+  const summary = reasons.map((reason) => t(REVIEW_REASON_LABEL_KEYS[reason])).join(", ");
 
   return (
     <Badge
@@ -23,7 +29,7 @@ export function ReviewChip({ reasons, className }: ReviewChipProps) {
       )}
     >
       <PenLine aria-hidden className="size-3" />
-      Needs details
+      {t("review.chip")}
       <span className="sr-only">: {summary}</span>
     </Badge>
   );

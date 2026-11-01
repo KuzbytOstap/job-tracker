@@ -10,6 +10,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { ApplicationFormFields, SectionHeading } from "@/components/applications/application-form-fields";
 import { ApplicationSourceMaterialsFields } from "@/components/applications/application-source-materials-fields";
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
+import { useT } from "@/components/i18n/i18n-provider";
 import { useUpdateApplication } from "@/hooks/use-update-application";
 import {
   applicationEditFormSchema,
@@ -35,6 +36,7 @@ export function ApplicationEditForm({
   onDirtyChange,
   onPendingChange,
 }: ApplicationEditFormProps) {
+  const t = useT();
   const mutation = useUpdateApplication(application.id);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const showHrCallTranscript = shouldShowHrCallTranscriptField(application);
@@ -62,7 +64,7 @@ export function ApplicationEditForm({
     const payload = applicationEditFormValuesToUpdatePayload(values);
     mutation.mutate(payload, {
       onSuccess: (updated) => {
-        toast.success("Changes saved");
+        toast.success(t("form.toasts.changesSaved"));
         form.reset(applicationEditFormValuesFromApplication(updated));
         onSaved(updated);
       },
@@ -90,10 +92,10 @@ export function ApplicationEditForm({
         <ApplicationSourceMaterialsFields />
         {showHrCallTranscript && (
           <div className="gh-form-surface flex flex-col gap-3">
-            <SectionHeading>HR call transcript</SectionHeading>
+            <SectionHeading>{t("form.sections.hrTranscript")}</SectionHeading>
             <Field data-invalid={!!form.formState.errors.hrCallTranscript}>
               <FieldLabel htmlFor="application-hr-call-transcript" className="sr-only">
-                HR call transcript
+                {t("form.sections.hrTranscript")}
               </FieldLabel>
               <Textarea
                 id="application-hr-call-transcript"
@@ -108,10 +110,10 @@ export function ApplicationEditForm({
         )}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:sticky sm:bottom-0 sm:-mx-5 sm:-mb-4 sm:border-t sm:border-[var(--gh-border)] sm:bg-[var(--gh-surface)] sm:px-5 sm:py-4 sm:shadow-[0_-10px_20px_-16px_oklch(0.24_0.02_50_/_0.16)]">
           <Button type="button" variant="outline" onClick={handleCancelClick} disabled={mutation.isPending}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={mutation.isPending} aria-busy={mutation.isPending}>
-            {mutation.isPending ? "Saving…" : "Save changes"}
+            {mutation.isPending ? t("common.saving") : t("form.actions.saveChanges")}
           </Button>
         </div>
       </form>

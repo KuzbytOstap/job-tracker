@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ApplicationFormFields } from "@/components/applications/application-form-fields";
 import { ApplicationExtractionPanel } from "@/components/applications/application-extraction-panel";
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
+import { useT } from "@/components/i18n/i18n-provider";
 import { useCreateApplication } from "@/hooks/use-create-application";
 import {
   applicationFormSchema,
@@ -36,6 +37,7 @@ export function ApplicationCreateForm({
   onDirtyChange,
   onPendingChange,
 }: ApplicationCreateFormProps) {
+  const t = useT();
   const router = useRouter();
   const mutation = useCreateApplication();
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
@@ -88,10 +90,10 @@ export function ApplicationCreateForm({
     mutation.mutate(payload, {
       onSuccess: (created) => {
         const showViewAppliedAction = currentStatusSlug != null && currentStatusSlug !== "applied";
-        toast.success(`${created.company} added to Applied`, {
+        toast.success(t("form.toasts.addedToApplied", { company: created.company }), {
           action: showViewAppliedAction
             ? {
-                label: "View Applied",
+                label: t("form.toasts.viewApplied"),
                 onClick: () => router.push(getStatusPageHref(Status.APPLIED)),
               }
             : undefined,
@@ -122,7 +124,7 @@ export function ApplicationCreateForm({
             disabled={mutation.isPending}
             onClick={handleCancelClick}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             type="submit"
@@ -130,7 +132,7 @@ export function ApplicationCreateForm({
             disabled={mutation.isPending}
             aria-busy={mutation.isPending}
           >
-            {mutation.isPending ? "Adding…" : "Add application"}
+            {mutation.isPending ? t("form.actions.adding") : t("form.actions.add")}
           </Button>
         </div>
       </form>

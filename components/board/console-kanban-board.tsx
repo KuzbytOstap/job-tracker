@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DroppableKanbanColumn } from "@/components/board/droppable-kanban-column";
+import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 import type { BoardColumnBucket } from "@/lib/board-columns";
 import type { ApplicationListItemDTO } from "@/lib/api-types";
@@ -25,6 +26,7 @@ export function ConsoleKanbanBoard({
   onSelectApplication,
   playEntrance = false,
 }: ConsoleKanbanBoardProps) {
+  const t = useT();
   const [closedOpen, setClosedOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const animateEntrance = playEntrance && !reducedMotion;
@@ -58,7 +60,7 @@ export function ConsoleKanbanBoard({
 
       <Collapsible open={closedOpen} onOpenChange={setClosedOpen}>
         <CollapsibleTrigger className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-[var(--gh-border)] bg-[var(--gh-surface-secondary)] px-3.5 text-sm font-medium text-[var(--gh-text-secondary)] transition-colors hover:text-[var(--gh-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-          <span>Closed applications</span>
+          <span>{t("board.closedApplications")}</span>
           <span className="flex items-center gap-2">
             <span className="font-mono text-xs tabular-nums text-[var(--gh-text-muted)]">{closedCount}</span>
             <ChevronDown

@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmActionDialog } from "@/components/overlay/confirm-action-dialog";
+import { useT } from "@/components/i18n/i18n-provider";
 
 type UnsavedChangesDialogProps = {
   open: boolean;
@@ -15,14 +16,16 @@ export function UnsavedChangesDialog({
   onConfirmDiscard,
   visualVariant = "default",
 }: UnsavedChangesDialogProps) {
+  const t = useT();
+
   return (
     <ConfirmActionDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Discard unsaved changes?"
-      description="You have unsaved changes. If you close now, they will be lost."
-      confirmLabel="Discard changes"
-      cancelLabel="Keep editing"
+      title={t("dialogs.unsaved.title")}
+      description={t("dialogs.unsaved.description")}
+      confirmLabel={t("dialogs.unsaved.confirm")}
+      cancelLabel={t("dialogs.unsaved.cancel")}
       destructive
       visualVariant={visualVariant}
       intent="warning"

@@ -6,6 +6,8 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { useT } from "@/components/i18n/i18n-provider"
+import { translateValidationMessage } from "@/lib/i18n/validation-keys"
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
@@ -181,6 +183,7 @@ function FieldError({
 }: React.ComponentProps<"div"> & {
   errors?: Array<{ message?: string } | undefined>
 }) {
+  const t = useT()
   const content = useMemo(() => {
     if (children) {
       return children
@@ -195,18 +198,21 @@ function FieldError({
     ]
 
     if (uniqueErrors?.length == 1) {
-      return uniqueErrors[0]?.message
+      const message = uniqueErrors[0]?.message
+      return message ? translateValidationMessage(t, message) : message
     }
 
     return (
       <ul className="ml-4 flex list-disc flex-col gap-1">
         {uniqueErrors.map(
           (error, index) =>
-            error?.message && <li key={index}>{error.message}</li>
+            error?.message && (
+              <li key={index}>{translateValidationMessage(t, error.message)}</li>
+            )
         )}
       </ul>
     )
-  }, [children, errors])
+  }, [children, errors, t])
 
   if (!content) {
     return null

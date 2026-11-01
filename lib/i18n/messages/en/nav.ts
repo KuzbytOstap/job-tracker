@@ -1,0 +1,15 @@
+export const nav = {
+  boardViewLabel: "Board view",
+  board: "Board",
+  table: "Table",
+  funnel: "Funnel",
+  pipelineNavigation: "Pipeline navigation",
+  allApplications: "All applications",
+  pipeline: "Pipeline",
+  closed: "Closed",
+  admin: "Admin",
+  applicationsCount: { one: "{count} application", other: "{count} applications" },
+  addApplication: "Add application",
+  signOut: "Sign out",
+  settings: "Settings",
+} as const;
