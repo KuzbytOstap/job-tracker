@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { checkSession } from "@/lib/auth";
+import { AutoIgnoreDaysProvider } from "@/components/applications/auto-ignore-days-context";
 
 export default async function ProtectedLayout({
   children,
@@ -10,5 +11,5 @@ export default async function ProtectedLayout({
   if (check.status !== "authorized") {
     redirect("/sign-in");
   }
-  return <>{children}</>;
+  return <AutoIgnoreDaysProvider>{children}</AutoIgnoreDaysProvider>;
 }

@@ -8,6 +8,7 @@ import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { ReviewChip } from "@/components/applications/review-chip";
+import { useAutoIgnoreDays } from "@/components/applications/auto-ignore-days-context";
 import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import { cn } from "@/lib/utils";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
@@ -35,6 +36,7 @@ export function ApplicationCard({
 }: ApplicationCardProps) {
   const isIgnored = application.effectiveStatus === "IGNORED";
   const isGameHub = visualVariant === "gameHub";
+  const autoIgnoreDays = useAutoIgnoreDays();
 
   return (
     <motion.div
@@ -109,13 +111,13 @@ export function ApplicationCard({
             title={application.isAutoIgnored ? undefined : formatExactDateTime(application.lastActivityAt)}
           >
             {application.isAutoIgnored
-              ? "Auto-ignored · 21d silence"
+              ? `Auto-ignored · ${autoIgnoreDays}d silence`
               : `Active ${formatRelativeDate(application.lastActivityAt)}`}
           </p>
 
           {application.isAutoIgnored && (
             <p className="kanban-card-auto-ignored-note text-xs text-muted-foreground italic">
-              Auto-ignored after 21 days of silence
+              Auto-ignored after {autoIgnoreDays} days of silence
             </p>
           )}
 
