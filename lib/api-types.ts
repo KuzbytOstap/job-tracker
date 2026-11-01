@@ -29,9 +29,11 @@ export type ApplicationDTO = Omit<
   | "hrEnhancementClaimToken"
   | "reviewReasons"
   | "suggestedPlatformName"
+  | "customPlatformId"
 > & {
   effectiveStatus: Status;
   isAutoIgnored: boolean;
+  customPlatformId?: string | null;
   customPlatform?: CustomPlatformRefDTO | null;
   reviewReasons?: string[];
   suggestedPlatformName?: string | null;
