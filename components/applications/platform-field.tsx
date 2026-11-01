@@ -108,7 +108,11 @@ export function PlatformField() {
         control={control}
         name="platform"
         render={({ field }) => (
-          <Select value={customPlatformId ?? field.value} onValueChange={handleSelect}>
+          <Select
+            value={customPlatformId ?? field.value}
+            items={options.map(({ value, label }) => ({ value, label }))}
+            onValueChange={handleSelect}
+          >
             <SelectTrigger id="application-platform" aria-invalid={!!errors.platform} className="w-full">
               <SelectValue placeholder="Select a platform" />
             </SelectTrigger>
