@@ -59,7 +59,7 @@ function usageRequest(overrides: Partial<AdminAiRequestDTO> = {}): AdminAiReques
     id: "req-2",
     type: "VACANCY_LIMIT",
     status: "PENDING",
-    quotaDate: "2026-08-09T00:00:00.000Z",
+    quotaDate: `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`,
     message: null,
     decidedAt: null,
     decisionNote: null,
