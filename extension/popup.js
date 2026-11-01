@@ -1,5 +1,6 @@
 import { TRACKER_URL } from "./config.js";
 import { createTranslator, detectLanguage } from "./strings.js";
+import { isPrivatePage, looksLikeJobPage } from "./page-heuristics.js";
 
 const REQUEST_TIMEOUT_MS = 90000;
 const LANGUAGE_REQUEST_TIMEOUT_MS = 2500;
@@ -11,25 +12,6 @@ const LOADING_STEP_MS = 2200;
 const SPARK_COUNT = 12;
 const LOADING_STEPS = ["loadingStep1", "loadingStep2", "loadingStep3"];
 const VIEWS = ["idle", "loading", "result", "confirm", "error"];
-const PRIVATE_PAGE_HOSTS = [
-  "instagram.com",
-  "facebook.com",
-  "messenger.com",
-  "web.whatsapp.com",
-  "web.telegram.org",
-  "mail.google.com",
-  "outlook.live.com",
-  "outlook.office.com",
-  "discord.com",
-  "app.slack.com",
-];
-const JOB_SIGNAL_PATTERNS = [
-  /vacanc|job description|responsibilit|requirements?|qualifications|we are looking|about the role|what you.ll do|apply now|full[- ]time|part[- ]time|salary|compensation|benefits/i,
-  /вакан|обов.язки|вимоги|шукаємо|пропонуємо|зарплат|оплата|кандидат|досвід/i,
-  /stanowisk|wymagania|obowiązki|oferta pracy|wynagrodzenie|poszukujemy/i,
-  /experience|remote|hybrid|on-site|team|skills|technolog/i,
-];
-const MIN_JOB_SIGNALS = 3;
 
 class AppError extends Error {
   constructor(key, params = {}) {
@@ -127,18 +109,6 @@ function mergeFrames(frames, tab) {
     pageText: pageText.slice(0, MAX_PAGE_TEXT_CHARS),
     jsonLd: [...new Set(frames.flatMap((frame) => frame.jsonLd))].slice(0, MAX_JSON_LD),
   };
-}
-
-function isPrivatePage(url) {
-  const host = new URL(url).hostname.toLowerCase();
-  return PRIVATE_PAGE_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
-}
-
-function looksLikeJobPage(pageCapture) {
-  if (pageCapture.jsonLd.length > 0) return true;
-  const text = `${pageCapture.title} ${pageCapture.pageText}`;
-  const signals = JOB_SIGNAL_PATTERNS.filter((pattern) => pattern.test(text)).length;
-  return pageCapture.pageText.length >= 300 && signals >= MIN_JOB_SIGNALS;
 }
 
 async function readPage(tab) {

@@ -1,0 +1,54 @@
+import { describe, expect, it } from "vitest";
+import { ApiError } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/i18n/api-errors";
+import { createTranslator } from "@/lib/i18n/translate";
+
+const en = createTranslator("en");
+const uk = createTranslator("uk");
+
+describe("getApiErrorMessage", () => {
+  it("uses the fallback for non-ApiError values", () => {
+    expect(getApiErrorMessage(en, new Error("boom"), "errors.saveFailed")).toBe("Couldn't save changes. Try again.");
+    expect(getApiErrorMessage(en, "boom", "errors.saveFailed")).toBe("Couldn't save changes. Try again.");
+  });
+
+  it("localizes known HTTP statuses instead of showing the server text", () => {
+    expect(getApiErrorMessage(en, new ApiError(401, "Unauthorized"), "errors.saveFailed")).toBe(
+      "Your session expired. Sign in again.",
+    );
+    expect(getApiErrorMessage(uk, new ApiError(404, "Application not found"), "errors.saveFailed")).toBe(
+      "Цього елемента більше не існує.",
+    );
+    expect(getApiErrorMessage(en, new ApiError(429, "slow down"), "errors.saveFailed")).toBe(
+      "Too many requests. Try again in a moment.",
+    );
+  });
+
+  it("maps gateway statuses to the unavailable message", () => {
+    for (const status of [502, 503, 504]) {
+      expect(getApiErrorMessage(en, new ApiError(status, "x"), "errors.saveFailed")).toBe(
+        "The service is temporarily unavailable. Try again.",
+      );
+    }
+  });
+
+  it("prefers a known error code over the status", () => {
+    const error = new ApiError(429, "limit", { code: "VACANCY_LIMIT_REACHED" });
+    expect(getApiErrorMessage(en, error, "errors.saveFailed")).toBe("The daily vacancy analysis limit is reached.");
+    expect(getApiErrorMessage(uk, error, "errors.saveFailed")).toBe("Досягнуто денний ліміт аналізу вакансій.");
+  });
+
+  it("falls back to the status when the code is unknown", () => {
+    const error = new ApiError(403, "no", { code: "SOMETHING_ELSE" });
+    expect(getApiErrorMessage(en, error, "errors.saveFailed")).toBe("You don't have access to this.");
+  });
+
+  it("falls back to the provided message for unmapped statuses", () => {
+    expect(getApiErrorMessage(en, new ApiError(400, "Invalid request"), "errors.createFailed")).toBe(
+      "Couldn't create the application. Try again.",
+    );
+    expect(getApiErrorMessage(en, new ApiError(500, "Internal server error"), "errors.deleteFailed")).toBe(
+      "Couldn't delete the application. Try again.",
+    );
+  });
+});

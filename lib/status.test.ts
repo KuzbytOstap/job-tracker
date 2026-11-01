@@ -67,3 +67,31 @@ describe("effectiveStatus", () => {
     expect(application).toEqual(snapshot);
   });
 });
+
+describe("effectiveStatus with a per-user threshold", () => {
+  it("uses a custom number of days", () => {
+    const stale: StatusSource = { status: Status.APPLIED, lastActivityAt: daysAgo(8) };
+    const fresh: StatusSource = { status: Status.APPLIED, lastActivityAt: daysAgo(6) };
+
+    expect(effectiveStatus(stale, NOW, 7)).toBe(Status.IGNORED);
+    expect(effectiveStatus(fresh, NOW, 7)).toBe(Status.APPLIED);
+  });
+
+  it("never auto-ignores when the threshold is null", () => {
+    const veryOld: StatusSource = { status: Status.HR_REPLIED, lastActivityAt: daysAgo(400) };
+
+    expect(effectiveStatus(veryOld, NOW, null)).toBe(Status.HR_REPLIED);
+  });
+
+  it("keeps terminal statuses regardless of the threshold", () => {
+    const offer: StatusSource = { status: Status.OFFER, lastActivityAt: daysAgo(400) };
+
+    expect(effectiveStatus(offer, NOW, 1)).toBe(Status.OFFER);
+  });
+
+  it("treats exactly the threshold as still active", () => {
+    const boundary: StatusSource = { status: Status.APPLIED, lastActivityAt: daysAgo(7) };
+
+    expect(effectiveStatus(boundary, NOW, 7)).toBe(Status.APPLIED);
+  });
+});
