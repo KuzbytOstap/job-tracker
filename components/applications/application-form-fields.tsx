@@ -6,9 +6,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PLATFORM_LABELS } from "@/lib/labels";
-import { PLATFORM_VALUES } from "@/lib/validation";
+import { PlatformField } from "@/components/applications/platform-field";
 import type { ApplicationFormValues } from "@/lib/application-form";
 
 type ApplicationFormFieldsProps = {
@@ -65,28 +63,7 @@ export function ApplicationFormFields({ showTestTaskCheckbox = false, sectioned 
       </div>
 
       <div className={groupClassName}>
-        <Field data-invalid={!!errors.platform}>
-          <FieldLabel htmlFor="application-platform">Platform</FieldLabel>
-          <Controller
-            control={control}
-            name="platform"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="application-platform" aria-invalid={!!errors.platform} className="w-full">
-                  <SelectValue placeholder="Select a platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PLATFORM_VALUES.map((platform) => (
-                    <SelectItem key={platform} value={platform}>
-                      {PLATFORM_LABELS[platform]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <FieldError errors={[errors.platform]} />
-        </Field>
+        <PlatformField />
 
         <Field data-invalid={!!errors.link}>
           <FieldLabel htmlFor="application-link">Vacancy link</FieldLabel>

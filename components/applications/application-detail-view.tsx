@@ -21,6 +21,7 @@ import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
 import { useReactivateApplication } from "@/hooks/use-reactivate-application";
 import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
+import { useAutoIgnoreSettings } from "@/hooks/use-auto-ignore-settings";
 import { useAiUsageStatus } from "@/hooks/use-ai-usage-status";
 import { STATUS_LABELS } from "@/lib/labels";
 import { AUTO_IGNORE_AFTER_DAYS } from "@/lib/status";
@@ -81,6 +82,8 @@ function companyMonogram(company: string) {
 
 export function ApplicationDetailView({ application, onEdit, onDeleted }: ApplicationDetailViewProps) {
   const reactivateMutation = useReactivateApplication();
+  const autoIgnoreSettings = useAutoIgnoreSettings();
+  const autoIgnoreDays = autoIgnoreSettings.data?.autoIgnoreAfterDays ?? AUTO_IGNORE_AFTER_DAYS;
   const aiAccess = useAiAccessStatus();
   const aiUsage = useAiUsageStatus(aiAccess.data?.status === AiAccessStatus.APPROVED);
 
@@ -108,7 +111,7 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
               {application.position}
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <PlatformBadge platform={application.platform} />
+              <PlatformBadge platform={application.platform} customPlatform={application.customPlatform} />
               <StatusBadge status={application.effectiveStatus} />
               {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
             </div>
@@ -123,7 +126,7 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
       {application.isAutoIgnored && (
         <div className="rounded-lg border border-dashed border-[var(--gh-border-strong,var(--border))] bg-[var(--gh-surface-subtle,var(--muted))] p-3">
           <p className="text-sm text-[var(--gh-text,var(--foreground))]">
-            Shown under <strong>Ignored</strong> because more than {AUTO_IGNORE_AFTER_DAYS} days passed
+            Shown under <strong>Ignored</strong> because more than {autoIgnoreDays} days passed
             without activity. Its stored status wasn&apos;t changed, and no status-change record was
             created for this.
           </p>

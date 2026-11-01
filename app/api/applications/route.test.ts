@@ -9,6 +9,10 @@ vi.mock("@/lib/auth", () => ({
 
 const findManyMock = vi.fn();
 const createMock = vi.fn();
+vi.mock("@/lib/user-settings", () => ({
+  getAutoIgnoreAfterDays: async () => 21,
+}));
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobApplication: {

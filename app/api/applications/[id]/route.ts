@@ -3,9 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { Status } from "@/app/generated/prisma/client";
 import { checkSession } from "@/lib/auth";
 import { updateApplicationSchema } from "@/lib/validation";
-import { resolveTestTaskFlags, toApplicationDTO, toApplicationWithMeta } from "@/lib/applications";
+import {
+  APPLICATION_DETAIL_INCLUDE,
+  resolveTestTaskFlags,
+  toApplicationDTO,
+  toApplicationWithMeta,
+} from "@/lib/applications";
+import { resolveApplicationPlatform } from "@/lib/platforms-service";
 import { ensureCoreHrQuestionsForTransition } from "@/lib/hr-questions-service";
 import { extractUrls } from "@/lib/url-extraction";
+import { getAutoIgnoreAfterDays } from "@/lib/user-settings";
 import {
   conflictResponse,
   forbiddenResponse,
@@ -32,14 +39,18 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   try {
     const application = await prisma.jobApplication.findFirst({
       where: { id, userId },
-      include: { statusChanges: { orderBy: { changedAt: "desc" } } },
+      include: APPLICATION_DETAIL_INCLUDE,
     });
 
     if (!application) {
       return notFoundResponse();
     }
 
-    return NextResponse.json(toApplicationDTO(toApplicationWithMeta(application, new Date())));
+    const autoIgnoreAfterDays = await getAutoIgnoreAfterDays(userId);
+
+    return NextResponse.json(
+      toApplicationDTO(toApplicationWithMeta(application, new Date(), autoIgnoreAfterDays)),
+    );
   } catch (error) {
     console.error(error);
     return serverErrorResponse();
@@ -67,9 +78,21 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   const now = new Date();
-  const { status, expectedUpdatedAt, sourceUrls: manualSourceUrls, ...rest } = parsed.data;
+  const {
+    status,
+    expectedUpdatedAt,
+    sourceUrls: manualSourceUrls,
+    platform,
+    customPlatformId,
+    ...rest
+  } = parsed.data;
 
   try {
+    const platformWrite = await resolveApplicationPlatform(userId, { platform, customPlatformId });
+    if (!platformWrite.ok) {
+      return jsonError(400, "Unknown platform");
+    }
+
     // Everything that reads the current row and derives the status change is
     // done inside one interactive transaction. When the client sends an
     // optimistic-concurrency token (expectedUpdatedAt), the write is guarded on
@@ -96,6 +119,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         },
         data: {
           ...rest,
+          ...platformWrite.data,
           hasTestTask,
           testTaskDone,
           ...(status !== undefined ? { status } : {}),
@@ -138,7 +162,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
       const application = await tx.jobApplication.findFirstOrThrow({
         where: { id, userId },
-        include: { statusChanges: { orderBy: { changedAt: "desc" } } },
+        include: APPLICATION_DETAIL_INCLUDE,
       });
 
       return {
@@ -182,7 +206,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       }
     }
 
-    return NextResponse.json(toApplicationDTO(toApplicationWithMeta(finalApplication, now)));
+    const autoIgnoreAfterDays = await getAutoIgnoreAfterDays(userId);
+
+    return NextResponse.json(
+      toApplicationDTO(toApplicationWithMeta(finalApplication, now, autoIgnoreAfterDays)),
+    );
   } catch (error) {
     console.error(error);
     return serverErrorResponse();

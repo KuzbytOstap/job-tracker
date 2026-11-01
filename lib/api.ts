@@ -2,6 +2,9 @@ import type { AiRequestStatus, AiRequestType } from "@/app/generated/prisma/enum
 import type {
   AdminAiRequestDTO,
   AdminAiRequestsListResponse,
+  AdminPlatformProposalsResponse,
+  CreatePlatformResponse,
+  PlatformsResponse,
   AdminUserOverrides,
   AdminUsersListResponse,
   AiAccessStatusResponse,
@@ -11,6 +14,7 @@ import type {
   ApiErrorBody,
   ApplicationDTO,
   ApplicationsListResponse,
+  AutoIgnoreSettingsDTO,
   CreateApplicationPayload,
   DeleteResponse,
   RequestMoreAiUsageResponse,
@@ -117,6 +121,47 @@ export function generateHrQuestions(id: string): Promise<ApplicationDTO> {
 
 export function getStats(): Promise<StatsResponse> {
   return request<StatsResponse>("/api/stats");
+}
+
+export function getPlatforms(): Promise<PlatformsResponse> {
+  return request<PlatformsResponse>("/api/platforms");
+}
+
+export type CreatePlatformPayload = {
+  name: string;
+  confirmNew?: boolean;
+};
+
+export function createPlatform(payload: CreatePlatformPayload): Promise<CreatePlatformResponse> {
+  return request<CreatePlatformResponse>("/api/platforms", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminPlatformProposals(): Promise<AdminPlatformProposalsResponse> {
+  return request<AdminPlatformProposalsResponse>("/api/admin/platforms");
+}
+
+export function decideAdminPlatformProposal(
+  proposalId: string,
+  decision: "APPROVED" | "REJECTED",
+): Promise<{ success: true }> {
+  return request<{ success: true }>(`/api/admin/platforms/${encodeURIComponent(proposalId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ decision }),
+  });
+}
+
+export function getAutoIgnoreSettings(): Promise<AutoIgnoreSettingsDTO> {
+  return request<AutoIgnoreSettingsDTO>("/api/settings/auto-ignore");
+}
+
+export function updateAutoIgnoreSettings(payload: AutoIgnoreSettingsDTO): Promise<AutoIgnoreSettingsDTO> {
+  return request<AutoIgnoreSettingsDTO>("/api/settings/auto-ignore", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getAiAccessStatus(): Promise<AiAccessStatusResponse> {

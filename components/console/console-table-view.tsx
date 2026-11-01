@@ -69,7 +69,7 @@ export function ConsoleTableView({ applications, onSelectApplication }: ConsoleT
                   <StatusBadge status={application.effectiveStatus} />
                 </td>
                 <td className="px-3 py-2.5">
-                  <PlatformBadge platform={application.platform} />
+                  <PlatformBadge platform={application.platform} customPlatform={application.customPlatform} />
                 </td>
                 <td
                   className="px-3 py-2.5 text-xs text-[var(--gh-text-muted)]"

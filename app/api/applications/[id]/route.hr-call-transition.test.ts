@@ -7,6 +7,10 @@ vi.mock("@/lib/auth", () => ({
   checkSession: () => checkSessionMock(),
 }));
 
+vi.mock("@/lib/user-settings", () => ({
+  getAutoIgnoreAfterDays: async () => 21,
+}));
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     $transaction: vi.fn(),

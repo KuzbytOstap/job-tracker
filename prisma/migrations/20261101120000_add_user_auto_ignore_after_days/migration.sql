@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN     "autoIgnoreAfterDays" INTEGER DEFAULT 21;

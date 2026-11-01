@@ -6,7 +6,12 @@ import { ApiError, createApplication } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import { buildOptimisticListItem, upsertApplicationInList } from "@/lib/cache-updates";
 import { applyApplicationToCaches, parseApplicationsListQueryKey } from "@/lib/sync-application-caches";
-import type { ApplicationDTO, ApplicationsListResponse, CreateApplicationPayload } from "@/lib/api-types";
+import type {
+  ApplicationDTO,
+  ApplicationsListResponse,
+  CreateApplicationPayload,
+  PlatformsResponse,
+} from "@/lib/api-types";
 
 type CreateContext = {
   previousLists: Array<[readonly unknown[], ApplicationsListResponse | undefined]>;
@@ -22,7 +27,23 @@ export function useCreateApplication() {
       await queryClient.cancelQueries({ queryKey: queryKeys.applications.lists() });
 
       const optimisticId = `optimistic-${crypto.randomUUID()}`;
-      const optimisticApplication = buildOptimisticListItem(input, optimisticId, new Date());
+      const selectedPlatform = input.customPlatformId
+        ? queryClient
+            .getQueryData<PlatformsResponse>(queryKeys.platforms())
+            ?.platforms.find((platform) => platform.customPlatformId === input.customPlatformId)
+        : undefined;
+      const optimisticApplication = buildOptimisticListItem(
+        input,
+        optimisticId,
+        new Date(),
+        selectedPlatform?.customPlatformId && selectedPlatform.colorKey
+          ? {
+              id: selectedPlatform.customPlatformId,
+              name: selectedPlatform.label,
+              colorKey: selectedPlatform.colorKey,
+            }
+          : null,
+      );
 
       const previousLists = queryClient.getQueriesData<ApplicationsListResponse>({
         queryKey: queryKeys.applications.lists(),

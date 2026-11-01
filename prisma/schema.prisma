@@ -64,11 +64,19 @@ enum AiRequestStatus {
   REJECTED
 }
 
+enum PlatformReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model JobApplication {
   id                      String    @id @default(cuid())
   company                 String
   position                String
   platform                Platform
+  customPlatformId        String?
+  customPlatform          CustomPlatform? @relation(fields: [customPlatformId], references: [id], onDelete: SetNull)
   link                    String?
   status                  Status    @default(APPLIED)
   hasTestTask             Boolean   @default(false)
@@ -99,6 +107,29 @@ model JobApplication {
   @@index([lastActivityAt])
   @@index([company])
   @@index([userId])
+  @@index([customPlatformId])
+}
+
+model CustomPlatform {
+  id              String               @id @default(cuid())
+  name            String
+  normalizedName  String
+  colorKey        String
+  ownerId         String?
+  owner           User?                @relation("CustomPlatformOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  isGlobal        Boolean              @default(false)
+  reviewStatus    PlatformReviewStatus @default(PENDING)
+  decidedAt       DateTime?
+  decidedByUserId String?
+  decidedByUser   User?                @relation("CustomPlatformDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  applications JobApplication[]
+
+  @@unique([ownerId, normalizedName])
+  @@index([isGlobal, normalizedName])
+  @@index([reviewStatus])
 }
 
 model User {
@@ -110,6 +141,8 @@ model User {
   role           Role           @default(USER)
   aiAccessStatus AiAccessStatus @default(NOT_REQUESTED)
 
+  autoIgnoreAfterDays Int? @default(21)
+
   accounts          Account[]
   jobApplications   JobApplication[]
   aiUserLimit       AiUserLimit?
@@ -117,6 +150,8 @@ model User {
   aiUsageEvents     AiUsageEvent[]
   aiAccessRequests  AiAccessRequest[] @relation("AiAccessRequestUser")
   aiDecidedRequests AiAccessRequest[] @relation("AiAccessRequestDecider")
+  customPlatforms        CustomPlatform[] @relation("CustomPlatformOwner")
+  decidedCustomPlatforms CustomPlatform[] @relation("CustomPlatformDecider")
 }
 
 model AiGlobalLimits {

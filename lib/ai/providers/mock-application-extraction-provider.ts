@@ -64,7 +64,20 @@ function douFixture(): ApplicationExtractionResult {
   };
 }
 
+function newPlatformFixture(): ApplicationExtractionResult {
+  return {
+    company: "Orbit Labs",
+    position: "Full Stack Engineer",
+    platform: null,
+    suggestedPlatformName: "Wellfound",
+    link: null,
+    salaryExpectation: null,
+    notes: "Found on Wellfound. Early-stage startup, remote friendly.",
+  };
+}
+
 const FIXTURE_MARKERS: Record<string, () => ApplicationExtractionResult> = {
+  "[mock:newplatform]": newPlatformFixture,
   "[mock:complete]": completeFixture,
   "[mock:partial]": partialFixture,
   "[mock:linkedin]": linkedinFixture,

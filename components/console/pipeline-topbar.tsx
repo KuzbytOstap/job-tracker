@@ -4,6 +4,7 @@ import { LogOut, Plus } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { AutoIgnoreSettingsButton } from "@/components/console/auto-ignore-settings-dialog";
 
 type PipelineTopbarActionsProps = {
   onAddClick: () => void;
@@ -19,6 +20,7 @@ export function PipelineTopbarActions({ onAddClick }: PipelineTopbarActionsProps
         <Plus data-icon="inline-start" />
         Add application
       </Button>
+      <AutoIgnoreSettingsButton />
       <ThemeToggle />
       <Button
         type="button"

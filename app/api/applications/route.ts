@@ -7,6 +7,7 @@ import {
   listApplicationsQuerySchema,
 } from "@/lib/validation";
 import {
+  APPLICATION_DETAIL_INCLUDE,
   APPLICATION_LIST_ITEM_SELECT,
   buildApplicationsWhere,
   resolveTestTaskFlags,
@@ -25,6 +26,8 @@ import {
 } from "@/lib/api-response";
 import type { ApplicationsListResponse } from "@/lib/api-types";
 import { extractUrls } from "@/lib/url-extraction";
+import { getAutoIgnoreAfterDays } from "@/lib/user-settings";
+import { resolveApplicationPlatform } from "@/lib/platforms-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,13 +50,16 @@ export async function GET(request: NextRequest) {
   try {
     const { status, sort, q } = parsedQuery.data;
 
-    const rows = await prisma.jobApplication.findMany({
-      where: buildApplicationsWhere(q, check.session.user.id),
-      select: APPLICATION_LIST_ITEM_SELECT,
-    });
+    const [rows, autoIgnoreAfterDays] = await Promise.all([
+      prisma.jobApplication.findMany({
+        where: buildApplicationsWhere(q, check.session.user.id),
+        select: APPLICATION_LIST_ITEM_SELECT,
+      }),
+      getAutoIgnoreAfterDays(check.session.user.id),
+    ]);
 
     const now = new Date();
-    const withMeta = rows.map((row) => toApplicationListItemWithMeta(row, now));
+    const withMeta = rows.map((row) => toApplicationListItemWithMeta(row, now, autoIgnoreAfterDays));
 
     const filtered =
       status === "ALL"
@@ -93,6 +99,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const now = new Date();
+    const platformWrite = await resolveApplicationPlatform(check.session.user.id, parsed.data);
+    if (!platformWrite.ok) {
+      return jsonError(400, "Unknown platform");
+    }
+
     const { hasTestTask, testTaskDone } = resolveTestTaskFlags(parsed.data, {
       hasTestTask: false,
       testTaskDone: false,
@@ -101,6 +112,7 @@ export async function POST(request: NextRequest) {
     const application = await prisma.jobApplication.create({
       data: {
         ...parsed.data,
+        ...platformWrite.data,
         hasTestTask,
         testTaskDone,
         status: Status.APPLIED,
@@ -108,12 +120,15 @@ export async function POST(request: NextRequest) {
         sourceUrls: extractUrls(parsed.data.jobPostingText),
         userId: check.session.user.id,
       },
-      include: { statusChanges: { orderBy: { changedAt: "desc" } } },
+      include: APPLICATION_DETAIL_INCLUDE,
     });
 
-    return NextResponse.json(toApplicationDTO(toApplicationWithMeta(application, now)), {
-      status: 201,
-    });
+    const autoIgnoreAfterDays = await getAutoIgnoreAfterDays(check.session.user.id);
+
+    return NextResponse.json(
+      toApplicationDTO(toApplicationWithMeta(application, now, autoIgnoreAfterDays)),
+      { status: 201 },
+    );
   } catch (error) {
     console.error(error);
     return serverErrorResponse();

@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useExtractApplication } from "@/hooks/use-extract-application";
+import { useCreatePlatform } from "@/hooks/use-create-platform";
+import { SimilarPlatformPrompt } from "@/components/applications/similar-platform-prompt";
+import { similarPlatformFromErrorDetails } from "@/lib/platforms";
 import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
 import { useAiUsageStatus } from "@/hooks/use-ai-usage-status";
 import { AiAccessNotice } from "@/components/ai/ai-access-notice";
@@ -22,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AiAccessStatus } from "@/app/generated/prisma/enums";
 import type { ApplicationFormValues } from "@/lib/application-form";
 import type { ApplicationExtractionResult } from "@/lib/application-extraction";
+import type { PlatformOptionDTO } from "@/lib/api-types";
 
 type ApplicationExtractionPanelProps = {
   jobPostingText: string;
@@ -42,9 +46,12 @@ export function ApplicationExtractionPanel({
 }: ApplicationExtractionPanelProps) {
   const [open, setOpen] = useState(true);
   const [lastResultProvider, setLastResultProvider] = useState<"mock" | "openai" | null>(null);
+  const [suggestedPlatformName, setSuggestedPlatformName] = useState<string | null>(null);
+  const [similarPlatform, setSimilarPlatform] = useState<PlatformOptionDTO | null>(null);
   const queryClient = useQueryClient();
   const form = useFormContext<ApplicationFormValues>();
   const mutation = useExtractApplication();
+  const createPlatformMutation = useCreatePlatform();
   const aiAccess = useAiAccessStatus();
   const aiAccessStatus = aiAccess.data?.status;
   const aiUsage = useAiUsageStatus(aiAccessStatus === AiAccessStatus.APPROVED);
@@ -79,6 +86,7 @@ export function ApplicationExtractionPanel({
         counts.kept += 1;
       } else {
         form.setValue("platform", effectivePlatform, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+        form.setValue("customPlatformId", null, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
         counts.filled += 1;
       }
     }
@@ -86,11 +94,44 @@ export function ApplicationExtractionPanel({
     return counts;
   }
 
+  function selectPlatformOption(option: Pick<PlatformOptionDTO, "platform" | "customPlatformId">) {
+    const options = { shouldDirty: true, shouldTouch: true, shouldValidate: true };
+    form.setValue("platform", option.platform, options);
+    form.setValue("customPlatformId", option.customPlatformId, options);
+    setSuggestedPlatformName(null);
+    setSimilarPlatform(null);
+  }
+
+  function handleAcceptSuggestedPlatform(confirmNew = false) {
+    if (!suggestedPlatformName || createPlatformMutation.isPending) return;
+
+    createPlatformMutation.mutate(
+      { name: suggestedPlatformName, confirmNew },
+      {
+        onSuccess: ({ platform, created }) => {
+          selectPlatformOption(platform);
+          toast.success(created ? `Added ${platform.label}` : `${platform.label} already exists, selected it`);
+        },
+        onError: (error) => {
+          const similar = error instanceof ApiError ? similarPlatformFromErrorDetails(error.details) : null;
+          if (similar) {
+            setSimilarPlatform(similar);
+            return;
+          }
+          toast.error(error instanceof ApiError ? error.message : "Couldn't add the platform. Try again.");
+        },
+      },
+    );
+  }
+
   function handleAnalyze() {
     if (mutation.isPending) return;
     if (jobPostingText.trim().length === 0) return;
     if (aiAccessStatus !== AiAccessStatus.APPROVED) return;
     if (quotaReason) return;
+
+    setSuggestedPlatformName(null);
+    setSimilarPlatform(null);
 
     mutation.mutate(
       {
@@ -100,6 +141,7 @@ export function ApplicationExtractionPanel({
       {
         onSuccess: (response) => {
           setLastResultProvider(response.meta.provider);
+          setSuggestedPlatformName(response.result.suggestedPlatformName ?? null);
           const { filled, kept } = applyExtractionResult(response.result);
           const summary =
             kept > 0
@@ -176,6 +218,42 @@ export function ApplicationExtractionPanel({
               onChange={(event) => onCoverLetterTextChange(event.target.value)}
             />
           </Field>
+
+          {suggestedPlatformName && similarPlatform && (
+            <SimilarPlatformPrompt
+              name={suggestedPlatformName}
+              similar={similarPlatform}
+              pending={createPlatformMutation.isPending}
+              onUseExisting={() => selectPlatformOption(similarPlatform)}
+              onCreateAnyway={() => handleAcceptSuggestedPlatform(true)}
+            />
+          )}
+
+          {suggestedPlatformName && !similarPlatform && (
+            <div
+              role="status"
+              className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-dashed border-[var(--gh-border-strong,var(--border))] p-2.5 text-sm"
+            >
+              <span>
+                Platform not in your list: <strong>{suggestedPlatformName}</strong>. Add it and use it for this
+                application?
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={createPlatformMutation.isPending}
+                  aria-busy={createPlatformMutation.isPending}
+                  onClick={() => handleAcceptSuggestedPlatform()}
+                >
+                  {createPlatformMutation.isPending ? "Adding…" : "Add platform"}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setSuggestedPlatformName(null)}>
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
 
           {mutation.isError && !quotaReason && (
             <p role="alert" className="text-sm text-destructive">

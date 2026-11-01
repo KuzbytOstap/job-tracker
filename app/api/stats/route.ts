@@ -10,6 +10,7 @@ import {
 } from "@/lib/status";
 import { forbiddenResponse, serverErrorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { buildFunnelStage } from "@/lib/stats";
+import { getAutoIgnoreAfterDays } from "@/lib/user-settings";
 import type { StatsResponse } from "@/lib/api-types";
 
 export const runtime = "nodejs";
@@ -21,14 +22,17 @@ export async function GET() {
   if (check.status === "forbidden") return forbiddenResponse();
 
   try {
-    const applications = await prisma.jobApplication.findMany({
-      where: { userId: check.session.user.id },
-      select: {
-        status: true,
-        lastActivityAt: true,
-        statusChanges: { select: { toStatus: true } },
-      },
-    });
+    const [applications, autoIgnoreAfterDays] = await Promise.all([
+      prisma.jobApplication.findMany({
+        where: { userId: check.session.user.id },
+        select: {
+          status: true,
+          lastActivityAt: true,
+          statusChanges: { select: { toStatus: true } },
+        },
+      }),
+      getAutoIgnoreAfterDays(check.session.user.id),
+    ]);
 
     const now = new Date();
     const total = applications.length;
@@ -43,7 +47,7 @@ export async function GET() {
     let offers = 0;
 
     for (const application of applications) {
-      const computedStatus = effectiveStatus(application, now);
+      const computedStatus = effectiveStatus(application, now, autoIgnoreAfterDays);
       counts[computedStatus] += 1;
 
       const reachedStatuses = new Set(application.statusChanges.map((change) => change.toStatus));

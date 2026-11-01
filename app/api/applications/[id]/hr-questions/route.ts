@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkSession } from "@/lib/auth";
-import { toApplicationDTO, toApplicationWithMeta } from "@/lib/applications";
+import {
+  APPLICATION_DETAIL_INCLUDE,
+  toApplicationDTO,
+  toApplicationWithMeta,
+} from "@/lib/applications";
 import { generateVacancySpecificHrQuestions } from "@/lib/hr-questions-service";
+import { getAutoIgnoreAfterDays } from "@/lib/user-settings";
 import {
   forbiddenResponse,
   jsonError,
@@ -48,14 +53,18 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
   try {
     const application = await prisma.jobApplication.findFirst({
       where: { id, userId },
-      include: { statusChanges: { orderBy: { changedAt: "desc" } } },
+      include: APPLICATION_DETAIL_INCLUDE,
     });
 
     if (!application) {
       return notFoundResponse();
     }
 
-    return NextResponse.json(toApplicationDTO(toApplicationWithMeta(application, new Date())));
+    const autoIgnoreAfterDays = await getAutoIgnoreAfterDays(userId);
+
+    return NextResponse.json(
+      toApplicationDTO(toApplicationWithMeta(application, new Date(), autoIgnoreAfterDays)),
+    );
   } catch (error) {
     console.error(error);
     return serverErrorResponse();

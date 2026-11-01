@@ -31,6 +31,7 @@ const openAiExtractionWireSchema = z
     company: z.string().nullable(),
     position: z.string().nullable(),
     platform: z.enum(PLATFORM_VALUES).nullable(),
+    suggestedPlatformName: z.string().nullable(),
     link: z.string().nullable(),
     salaryExpectation: z.string().nullable(),
     notes: z.string().nullable(),
@@ -45,6 +46,7 @@ Extract only these fields:
 - company: the employer/hiring company name. Never use the recruiting platform's name as the company. Preserve its recognizable spelling. Use null if unclear.
 - position: the advertised role title, trimmed of marketing text, not rewritten into an unrelated title. Use null if unclear.
 - platform: one of the supported platform enum values if clearly identifiable, otherwise null. When uncertain, use null.
+- suggestedPlatformName: only when platform is null and the posting clearly comes from a specific job board or recruiting site that is not one of the supported platform enum values, the site's short recognizable name (for example "Wellfound"). Never use the employer's name. Use null in every other case.
 - link: a valid vacancy URL only if it is explicitly present in the pasted text. Never invent or reconstruct a URL. Use null if absent.
 - salaryExpectation: use only explicit compensation information, in this priority order: (1) if the cover letter explicitly states the candidate's own salary expectation, use that exact expectation; (2) otherwise, if the job posting explicitly states a salary or compensation range, use that; (3) otherwise null. Never calculate a market salary, never convert currencies, never invent a range. Preserve useful currency/period information and keep it concise.
 - notes: a short 2-4 sentence summary in the main language of the job posting, covering only core responsibilities, key requirements, important technologies, or unusual conditions. Summarize, do not copy large passages. Never paste the full vacancy or the cover letter. Never mention that AI generated this summary. Never include candidate analysis, a fit score, or advice. Never use a markdown table. Use null only when the posting is too empty to summarize.
@@ -242,8 +244,10 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
       );
     }
 
-    const result = validated.data;
+    const { suggestedPlatformName: rawSuggestedPlatformName, ...result } = validated.data;
     const inferredPlatform = result.link ? inferPlatformFromLink(result.link) : null;
+    const suggestedPlatformName =
+      inferredPlatform === null && result.platform === null ? (rawSuggestedPlatformName ?? null) : null;
 
     options?.onUsage?.({
       model: OPENAI_EXTRACTION_MODEL,
@@ -255,6 +259,7 @@ export class OpenAIApplicationExtractionProvider implements ApplicationExtractio
     return {
       ...result,
       platform: inferredPlatform ?? result.platform,
+      ...(suggestedPlatformName ? { suggestedPlatformName } : {}),
     };
   }
 }

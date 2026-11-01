@@ -88,7 +88,7 @@ export function ApplicationCard({
           </div>
 
           <div className="kanban-card-badges flex flex-wrap items-center gap-1.5">
-            <PlatformBadge platform={application.platform} />
+            <PlatformBadge platform={application.platform} customPlatform={application.customPlatform} />
             <StatusBadge status={application.effectiveStatus} className="kanban-card-status-badge" />
             {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
           </div>

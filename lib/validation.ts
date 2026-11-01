@@ -83,6 +83,7 @@ const baseApplicationFields = {
   company: z.string().trim().min(1, "company is required"),
   position: z.string().trim().min(1, "position is required"),
   platform: platformSchema,
+  customPlatformId: z.string().min(1).nullable().optional(),
   link: linkSchema,
   salaryExpectation: optionalNullableText(),
   notes: optionalNullableText(),

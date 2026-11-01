@@ -41,6 +41,36 @@ export const PLATFORM_BADGE_CLASSES: Record<Platform, string> = {
   OTHER: "bg-zinc-100 text-zinc-600 dark:bg-zinc-400/15 dark:text-zinc-400",
 };
 
+export const CUSTOM_PLATFORM_COLOR_CLASSES = {
+  rose: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300",
+  amber: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+  lime: "bg-lime-100 text-lime-700 dark:bg-lime-400/15 dark:text-lime-300",
+  cyan: "bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300",
+  indigo: "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300",
+  violet: "bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300",
+  pink: "bg-pink-100 text-pink-700 dark:bg-pink-400/15 dark:text-pink-300",
+  red: "bg-red-100 text-red-700 dark:bg-red-400/15 dark:text-red-300",
+  yellow: "bg-yellow-100 text-yellow-700 dark:bg-yellow-400/15 dark:text-yellow-300",
+  blue: "bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300",
+  neutral: "bg-zinc-100 text-zinc-600 dark:bg-zinc-400/15 dark:text-zinc-400",
+} as const;
+
+export type PlatformColorKey = keyof typeof CUSTOM_PLATFORM_COLOR_CLASSES;
+
+export const PLATFORM_COLOR_KEYS = Object.keys(CUSTOM_PLATFORM_COLOR_CLASSES) as [
+  PlatformColorKey,
+  ...PlatformColorKey[],
+];
+
+export const DEFAULT_PLATFORM_COLOR_KEY: PlatformColorKey = "neutral";
+
+export function customPlatformBadgeClasses(colorKey: string): string {
+  return (
+    CUSTOM_PLATFORM_COLOR_CLASSES[colorKey as PlatformColorKey] ??
+    CUSTOM_PLATFORM_COLOR_CLASSES[DEFAULT_PLATFORM_COLOR_KEY]
+  );
+}
+
 export const SORT_OPTIONS: SortOption[] = ["newest", "oldest", "activity", "company"];
 
 export const SORT_LABELS: Record<SortOption, string> = {

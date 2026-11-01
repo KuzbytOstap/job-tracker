@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PLATFORM_VALUES } from "@/lib/validation";
+import { PLATFORM_NAME_MAX_LENGTH } from "@/lib/platforms";
 
 function isHttpUrl(value: string): boolean {
   try {
@@ -38,6 +39,15 @@ export const applicationExtractionResultSchema = z
     company: nullableTrimmedString(),
     position: nullableTrimmedString(),
     platform: z.enum(PLATFORM_VALUES).nullable(),
+    suggestedPlatformName: z
+      .string()
+      .nullable()
+      .transform((value) => {
+        if (value === null) return null;
+        const trimmed = value.trim();
+        return trimmed.length === 0 || trimmed.length > PLATFORM_NAME_MAX_LENGTH ? null : trimmed;
+      })
+      .optional(),
     link: nullableLink,
     salaryExpectation: nullableTrimmedString(),
     notes: nullableTrimmedString(),

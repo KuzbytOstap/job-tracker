@@ -74,6 +74,8 @@ export function useMoveApplicationToStatus() {
           company: source.company,
           position: source.position,
           platform: source.platform,
+          customPlatformId: source.customPlatformId,
+          customPlatform: source.customPlatform,
           link: source.link,
           status: targetStatus,
           effectiveStatus: targetStatus,

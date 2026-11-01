@@ -16,11 +16,14 @@ export const queryKeys = {
     detail: (id: string) => ["applications", "detail", id] as const,
   },
   stats: () => ["stats"] as const,
+  autoIgnoreSettings: () => ["settings", "auto-ignore"] as const,
+  platforms: () => ["platforms"] as const,
   aiAccess: () => ["ai-access"] as const,
   aiUsage: () => ["ai-usage"] as const,
   admin: {
     aiRequests: () => ["admin", "ai-requests"] as const,
     users: () => ["admin", "users"] as const,
     settings: () => ["admin", "settings"] as const,
+    platformProposals: () => ["admin", "platform-proposals"] as const,
   },
 };

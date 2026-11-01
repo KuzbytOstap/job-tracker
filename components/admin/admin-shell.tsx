@@ -4,11 +4,13 @@ import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { RequestsSection } from "@/components/admin/requests/requests-section";
+import { PlatformsSection } from "@/components/admin/platforms/platforms-section";
 import { UsersSection } from "@/components/admin/users/users-section";
 import { SettingsSection } from "@/components/admin/settings/settings-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAdminAiRequests } from "@/hooks/use-admin-ai-requests";
+import { useAdminPlatformProposals } from "@/hooks/use-admin-platform-proposals";
 
 const ENTRANCE_EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -17,6 +19,8 @@ export function AdminShell() {
   const reducedMotion = useReducedMotion();
   const requestsQuery = useAdminAiRequests();
   const pendingCount = requestsQuery.data?.requests.filter((request) => request.status === "PENDING").length ?? 0;
+  const platformProposalsQuery = useAdminPlatformProposals();
+  const platformProposalCount = platformProposalsQuery.data?.proposals.length ?? 0;
 
   return (
     <div data-job-tracker-theme="game-hub" className="relative min-h-screen bg-[var(--gh-bg)]">
@@ -37,11 +41,22 @@ export function AdminShell() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="platforms" className="gap-1.5">
+              Platforms
+              {platformProposalCount > 0 && (
+                <Badge className="h-4 min-w-4 justify-center bg-[var(--gh-action-primary-bg)] px-1 text-[10px] text-[var(--gh-action-primary-fg)]">
+                  {platformProposalCount}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="requests">
             <RequestsSection />
+          </TabsContent>
+          <TabsContent value="platforms">
+            <PlatformsSection />
           </TabsContent>
           <TabsContent value="users">
             <UsersSection />

@@ -4,6 +4,7 @@ import type {
   ApplicationListItemDTO,
   ApplicationsListResponse,
   CreateApplicationPayload,
+  CustomPlatformRefDTO,
 } from "@/lib/api-types";
 import type { ApplicationsListParams } from "@/lib/query-keys";
 import type { SortOption } from "@/lib/validation";
@@ -19,6 +20,8 @@ export function toApplicationListItem(application: ApplicationDTO): ApplicationL
     company: application.company,
     position: application.position,
     platform: application.platform,
+    customPlatformId: application.customPlatformId,
+    customPlatform: application.customPlatform,
     link: application.link,
     status: application.status,
     effectiveStatus: application.effectiveStatus,
@@ -115,6 +118,7 @@ export function buildOptimisticListItem(
   input: CreateApplicationPayload,
   id: string,
   now: Date,
+  customPlatform: CustomPlatformRefDTO | null = null,
 ): ApplicationListItemDTO {
   const nowIso = now.toISOString();
   return {
@@ -122,6 +126,7 @@ export function buildOptimisticListItem(
     company: input.company,
     position: input.position,
     platform: input.platform,
+    ...(input.customPlatformId ? { customPlatformId: input.customPlatformId, customPlatform } : {}),
     link: input.link ?? null,
     status: Status.APPLIED,
     hasTestTask: input.hasTestTask ?? false,

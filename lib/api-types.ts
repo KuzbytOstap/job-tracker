@@ -14,6 +14,12 @@ type WithStringDates<T, K extends keyof T> = Omit<T, K> & { [P in K]: string };
 
 export type StatusChangeDTO = WithStringDates<StatusChange, "changedAt">;
 
+export type CustomPlatformRefDTO = {
+  id: string;
+  name: string;
+  colorKey: string;
+};
+
 export type ApplicationDTO = Omit<
   WithStringDates<JobApplication, "appliedAt" | "lastActivityAt" | "createdAt" | "updatedAt">,
   | "hrInterviewQuestions"
@@ -24,6 +30,7 @@ export type ApplicationDTO = Omit<
 > & {
   effectiveStatus: Status;
   isAutoIgnored: boolean;
+  customPlatform?: CustomPlatformRefDTO | null;
   statusChanges: StatusChangeDTO[];
   hrInterviewQuestions: HrInterviewQuestionSet | null;
   hrQuestionsGeneratedAt: string | null;
@@ -39,6 +46,8 @@ export type ApplicationListItemDTO = {
   company: string;
   position: string;
   platform: Platform;
+  customPlatformId?: string | null;
+  customPlatform?: CustomPlatformRefDTO | null;
   link: string | null;
   status: Status;
   effectiveStatus: Status;
@@ -76,6 +85,10 @@ export type StatsResponse = {
   };
 };
 
+export type AutoIgnoreSettingsDTO = {
+  autoIgnoreAfterDays: number | null;
+};
+
 export type AiAccessStatusResponse = {
   status: AiAccessStatus;
 };
@@ -109,10 +122,44 @@ export type DeleteResponse = {
   success: true;
 };
 
+export type PlatformOptionScope = "builtin" | "global" | "own";
+
+export type PlatformOptionDTO = {
+  value: string;
+  label: string;
+  platform: Platform;
+  customPlatformId: string | null;
+  colorKey: string | null;
+  scope: PlatformOptionScope;
+};
+
+export type PlatformsResponse = {
+  platforms: PlatformOptionDTO[];
+};
+
+export type CreatePlatformResponse = {
+  platform: PlatformOptionDTO;
+  created: boolean;
+};
+
+export type AdminPlatformProposalDTO = {
+  id: string;
+  name: string;
+  colorKey: string;
+  owners: AdminUserRef[];
+  applicationCount: number;
+  createdAt: string;
+};
+
+export type AdminPlatformProposalsResponse = {
+  proposals: AdminPlatformProposalDTO[];
+};
+
 export type CreateApplicationPayload = {
   company: string;
   position: string;
   platform: Platform;
+  customPlatformId?: string | null;
   link?: string;
   salaryExpectation?: string;
   notes?: string;

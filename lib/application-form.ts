@@ -17,6 +17,7 @@ export const applicationFormSchema = z.object({
   company: z.string().trim().min(1, "Company is required"),
   position: z.string().trim().min(1, "Position is required"),
   platform: z.enum(PLATFORM_VALUES),
+  customPlatformId: z.string().nullable().optional(),
   link: z
     .string()
     .trim()
@@ -52,6 +53,7 @@ export function applicationFormValuesFromApplication(application: ApplicationDTO
     company: application.company,
     position: application.position,
     platform: application.platform,
+    ...(application.customPlatformId ? { customPlatformId: application.customPlatformId } : {}),
     link: application.link ?? "",
     salaryExpectation: application.salaryExpectation ?? "",
     notes: application.notes ?? "",
@@ -65,6 +67,7 @@ export function applicationFormValuesToCreatePayload(values: ApplicationFormValu
     company: values.company.trim(),
     position: values.position.trim(),
     platform: values.platform,
+    ...(values.customPlatformId ? { customPlatformId: values.customPlatformId } : {}),
     link: values.link.trim() === "" ? undefined : values.link.trim(),
     salaryExpectation: values.salaryExpectation.trim() === "" ? undefined : values.salaryExpectation.trim(),
     notes: values.notes.trim() === "" ? undefined : values.notes.trim(),
@@ -79,6 +82,7 @@ export function applicationFormValuesToUpdatePayload(values: ApplicationFormValu
     company: payload.company,
     position: payload.position,
     platform: payload.platform,
+    ...(payload.customPlatformId ? { customPlatformId: payload.customPlatformId } : {}),
     link: payload.link,
     salaryExpectation: payload.salaryExpectation,
     notes: payload.notes,

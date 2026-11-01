@@ -9,8 +9,20 @@ import { parseStoredHrInterviewQuestionSet } from "@/lib/hr-interview-questions"
 import type { SortOption } from "@/lib/validation";
 import type { ApplicationDTO, ApplicationListItemDTO } from "@/lib/api-types";
 
+export const APPLICATION_CUSTOM_PLATFORM_SELECT = {
+  id: true,
+  name: true,
+  colorKey: true,
+} satisfies Prisma.CustomPlatformSelect;
+
+export const APPLICATION_DETAIL_INCLUDE = {
+  statusChanges: { orderBy: { changedAt: "desc" } },
+  customPlatform: { select: APPLICATION_CUSTOM_PLATFORM_SELECT },
+} satisfies Prisma.JobApplicationInclude;
+
 export type ApplicationWithHistory = JobApplication & {
   statusChanges: StatusChange[];
+  customPlatform?: { id: string; name: string; colorKey: string } | null;
 };
 
 export type ApplicationWithMeta = ApplicationWithHistory & {
@@ -27,6 +39,8 @@ export const APPLICATION_LIST_ITEM_SELECT = {
   company: true,
   position: true,
   platform: true,
+  customPlatformId: true,
+  customPlatform: { select: APPLICATION_CUSTOM_PLATFORM_SELECT },
   link: true,
   status: true,
   hasTestTask: true,
@@ -49,8 +63,9 @@ export type ApplicationListItemWithMeta = ApplicationListItemRow & {
 export function toApplicationListItemWithMeta(
   row: ApplicationListItemRow,
   now: Date,
+  autoIgnoreAfterDays?: number | null,
 ): ApplicationListItemWithMeta {
-  const computedStatus = effectiveStatus(row, now);
+  const computedStatus = effectiveStatus(row, now, autoIgnoreAfterDays);
 
   return {
     ...row,
@@ -85,8 +100,9 @@ export function buildApplicationsWhere(q: string, userId: string): Prisma.JobApp
 export function toApplicationWithMeta(
   application: ApplicationWithHistory,
   now: Date,
+  autoIgnoreAfterDays?: number | null,
 ): ApplicationWithMeta {
-  const computedStatus = effectiveStatus(application, now);
+  const computedStatus = effectiveStatus(application, now, autoIgnoreAfterDays);
 
   return {
     ...application,

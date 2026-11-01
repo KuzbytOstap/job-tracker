@@ -145,6 +145,7 @@ export async function generateVacancySpecificHrQuestions(
 ): Promise<HrQuestionsResult | null> {
   const application = await prisma.jobApplication.findFirst({
     where: { id: applicationId, userId },
+    include: { customPlatform: { select: { name: true } } },
   });
   if (!application) {
     return null;
@@ -166,7 +167,7 @@ export async function generateVacancySpecificHrQuestions(
   const context: HrQuestionsTransitionContext = {
     company: application.company,
     position: application.position,
-    platform: application.platform,
+    platform: application.customPlatform?.name ?? application.platform,
     salaryExpectation: application.salaryExpectation,
     notes: application.notes,
     jobPostingText: application.jobPostingText,
