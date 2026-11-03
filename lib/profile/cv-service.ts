@@ -185,6 +185,24 @@ export async function getCvFile(userId: string, cvId: string): Promise<{ fileNam
   return row ? { fileName: row.fileName, bytes: Buffer.from(row.fileData) } : null;
 }
 
+export type ResolvedCvText =
+  | { status: "ok"; text: string }
+  | { status: "missing"; reason: "CV_NOT_FOUND" | "NO_CV_TEXT" };
+
+export async function resolveCvText(userId: string, cvId?: string): Promise<ResolvedCvText> {
+  const row = await prisma.userCv.findFirst({
+    where: cvId === undefined ? { userId, isPrimary: true } : { id: cvId, userId },
+    select: { extractedText: true },
+  });
+
+  if (!row) {
+    return { status: "missing", reason: cvId === undefined ? "NO_CV_TEXT" : "CV_NOT_FOUND" };
+  }
+
+  const text = row.extractedText?.trim();
+  return text ? { status: "ok", text } : { status: "missing", reason: "NO_CV_TEXT" };
+}
+
 export async function getPrimaryCvText(userId: string): Promise<string | null> {
   const row = await prisma.userCv.findFirst({
     where: { userId, isPrimary: true },

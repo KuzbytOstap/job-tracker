@@ -19,6 +19,7 @@ export const profile = {
       aiAccessRequired: "AI access isn't approved yet.",
       aiSuspended: "AI access is suspended.",
       profileLimit: "The daily profile AI limit is reached.",
+      coverLetterLimit: "The daily cover letter limit is reached.",
       tokenLimit: "The daily AI token limit is reached.",
       providerFailed: "The AI service didn't respond. Try again later.",
       noCvText: "Add the text of your primary CV first.",

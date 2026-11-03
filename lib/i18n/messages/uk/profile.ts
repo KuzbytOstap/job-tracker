@@ -21,6 +21,7 @@ export const profile: Messages["profile"] = {
       aiAccessRequired: "AI-доступ ще не схвалено.",
       aiSuspended: "AI-доступ призупинено.",
       profileLimit: "Досягнуто денний ліміт AI для профілю.",
+      coverLetterLimit: "Досягнуто денний ліміт листів.",
       tokenLimit: "Досягнуто денний ліміт AI-токенів.",
       providerFailed: "AI-сервіс не відповів. Спробуйте пізніше.",
       noCvText: "Спершу додайте текст основного CV.",

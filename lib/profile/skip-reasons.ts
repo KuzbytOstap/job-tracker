@@ -4,6 +4,7 @@ const SKIP_REASON_KEYS: Record<string, MessageKey> = {
   AI_ACCESS_REQUIRED: "profile.ai.reasons.aiAccessRequired",
   AI_SUSPENDED: "profile.ai.reasons.aiSuspended",
   PROFILE_LIMIT_REACHED: "profile.ai.reasons.profileLimit",
+  COVER_LETTER_LIMIT_REACHED: "profile.ai.reasons.coverLetterLimit",
   TOKEN_LIMIT_REACHED: "profile.ai.reasons.tokenLimit",
   PROVIDER_FAILED: "profile.ai.reasons.providerFailed",
   NO_CV_TEXT: "profile.ai.reasons.noCvText",

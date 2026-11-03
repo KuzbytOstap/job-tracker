@@ -10,6 +10,7 @@ describe("skipReasonMessageKey", () => {
     expect(en(skipReasonMessageKey("AI_ACCESS_REQUIRED"))).toBe("AI access isn't approved yet.");
     expect(en(skipReasonMessageKey("AI_SUSPENDED"))).toBe("AI access is suspended.");
     expect(en(skipReasonMessageKey("PROFILE_LIMIT_REACHED"))).toBe("The daily profile AI limit is reached.");
+    expect(en(skipReasonMessageKey("COVER_LETTER_LIMIT_REACHED"))).toBe("The daily cover letter limit is reached.");
     expect(en(skipReasonMessageKey("TOKEN_LIMIT_REACHED"))).toBe("The daily AI token limit is reached.");
     expect(en(skipReasonMessageKey("PROVIDER_FAILED"))).toBe("The AI service didn't respond. Try again later.");
     expect(en(skipReasonMessageKey("NO_CV_TEXT"))).toBe("Add the text of your primary CV first.");
@@ -23,6 +24,7 @@ describe("skipReasonMessageKey", () => {
 
   it("has a Ukrainian message for each reason", () => {
     expect(uk(skipReasonMessageKey("PROFILE_LIMIT_REACHED"))).toBe("Досягнуто денний ліміт AI для профілю.");
+    expect(uk(skipReasonMessageKey("COVER_LETTER_LIMIT_REACHED"))).toBe("Досягнуто денний ліміт листів.");
     expect(uk(skipReasonMessageKey(null))).toBe("AI зараз не може це обробити.");
   });
 });

@@ -42,6 +42,7 @@ import {
   getPrimaryCvText,
   listCvs,
   replaceCvFile,
+  resolveCvText,
   setCvText,
   updateCvMeta,
   validateCvFile,
@@ -366,6 +367,41 @@ describe("getCvFile", () => {
     findFirstMock.mockResolvedValue(null);
 
     await expect(getCvFile("user_2", "cv_1")).resolves.toBeNull();
+  });
+});
+
+describe("resolveCvText", () => {
+  it("uses the primary CV when no id is given", async () => {
+    findFirstMock.mockResolvedValue({ extractedText: "  CV text  " });
+
+    await expect(resolveCvText("user_1")).resolves.toEqual({ status: "ok", text: "CV text" });
+    expect(findFirstMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user_1", isPrimary: true } }),
+    );
+  });
+
+  it("looks the chosen CV up by id and owner", async () => {
+    findFirstMock.mockResolvedValue({ extractedText: "Other CV" });
+
+    await expect(resolveCvText("user_1", "cv_2")).resolves.toEqual({ status: "ok", text: "Other CV" });
+    expect(findFirstMock).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "cv_2", userId: "user_1" } }));
+  });
+
+  it("reports CV_NOT_FOUND for a chosen CV that is missing or belongs to someone else", async () => {
+    findFirstMock.mockResolvedValue(null);
+
+    await expect(resolveCvText("user_1", "cv_other")).resolves.toEqual({ status: "missing", reason: "CV_NOT_FOUND" });
+  });
+
+  it("reports NO_CV_TEXT when there is no primary CV, no text, or only blank text", async () => {
+    findFirstMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ extractedText: null })
+      .mockResolvedValueOnce({ extractedText: "   " });
+
+    await expect(resolveCvText("user_1")).resolves.toEqual({ status: "missing", reason: "NO_CV_TEXT" });
+    await expect(resolveCvText("user_1", "cv_1")).resolves.toEqual({ status: "missing", reason: "NO_CV_TEXT" });
+    await expect(resolveCvText("user_1", "cv_1")).resolves.toEqual({ status: "missing", reason: "NO_CV_TEXT" });
   });
 });
 
