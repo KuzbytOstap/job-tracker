@@ -13,8 +13,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 const decisionBodySchema = z
   .object({
     decision: z.enum(["APPROVED", "REJECTED"]),
-    decisionNote: z.string().trim().max(2000).optional(),
-    grantedAmount: z.number().int().positive().optional(),
+    decisionNote: z.string().trim().max(2000).nullable().optional(),
+    grantedAmount: z.number().int().positive().nullable().optional(),
   })
   .strict();
 
