@@ -18,7 +18,7 @@ import {
 } from "@/lib/ai/profile-provider";
 import type { AiUsageReport } from "@/lib/ai/token-usage";
 
-const OPENAI_PROFILE_MODEL = "gpt-5-nano-2025-08-07" as const;
+const OPENAI_PROFILE_MODEL = "gpt-6-luna" as const;
 
 const CV_EXTRACTION_MAX_OUTPUT_TOKENS = 4_000;
 const CONTEXT_SCORE_MAX_OUTPUT_TOKENS = 60;
@@ -101,7 +101,7 @@ type ProfileResponseParams = {
   tools: [];
   max_output_tokens: number;
   text: { format: ReturnType<typeof zodTextFormat>; verbosity: "low" };
-  reasoning: { effort: "minimal" };
+  reasoning: { effort: "none" };
 };
 
 function baseParams(
@@ -118,7 +118,7 @@ function baseParams(
     tools: [],
     max_output_tokens: maxOutputTokens,
     text: { format, verbosity: "low" },
-    reasoning: { effort: "minimal" },
+    reasoning: { effort: "none" },
   };
 }
 

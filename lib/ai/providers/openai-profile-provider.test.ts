@@ -56,6 +56,8 @@ describe("OpenAIProfileAiProvider.extractCv", () => {
     await new OpenAIProfileAiProvider().extractCv.run(CV_INPUT);
 
     const body = parseMock.mock.calls[0][0];
+    expect(body.model).toBe("gpt-6-luna");
+    expect(body.reasoning).toEqual({ effort: "none" });
     expect(body.store).toBe(false);
     expect(body.tools).toEqual([]);
     expect(body.input).toHaveLength(1);
@@ -76,7 +78,7 @@ describe("OpenAIProfileAiProvider.extractCv", () => {
     expect(result.text).toBe("CV text");
     expect(result.identity.firstName).toBe("Ada");
     expect(onUsage).toHaveBeenCalledWith({
-      model: "gpt-5-nano-2025-08-07",
+      model: "gpt-6-luna",
       inputTokens: 100,
       outputTokens: 20,
       totalTokens: 120,
