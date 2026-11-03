@@ -165,6 +165,17 @@ export type CvSuggestionsResponseDTO =
   | { status: "ok"; suggestions: CvSuggestionDTO[] }
   | { status: "skipped"; reason: string };
 
+export type GenerateCoverLetterPayload = {
+  vacancyText: string;
+  company?: string | null;
+  position?: string | null;
+  cvId?: string;
+};
+
+export type CoverLetterGenerationDTO =
+  | { status: "ok"; letter: string }
+  | { status: "skipped"; reason: string };
+
 export type ContextItemWeightValue = "COVERED" | "SUBSTANTIAL" | "MINOR";
 
 export type ContextItemDTO = {

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   COVER_LETTER_EXAMPLE_MAX_LENGTH,
   COVER_LETTER_PROMPT_MAX_LENGTH,
+  COVER_LETTER_VACANCY_MAX_LENGTH,
   CONTEXT_ITEM_MAX_LENGTH,
   CV_LABEL_MAX_LENGTH,
   CV_LANGUAGE_MAX_LENGTH,
@@ -122,5 +123,17 @@ export const updateExampleSchema = z
   .strict()
   .refine((value) => Object.keys(value).length > 0, { message: "At least one field is required" });
 
+const vacancyLabel = nullableText(PROFILE_FIELD_MAX_LENGTH).transform((value) => value ?? null);
+
+export const generateCoverLetterSchema = z
+  .object({
+    vacancyText: z.string().trim().min(1).max(COVER_LETTER_VACANCY_MAX_LENGTH),
+    company: vacancyLabel,
+    position: vacancyLabel,
+    cvId: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+export type GenerateCoverLetterInput = z.output<typeof generateCoverLetterSchema>;
 export type CreateExampleInput = z.output<typeof createExampleSchema>;
 export type UpdateExampleInput = z.output<typeof updateExampleSchema>;

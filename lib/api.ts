@@ -21,7 +21,9 @@ import type {
   CoverLetterExampleDTO,
   CoverLetterExamplePayload,
   CvDTO,
+  CoverLetterGenerationDTO,
   CvSuggestionsResponseDTO,
+  GenerateCoverLetterPayload,
   CvUpdateHintDTO,
   CvUploadResultDTO,
   ProfileDTO,
@@ -385,6 +387,13 @@ export function snoozeCvUpdateHint(): Promise<CvUpdateHintDTO> {
 
 export function suggestCvUpdates(): Promise<CvSuggestionsResponseDTO> {
   return request<CvSuggestionsResponseDTO>("/api/profile/cv-update-hint/suggestions", { method: "POST" });
+}
+
+export function generateCoverLetter(payload: GenerateCoverLetterPayload): Promise<CoverLetterGenerationDTO> {
+  return request<CoverLetterGenerationDTO>("/api/profile/cover-letter", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getCoverLetterExamples(): Promise<CoverLetterExampleDTO[]> {
