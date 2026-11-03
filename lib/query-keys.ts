@@ -20,6 +20,14 @@ export const queryKeys = {
   platforms: () => ["platforms"] as const,
   aiAccess: () => ["ai-access"] as const,
   aiUsage: () => ["ai-usage"] as const,
+  profile: {
+    root: () => ["profile"] as const,
+    detail: () => ["profile", "detail"] as const,
+    cvs: () => ["profile", "cvs"] as const,
+    contextItems: () => ["profile", "context-items"] as const,
+    cvUpdateHint: () => ["profile", "cv-update-hint"] as const,
+    examples: () => ["profile", "examples"] as const,
+  },
   admin: {
     aiRequests: () => ["admin", "ai-requests"] as const,
     users: () => ["admin", "users"] as const,

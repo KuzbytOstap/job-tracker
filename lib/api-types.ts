@@ -128,6 +128,43 @@ export type ProfileDTO = {
   defaultCoverLetterPrompt: string;
 };
 
+export type UpdateProfilePayload = {
+  firstName?: string | null;
+  lastName?: string | null;
+  contactEmail?: string | null;
+  phone?: string | null;
+  address?: {
+    street?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    region?: string | null;
+    country?: string | null;
+  };
+  salary?: {
+    amount?: number | null;
+    currency?: string | null;
+    period?: SalaryPeriodValue | null;
+  };
+  employmentTypes?: EmploymentTypeValue[];
+  workFormats?: WorkFormatValue[];
+  coverLetterPrompt?: string | null;
+};
+
+export type UpdateCvPayload = {
+  label?: string;
+  language?: string | null;
+  isPrimary?: true;
+};
+
+export type CoverLetterExamplePayload = {
+  vacancyText: string;
+  letterText: string;
+};
+
+export type CvSuggestionsResponseDTO =
+  | { status: "ok"; suggestions: CvSuggestionDTO[] }
+  | { status: "skipped"; reason: string };
+
 export type ContextItemWeightValue = "COVERED" | "SUBSTANTIAL" | "MINOR";
 
 export type ContextItemDTO = {

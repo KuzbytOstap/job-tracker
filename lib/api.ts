@@ -15,6 +15,18 @@ import type {
   ApplicationDTO,
   ApplicationsListResponse,
   AutoIgnoreSettingsDTO,
+  ContextItemDTO,
+  ContextItemSaveResultDTO,
+  ContextScoringDTO,
+  CoverLetterExampleDTO,
+  CoverLetterExamplePayload,
+  CvDTO,
+  CvSuggestionsResponseDTO,
+  CvUpdateHintDTO,
+  CvUploadResultDTO,
+  ProfileDTO,
+  UpdateCvPayload,
+  UpdateProfilePayload,
   CreateApplicationPayload,
   LocaleSettingsDTO,
   DeleteResponse,
@@ -277,4 +289,122 @@ export function updateAdminSettings(payload: UpdateAdminSettingsPayload): Promis
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  let body: ApiErrorBody | null = null;
+  try {
+    body = (await response.json()) as ApiErrorBody;
+  } catch {
+    body = null;
+  }
+
+  return new ApiError(response.status, body?.error ?? response.statusText ?? "Request failed", body?.details);
+}
+
+async function requestForm<T>(path: string, init: { method: "POST" | "PUT"; body: FormData }): Promise<T> {
+  const response = await fetch(path, init);
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+  return response.json() as Promise<T>;
+}
+
+async function requestNoContent(path: string, init: { method: "DELETE" }): Promise<void> {
+  const response = await fetch(path, init);
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
+export function getProfile(): Promise<ProfileDTO> {
+  return request<ProfileDTO>("/api/profile");
+}
+
+export function updateProfile(payload: UpdateProfilePayload): Promise<ProfileDTO> {
+  return request<ProfileDTO>("/api/profile", { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function getCvs(): Promise<CvDTO[]> {
+  return request<CvDTO[]>("/api/profile/cvs");
+}
+
+export function uploadCv(formData: FormData): Promise<CvUploadResultDTO> {
+  return requestForm<CvUploadResultDTO>("/api/profile/cvs", { method: "POST", body: formData });
+}
+
+export function replaceCvFile(id: string, formData: FormData): Promise<CvUploadResultDTO> {
+  return requestForm<CvUploadResultDTO>(`/api/profile/cvs/${id}/file`, { method: "PUT", body: formData });
+}
+
+export function updateCv(id: string, payload: UpdateCvPayload): Promise<CvDTO> {
+  return request<CvDTO>(`/api/profile/cvs/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function deleteCv(id: string): Promise<void> {
+  return requestNoContent(`/api/profile/cvs/${id}`, { method: "DELETE" });
+}
+
+export function setCvText(id: string, text: string): Promise<CvDTO> {
+  return request<CvDTO>(`/api/profile/cvs/${id}/text`, { method: "PUT", body: JSON.stringify({ text }) });
+}
+
+export function getContextItems(): Promise<ContextItemDTO[]> {
+  return request<ContextItemDTO[]>("/api/profile/context-items");
+}
+
+export function createContextItem(text: string): Promise<ContextItemSaveResultDTO> {
+  return request<ContextItemSaveResultDTO>("/api/profile/context-items", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function updateContextItem(id: string, text: string): Promise<ContextItemSaveResultDTO> {
+  return request<ContextItemSaveResultDTO>(`/api/profile/context-items/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function deleteContextItem(id: string): Promise<void> {
+  return requestNoContent(`/api/profile/context-items/${id}`, { method: "DELETE" });
+}
+
+export function scoreContextItems(): Promise<ContextScoringDTO> {
+  return request<ContextScoringDTO>("/api/profile/context-items/score", { method: "POST" });
+}
+
+export function getCvUpdateHint(): Promise<CvUpdateHintDTO> {
+  return request<CvUpdateHintDTO>("/api/profile/cv-update-hint");
+}
+
+export function snoozeCvUpdateHint(): Promise<CvUpdateHintDTO> {
+  return request<CvUpdateHintDTO>("/api/profile/cv-update-hint/snooze", { method: "POST" });
+}
+
+export function suggestCvUpdates(): Promise<CvSuggestionsResponseDTO> {
+  return request<CvSuggestionsResponseDTO>("/api/profile/cv-update-hint/suggestions", { method: "POST" });
+}
+
+export function getCoverLetterExamples(): Promise<CoverLetterExampleDTO[]> {
+  return request<CoverLetterExampleDTO[]>("/api/profile/examples");
+}
+
+export function createCoverLetterExample(payload: CoverLetterExamplePayload): Promise<CoverLetterExampleDTO> {
+  return request<CoverLetterExampleDTO>("/api/profile/examples", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateCoverLetterExample(
+  id: string,
+  payload: Partial<CoverLetterExamplePayload>,
+): Promise<CoverLetterExampleDTO> {
+  return request<CoverLetterExampleDTO>(`/api/profile/examples/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCoverLetterExample(id: string): Promise<void> {
+  return requestNoContent(`/api/profile/examples/${id}`, { method: "DELETE" });
 }
