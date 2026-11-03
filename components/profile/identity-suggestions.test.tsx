@@ -23,6 +23,10 @@ const EMPTY_PROFILE: ProfileDTO = {
   defaultCoverLetterPrompt: "Default",
 };
 
+function checkbox(label: string): HTMLElement {
+  return screen.getByRole("checkbox", { name: new RegExp(`^${label}`) });
+}
+
 const SUGGESTIONS: CvIdentitySuggestionsDTO = {
   firstName: "Ada",
   lastName: "Lovelace",
@@ -42,24 +46,24 @@ describe("IdentitySuggestions", () => {
   it("starts with empty profile fields ticked and already filled fields unticked", () => {
     renderSuggestions({ ...EMPTY_PROFILE, firstName: "Ada L." });
 
-    expect(screen.getByRole("checkbox", { name: "First name" })).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Last name" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Contact email" })).toBeChecked();
+    expect(checkbox("First name")).not.toBeChecked();
+    expect(checkbox("Last name")).toBeChecked();
+    expect(checkbox("Contact email")).toBeChecked();
     expect(screen.getByText("Current: Ada L.")).toBeInTheDocument();
   });
 
   it("does not offer a field the CV did not provide", () => {
     renderSuggestions(EMPTY_PROFILE);
 
-    expect(screen.queryByRole("checkbox", { name: "Phone" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /^Phone/ })).not.toBeInTheDocument();
   });
 
   it("applies only the ticked fields", async () => {
     const user = userEvent.setup();
     const { onApply } = renderSuggestions(EMPTY_PROFILE);
 
-    await user.click(screen.getByRole("checkbox", { name: "Last name" }));
-    await user.click(screen.getByRole("checkbox", { name: "Contact email" }));
+    await user.click(checkbox("Last name"));
+    await user.click(checkbox("Contact email"));
     await user.click(screen.getByRole("button", { name: "Apply selected" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
@@ -71,7 +75,7 @@ describe("IdentitySuggestions", () => {
     renderSuggestions(EMPTY_PROFILE);
 
     for (const name of ["First name", "Last name", "Contact email", "City"]) {
-      await user.click(screen.getByRole("checkbox", { name }));
+      await user.click(checkbox(name));
     }
 
     expect(screen.getByRole("button", { name: "Apply selected" })).toBeDisabled();
