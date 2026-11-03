@@ -202,7 +202,7 @@ describe("OpenAIProfileAiProvider error mapping", () => {
 
   it("maps a missing client configuration to a configuration error", async () => {
     getOpenAIClientMock.mockImplementation(() => {
-      throw new OpenAIConfigurationError();
+      throw new OpenAIConfigurationError("OPENAI_API_KEY is not configured.");
     });
 
     await expect(new OpenAIProfileAiProvider().scoreContextItem.run(input)).rejects.toMatchObject({
