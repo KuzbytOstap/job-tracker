@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { ContextItemDTO } from "@/lib/api-types";
+import type { ContextItemDTO, ContextItemWeightValue } from "@/lib/api-types";
 import type { ContextItemInput } from "@/lib/profile/schemas";
 
 const ITEM_SELECT = {
@@ -60,6 +60,44 @@ export async function updateContextItem(
 export async function deleteContextItem(userId: string, id: string): Promise<boolean> {
   const deleted = await prisma.profileContextItem.deleteMany({ where: { id, userId } });
   return deleted.count > 0;
+}
+
+export async function listUnscoredContextItems(userId: string): Promise<{ id: string; text: string }[]> {
+  return prisma.profileContextItem.findMany({
+    where: { userId, weight: null },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, text: true },
+  });
+}
+
+export async function setContextItemScore(
+  userId: string,
+  id: string,
+  expectedText: string,
+  score: { weight: ContextItemWeightValue; impact: number | null },
+): Promise<boolean> {
+  const updated = await prisma.profileContextItem.updateMany({
+    where: { id, userId, text: expectedText, weight: null },
+    data: { weight: score.weight, impact: score.impact },
+  });
+  return updated.count > 0;
+}
+
+export async function listContextItemScores(
+  userId: string,
+): Promise<{ weight: ContextItemWeightValue | null; impact: number | null; createdAt: Date }[]> {
+  return prisma.profileContextItem.findMany({
+    where: { userId },
+    select: { weight: true, impact: true, createdAt: true },
+  });
+}
+
+export async function listSubstantialContextItems(userId: string): Promise<{ id: string; text: string }[]> {
+  return prisma.profileContextItem.findMany({
+    where: { userId, weight: "SUBSTANTIAL" },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, text: true },
+  });
 }
 
 export async function invalidateContextItemWeights(

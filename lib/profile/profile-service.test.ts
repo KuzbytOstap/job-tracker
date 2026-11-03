@@ -12,7 +12,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-import { getProfile, updateProfile } from "@/lib/profile/profile-service";
+import { getCvHintSnoozedAt, getProfile, setCvHintSnoozedAt, updateProfile } from "@/lib/profile/profile-service";
 import { DEFAULT_COVER_LETTER_PROMPT } from "@/lib/profile/default-cover-letter-prompt";
 
 function row(overrides: Record<string, unknown> = {}) {
@@ -95,6 +95,38 @@ describe("getProfile", () => {
     const args = findUniqueMock.mock.calls[0][0] as { select: Record<string, boolean> };
     expect(Object.keys(args.select)).not.toContain("user");
     expect(Object.keys(args.select)).not.toContain("userId");
+  });
+});
+
+describe("CV hint snooze time", () => {
+  it("returns null when there is no profile row or no snooze", async () => {
+    findUniqueMock.mockResolvedValueOnce(null).mockResolvedValueOnce({ cvHintSnoozedAt: null });
+
+    await expect(getCvHintSnoozedAt("user_1")).resolves.toBeNull();
+    await expect(getCvHintSnoozedAt("user_1")).resolves.toBeNull();
+  });
+
+  it("returns the stored snooze time", async () => {
+    const at = new Date("2026-11-03T12:00:00.000Z");
+    findUniqueMock.mockResolvedValue({ cvHintSnoozedAt: at });
+
+    await expect(getCvHintSnoozedAt("user_1")).resolves.toEqual(at);
+    expect(findUniqueMock).toHaveBeenCalledWith({ where: { userId: "user_1" }, select: { cvHintSnoozedAt: true } });
+  });
+
+  it("creates the profile row when needed and stores the snooze time", async () => {
+    const at = new Date("2026-11-03T12:00:00.000Z");
+    upsertMock.mockResolvedValue({ cvHintSnoozedAt: at });
+
+    await setCvHintSnoozedAt("user_1", at);
+
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        create: { userId: "user_1", cvHintSnoozedAt: at },
+        update: { cvHintSnoozedAt: at },
+      }),
+    );
   });
 });
 

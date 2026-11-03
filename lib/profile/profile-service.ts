@@ -98,6 +98,20 @@ export async function getProfile(userId: string): Promise<ProfileDTO> {
   return toProfileDTO(row);
 }
 
+export async function getCvHintSnoozedAt(userId: string): Promise<Date | null> {
+  const row = await prisma.userProfile.findUnique({ where: { userId }, select: { cvHintSnoozedAt: true } });
+  return row?.cvHintSnoozedAt ?? null;
+}
+
+export async function setCvHintSnoozedAt(userId: string, at: Date): Promise<void> {
+  await prisma.userProfile.upsert({
+    where: { userId },
+    create: { userId, cvHintSnoozedAt: at },
+    update: { cvHintSnoozedAt: at },
+    select: { cvHintSnoozedAt: true },
+  });
+}
+
 export async function updateProfile(userId: string, input: UpdateProfileInput): Promise<ProfileDTO> {
   const columns = toColumns(input);
   const row = await prisma.userProfile.upsert({

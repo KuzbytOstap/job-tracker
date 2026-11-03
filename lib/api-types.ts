@@ -151,6 +151,25 @@ export type CvDTO = {
   updatedAt: string;
 };
 
+export type CvIdentitySuggestionsDTO = {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+};
+
+export type CvUpdateHintDTO = {
+  visible: boolean;
+  substantialCount: number;
+  snoozed: boolean;
+};
+
+export type CvSuggestionDTO = {
+  itemId: string;
+  bullet: string;
+};
+
 export type CoverLetterExampleDTO = {
   id: string;
   vacancyText: string;

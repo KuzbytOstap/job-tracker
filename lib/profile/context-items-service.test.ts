@@ -22,7 +22,11 @@ import {
   createContextItem,
   deleteContextItem,
   invalidateContextItemWeights,
+  listContextItemScores,
   listContextItems,
+  listSubstantialContextItems,
+  listUnscoredContextItems,
+  setContextItemScore,
   updateContextItem,
 } from "@/lib/profile/context-items-service";
 
@@ -116,6 +120,60 @@ describe("deleteContextItem", () => {
     deleteManyMock.mockResolvedValue({ count: 0 });
 
     await expect(deleteContextItem("user_2", "item_1")).resolves.toBe(false);
+  });
+});
+
+describe("scoring helpers", () => {
+  it("lists only the user's unscored items, newest first", async () => {
+    findManyMock.mockResolvedValue([{ id: "a", text: "t" }]);
+
+    await expect(listUnscoredContextItems("user_1")).resolves.toEqual([{ id: "a", text: "t" }]);
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { userId: "user_1", weight: null },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, text: true },
+    });
+  });
+
+  it("writes a score only while the item is still unscored and its text is unchanged", async () => {
+    updateManyMock.mockResolvedValue({ count: 1 });
+
+    await expect(
+      setContextItemScore("user_1", "item_1", "Shipped passkeys", { weight: "SUBSTANTIAL", impact: 4 }),
+    ).resolves.toBe(true);
+    expect(updateManyMock).toHaveBeenCalledWith({
+      where: { id: "item_1", userId: "user_1", text: "Shipped passkeys", weight: null },
+      data: { weight: "SUBSTANTIAL", impact: 4 },
+    });
+  });
+
+  it("reports false when the item was edited, scored or removed in the meantime", async () => {
+    updateManyMock.mockResolvedValue({ count: 0 });
+
+    await expect(
+      setContextItemScore("user_1", "item_1", "old text", { weight: "MINOR", impact: null }),
+    ).resolves.toBe(false);
+  });
+
+  it("lists weight, impact and creation time for the user's items without their text", async () => {
+    findManyMock.mockResolvedValue([]);
+
+    await listContextItemScores("user_1");
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      select: { weight: true, impact: true, createdAt: true },
+    });
+  });
+
+  it("lists only the user's SUBSTANTIAL items", async () => {
+    findManyMock.mockResolvedValue([]);
+
+    await listSubstantialContextItems("user_1");
+
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user_1", weight: "SUBSTANTIAL" } }),
+    );
   });
 });
 
