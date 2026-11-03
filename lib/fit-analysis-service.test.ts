@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   listContextItems: vi.fn(),
   runProfileOperation: vi.fn(),
   getAutoIgnoreAfterDays: vi.fn(),
+  getUserLocale: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -39,6 +40,7 @@ vi.mock("@/lib/profile/run-profile-ai", () => ({
 
 vi.mock("@/lib/user-settings", () => ({
   getAutoIgnoreAfterDays: (...args: unknown[]) => mocks.getAutoIgnoreAfterDays(...args),
+  getUserLocale: (...args: unknown[]) => mocks.getUserLocale(...args),
 }));
 
 import { AiFeature } from "@/app/generated/prisma/client";
@@ -135,6 +137,7 @@ beforeEach(() => {
   mocks.listContextItems.mockResolvedValue([{ id: "c1", text: "Shipped passkeys" }]);
   mocks.runProfileOperation.mockResolvedValue({ ok: true, result: { items: fitItems() } });
   mocks.getAutoIgnoreAfterDays.mockResolvedValue(21);
+  mocks.getUserLocale.mockResolvedValue("uk");
 });
 
 describe("analyzeApplicationFit ownership", () => {
@@ -220,7 +223,19 @@ describe("analyzeApplicationFit operation", () => {
       },
       company: "Acme",
       position: "Engineer",
+      reasonLanguage: "uk",
     });
+  });
+
+  it("asks for explanations in the saved interface language and falls back to the vacancy language when none is saved", async () => {
+    await analyzeApplicationFit("user_1", "app_1");
+    expect(mocks.getUserLocale).toHaveBeenCalledWith("user_1");
+    expect(mocks.runProfileOperation.mock.calls[0][0].input.reasonLanguage).toBe("uk");
+
+    mocks.runProfileOperation.mockClear();
+    mocks.getUserLocale.mockResolvedValue(null);
+    await analyzeApplicationFit("user_1", "app_1");
+    expect(mocks.runProfileOperation.mock.calls[0][0].input.reasonLanguage).toBeNull();
   });
 
   it("never sends the name, email, phone or address to the model", async () => {

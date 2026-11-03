@@ -662,8 +662,9 @@ describe("OpenAIProfileAiProvider.analyzeFit", () => {
       "for SALARY, WORK_FORMAT and EMPLOYMENT_TYPE only, when <search_preferences> has no value for that criterion",
     );
     expect(instructions).toContain(
-      "For EXPERIENCE_YEARS and TECHNOLOGIES, a requirement that the CV and the context notes do not confirm is always a MISMATCH, never UNKNOWN.",
+      "For EXPERIENCE_YEARS, a requirement that the CV and the context notes do not confirm is always a MISMATCH, never UNKNOWN.",
     );
+    expect(instructions).not.toContain("For EXPERIENCE_YEARS and TECHNOLOGIES, a requirement");
     expect(instructions).not.toContain("when the candidate has no data to compare against");
     expect(instructions).toContain("MATCH only when the candidate's data explicitly confirms");
     expect(instructions).toContain("obviously comparable");
@@ -671,6 +672,75 @@ describe("OpenAIProfileAiProvider.analyzeFit", () => {
     expect(instructions).toContain("nice to have");
     expect(instructions).toContain("Never invent facts about the candidate");
     expect(instructions).toContain("never give an overall score");
+  });
+
+  it("treats skills the CV clearly implies as confirmed and only core missing technologies as mismatches", async () => {
+    parseMock.mockResolvedValue(completed({ items: fitItems() }));
+
+    await new OpenAIProfileAiProvider().analyzeFit.run(FIT_INPUT);
+
+    const instructions = parseMock.mock.calls[0][0].instructions as string;
+    expect(instructions).toContain("A skill that the CV clearly implies counts as confirmed");
+    expect(instructions).toContain("React Native implies JavaScript");
+    expect(instructions).toContain("GitHub Actions or pull requests (implies Git)");
+    expect(instructions).toContain("the reason names the CV item that implies it");
+    expect(instructions).toContain(
+      "Return MISMATCH when a core required technology is absent from the CV and the context notes and nothing in them implies it.",
+    );
+    expect(instructions).toContain("do not turn the verdict into MISMATCH on their own");
+    expect(instructions).toContain("never stretch the data in the candidate's favour");
+  });
+
+  it("describes the preferences in plain words and passes unknown values through unchanged", async () => {
+    parseMock.mockResolvedValue(completed({ items: fitItems() }));
+
+    await new OpenAIProfileAiProvider().analyzeFit.run({
+      ...FIT_INPUT,
+      searchPreferences: {
+        salaryAmount: 30,
+        salaryCurrency: "USD",
+        salaryPeriod: "HOUR",
+        employmentTypes: ["PART_TIME", "CONTRACT", "SEASONAL"],
+        workFormats: ["ONSITE"],
+      },
+    });
+
+    const input = parseMock.mock.calls[0][0].input as string;
+    expect(input).toContain("salary_period: per hour");
+    expect(input).toContain("employment_types: part time, contract, SEASONAL");
+    expect(input).toContain("work_formats: on site");
+    expect(input).not.toMatch(/\b(PART_TIME|ONSITE|HOUR)\b/);
+  });
+
+  it("asks for every value to be written in a single language", async () => {
+    parseMock.mockResolvedValue(completed({ items: fitItems() }));
+
+    await new OpenAIProfileAiProvider().analyzeFit.run(FIT_INPUT);
+
+    const instructions = parseMock.mock.calls[0][0].instructions as string;
+    expect(instructions).toContain("each one entirely in a single language and never mixing languages inside one value");
+    expect(instructions).toContain("use the language of <reason_language>, or the vacancy language when that tag is absent");
+  });
+
+  it("names the language of the explanations in the input and leaves it out when none is saved", async () => {
+    parseMock.mockResolvedValue(completed({ items: fitItems() }));
+    const provider = new OpenAIProfileAiProvider();
+
+    await provider.analyzeFit.run({ ...FIT_INPUT, reasonLanguage: "uk" });
+    await provider.analyzeFit.run({ ...FIT_INPUT, reasonLanguage: "en" });
+    await provider.analyzeFit.run({ ...FIT_INPUT, reasonLanguage: null });
+    await provider.analyzeFit.run(FIT_INPUT);
+
+    const inputs = parseMock.mock.calls.map((call) => call[0].input as string);
+    expect(inputs[0]).toContain("<reason_language>Ukrainian</reason_language>");
+    expect(inputs[1]).toContain("<reason_language>English</reason_language>");
+    expect(inputs[2]).not.toContain("<reason_language>");
+    expect(inputs[3]).not.toContain("<reason_language>");
+
+    const instructions = parseMock.mock.calls[0][0].instructions as string;
+    expect(instructions).toContain("Write reason in the language named in <reason_language>");
+    expect(instructions).toContain("when that tag is absent, use the language of the vacancy text");
+    expect(instructions).not.toContain("Ukrainian");
   });
 
   it("sends the cv, context notes, company, position and search preferences as tagged input", async () => {
@@ -689,9 +759,9 @@ describe("OpenAIProfileAiProvider.analyzeFit", () => {
         "<search_preferences>",
         "salary_amount: 4500",
         "salary_currency: USD",
-        "salary_period: MONTH",
-        "employment_types: FULL_TIME",
-        "work_formats: REMOTE, HYBRID",
+        "salary_period: per month",
+        "employment_types: full time",
+        "work_formats: remote, hybrid",
         "</search_preferences>",
       ].join("\n"),
     );

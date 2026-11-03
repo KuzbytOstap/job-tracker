@@ -80,6 +80,7 @@ export type FitAnalysisInput = {
   };
   company: string | null;
   position: string | null;
+  reasonLanguage?: "uk" | "en" | null;
 };
 export type FitAnalysisResult = z.infer<typeof fitAnalysisResultSchema>;
 

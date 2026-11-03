@@ -11,7 +11,7 @@ import { listContextItems } from "@/lib/profile/context-items-service";
 import { resolveCvText } from "@/lib/profile/cv-service";
 import { getProfile } from "@/lib/profile/profile-service";
 import { runProfileOperation } from "@/lib/profile/run-profile-ai";
-import { getAutoIgnoreAfterDays } from "@/lib/user-settings";
+import { getAutoIgnoreAfterDays, getUserLocale } from "@/lib/user-settings";
 
 const STORE_ATTEMPTS = 3;
 
@@ -79,7 +79,11 @@ export async function analyzeApplicationFit(userId: string, applicationId: strin
     return { status: "skipped", reason: cv.reason };
   }
 
-  const [profile, contextItems] = await Promise.all([getProfile(userId), listContextItems(userId)]);
+  const [profile, contextItems, locale] = await Promise.all([
+    getProfile(userId),
+    listContextItems(userId),
+    getUserLocale(userId),
+  ]);
 
   const outcome = await runProfileOperation({
     userId,
@@ -98,6 +102,7 @@ export async function analyzeApplicationFit(userId: string, applicationId: strin
       },
       company: application.company,
       position: application.position,
+      reasonLanguage: locale,
     },
   });
 
