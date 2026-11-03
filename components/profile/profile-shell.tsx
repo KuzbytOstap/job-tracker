@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverLetterSection } from "@/components/profile/cover-letter-section";
+import { CvSection } from "@/components/profile/cv-section";
 import { PersonalSection } from "@/components/profile/personal-section";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SearchPreferencesSection } from "@/components/profile/search-preferences-section";
@@ -34,6 +35,7 @@ export function ProfileShell() {
           <>
             <PersonalSection profile={profileQuery.data} />
             <SearchPreferencesSection profile={profileQuery.data} />
+            <CvSection profile={profileQuery.data} />
             <CoverLetterSection profile={profileQuery.data} />
           </>
         )}

@@ -108,6 +108,10 @@ export const profile: Messages["profile"] = {
     identityApplied: "Профіль оновлено з CV",
     identityNothing: "З цього CV нічого нового додати.",
     identityCurrent: "Зараз: {value}",
+    sizeKb: "{size} КБ",
+    languageField: "Мова: {language}",
+    renameTitle: "Редагувати CV",
+    saveChanges: "Зберегти зміни",
   },
   context: {
     title: "Додатковий контекст",

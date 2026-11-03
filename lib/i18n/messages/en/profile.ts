@@ -106,6 +106,10 @@ export const profile = {
     identityApplied: "Profile updated from the CV",
     identityNothing: "Nothing new to add from this CV.",
     identityCurrent: "Current: {value}",
+    sizeKb: "{size} KB",
+    languageField: "Language: {language}",
+    renameTitle: "Edit CV",
+    saveChanges: "Save changes",
   },
   context: {
     title: "Extra context",
