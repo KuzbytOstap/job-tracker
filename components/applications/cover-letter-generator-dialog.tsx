@@ -52,8 +52,10 @@ export function CoverLetterGeneratorDialog({
   const [open, setOpen] = useState(false);
   const aiAccess = useAiAccessStatus();
   const hasVacancy = jobPostingText.trim().length > 0;
+  const accessStatus = aiAccess.data?.status;
+  const accessLocked = accessStatus !== undefined && accessStatus !== AiAccessStatus.APPROVED;
 
-  if (aiAccess.data?.status === AiAccessStatus.REJECTED) {
+  if (accessStatus === AiAccessStatus.REJECTED) {
     return null;
   }
 
@@ -64,16 +66,16 @@ export function CoverLetterGeneratorDialog({
         variant="outline"
         size="sm"
         className="h-9 self-start sm:h-8"
-        disabled={!hasVacancy}
-        aria-describedby={hasVacancy ? undefined : hintId}
+        disabled={!hasVacancy || accessLocked}
+        aria-describedby={hasVacancy && !accessLocked ? undefined : hintId}
         onClick={() => setOpen(true)}
       >
         <Sparkles data-icon="inline-start" />
         {t("coverLetter.trigger")}
       </Button>
-      {!hasVacancy && (
+      {(!hasVacancy || accessLocked) && (
         <p id={hintId} className="text-xs text-muted-foreground">
-          {t("coverLetter.needsVacancy")}
+          {accessLocked ? t("coverLetter.needsAccess") : t("coverLetter.needsVacancy")}
         </p>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -231,7 +233,7 @@ function GeneratorBody({ jobPostingText, company, position, currentLetter, onUse
         <AiAccessNotice status={aiAccessStatus} />
       ) : (
         <>
-          {renderCvArea()}
+          {!quotaReason && renderCvArea()}
           {quotaReason && aiUsage.data ? (
             <AiQuotaNotice
               reason={quotaReason}

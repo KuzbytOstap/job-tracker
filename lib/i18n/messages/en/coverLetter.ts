@@ -1,6 +1,7 @@
 export const coverLetter = {
   trigger: "Generate cover letter",
   needsVacancy: "Add the job posting text to generate a letter.",
+  needsAccess: "AI access is required to generate a letter.",
   title: "Generate a cover letter",
   description: "Written from your CV, extra context and writing style in your profile. Nothing is saved until you use it.",
   cvLabel: "CV to base the letter on",

@@ -282,6 +282,7 @@ describe("CoverLetterGeneratorDialog when AI cannot run", () => {
     expect(screen.getByText("Daily cover letter limit reached")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Generate" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /request/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
   it("shows the limit notice when the server reports the limit after a run", async () => {
@@ -337,14 +338,23 @@ describe("CoverLetterGeneratorDialog when AI cannot run", () => {
     expect(screen.queryByRole("button", { name: "Generate" })).not.toBeInTheDocument();
   });
 
-  it("shows the access notice instead of the controls when AI access is not approved", async () => {
+  it.each(["NOT_REQUESTED", "PENDING", "SUSPENDED"])(
+    "blocks the entry point with a reason while AI access is %s",
+    (status) => {
+      state.access = { data: { status } };
+      renderDialog();
+
+      expect(screen.getByRole("button", { name: "Generate cover letter" })).toBeDisabled();
+      expect(screen.getByText("AI access is required to generate a letter.")).toBeInTheDocument();
+    },
+  );
+
+  it("shows the access reason instead of the missing posting reason when both apply", () => {
     state.access = { data: { status: "NOT_REQUESTED" } };
-    const user = userEvent.setup();
-    renderDialog();
+    renderDialog({ jobPostingText: "" });
 
-    await openDialog(user);
-
-    expect(screen.getByText("AI features are locked")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Generate" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate cover letter" })).toBeDisabled();
+    expect(screen.getByText("AI access is required to generate a letter.")).toBeInTheDocument();
+    expect(screen.queryByText("Add the job posting text to generate a letter.")).not.toBeInTheDocument();
   });
 });

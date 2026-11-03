@@ -3,6 +3,7 @@ import type { Messages } from "@/lib/i18n/messages/types";
 export const coverLetter: Messages["coverLetter"] = {
   trigger: "Згенерувати лист",
   needsVacancy: "Додайте текст вакансії, щоб згенерувати лист.",
+  needsAccess: "Для генерації листа потрібен AI-доступ.",
   title: "Генерація супровідного листа",
   description: "Лист пишеться за вашим CV, додатковим контекстом і стилем із профілю. Нічого не зберігається, доки ви не скористаєтесь ним.",
   cvLabel: "CV, за яким писати лист",
