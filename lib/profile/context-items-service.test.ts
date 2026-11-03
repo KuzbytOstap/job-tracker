@@ -21,6 +21,7 @@ vi.mock("@/lib/prisma", () => ({
 import {
   createContextItem,
   deleteContextItem,
+  getContextItem,
   invalidateContextItemWeights,
   listContextItemScores,
   listContextItems,
@@ -69,6 +70,23 @@ describe("listContextItems", () => {
         updatedAt: "2026-11-03T10:00:00.000Z",
       },
     ]);
+  });
+});
+
+describe("getContextItem", () => {
+  it("reads one item scoped to the user", async () => {
+    findFirstMock.mockResolvedValue(row({ weight: "MINOR" }));
+
+    const item = await getContextItem("user_1", "item_1");
+
+    expect(findFirstMock).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "item_1", userId: "user_1" } }));
+    expect(item?.weight).toBe("MINOR");
+  });
+
+  it("returns null for another user's item", async () => {
+    findFirstMock.mockResolvedValue(null);
+
+    await expect(getContextItem("user_2", "item_1")).resolves.toBeNull();
   });
 });
 

@@ -139,6 +139,17 @@ export type ContextItemDTO = {
   updatedAt: string;
 };
 
+export type ContextScoringDTO = {
+  scored: number;
+  remaining: number;
+  skipped: string | null;
+};
+
+export type ContextItemSaveResultDTO = {
+  item: ContextItemDTO;
+  scoring: ContextScoringDTO;
+};
+
 export type CvDTO = {
   id: string;
   label: string;

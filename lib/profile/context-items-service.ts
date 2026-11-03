@@ -34,6 +34,11 @@ export async function listContextItems(userId: string): Promise<ContextItemDTO[]
   return rows.map(toDTO);
 }
 
+export async function getContextItem(userId: string, id: string): Promise<ContextItemDTO | null> {
+  const row = await prisma.profileContextItem.findFirst({ where: { id, userId }, select: ITEM_SELECT });
+  return row ? toDTO(row) : null;
+}
+
 export async function createContextItem(userId: string, input: ContextItemInput): Promise<ContextItemDTO> {
   const row = await prisma.profileContextItem.create({
     data: { userId, text: input.text },
