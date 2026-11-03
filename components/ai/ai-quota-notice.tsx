@@ -15,6 +15,7 @@ import type { AiQuotaStatus } from "@/lib/api-types";
 const REASON_COPY: Record<AiQuotaReasonCode, { title: MessageKey }> = {
   VACANCY_LIMIT_REACHED: { title: "ai.quota.vacancyTitle" },
   HR_LIMIT_REACHED: { title: "ai.quota.hrTitle" },
+  PROFILE_LIMIT_REACHED: { title: "ai.quota.profileTitle" },
   TOKEN_LIMIT_REACHED: { title: "ai.quota.tokenTitle" },
 };
 
@@ -29,9 +30,11 @@ export function AiQuotaNotice({ reason, quota, resetAt, className }: AiQuotaNoti
   const { t, locale } = useI18n();
   const mutation = useRequestMoreAiUsage();
   const copy = REASON_COPY[reason];
+  const requestType = reason === "PROFILE_LIMIT_REACHED" ? null : AI_QUOTA_REQUEST_TYPE[reason];
 
   function handleRequest() {
-    mutation.mutate(AI_QUOTA_REQUEST_TYPE[reason], {
+    if (requestType === null) return;
+    mutation.mutate(requestType, {
       onSuccess: () => toast.success(t("ai.quota.requested")),
       onError: (error) => toast.error(getApiErrorMessage(t, error, "ai.quota.requestFailed")),
     });
@@ -57,7 +60,7 @@ export function AiQuotaNotice({ reason, quota, resetAt, className }: AiQuotaNoti
             resetAt: formatExactDateTime(resetAt, { t, locale }),
           })}
         </p>
-        {quota.pendingRequest ? (
+        {requestType === null ? null : quota.pendingRequest ? (
           <p className="mt-2 text-xs font-medium text-[var(--gh-text-secondary,var(--muted-foreground))]">
             {t("ai.quota.pending")}
           </p>

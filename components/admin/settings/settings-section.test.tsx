@@ -36,6 +36,7 @@ function globalLimits(overrides: Partial<AiGlobalLimitsDTO> = {}): AiGlobalLimit
   return {
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
+    profileGenerationLimit: 50,
     tokenLimit: 20_000,
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
@@ -95,6 +96,33 @@ describe("SettingsSection", () => {
       expect(updateAdminSettingsMock).toHaveBeenCalledWith({
         vacancyGenerationLimit: 15,
         hrGenerationLimit: 10,
+        profileGenerationLimit: 50,
+        tokenLimit: 20_000,
+      }),
+    );
+  });
+
+  it("shows the profile limit and saves an edited value", async () => {
+    const user = userEvent.setup();
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    updateAdminSettingsMock.mockResolvedValue(globalLimits({ profileGenerationLimit: 25 }));
+
+    renderSection();
+
+    const profileInput = await screen.findByLabelText("Profile AI calls / day");
+    expect(profileInput).toHaveValue(50);
+    await user.clear(profileInput);
+    await user.type(profileInput, "25");
+
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+
+    await waitFor(() =>
+      expect(updateAdminSettingsMock).toHaveBeenCalledWith({
+        vacancyGenerationLimit: 10,
+        hrGenerationLimit: 10,
+        profileGenerationLimit: 25,
         tokenLimit: 20_000,
       }),
     );

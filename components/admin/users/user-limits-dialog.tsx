@@ -27,11 +27,12 @@ type UserLimitsDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-type FieldKey = "vacancy" | "hr" | "tokens";
+type FieldKey = "vacancy" | "hr" | "profile" | "tokens";
 
 const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; globalKey: keyof AiGlobalLimitsDTO }> = [
   { key: "vacancy", labelKey: "admin.limits.vacancyField", globalKey: "vacancyGenerationLimit" },
   { key: "hr", labelKey: "admin.limits.hrField", globalKey: "hrGenerationLimit" },
+  { key: "profile", labelKey: "admin.limits.profileField", globalKey: "profileGenerationLimit" },
   { key: "tokens", labelKey: "admin.limits.tokensField", globalKey: "tokenLimit" },
 ];
 
@@ -44,6 +45,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
   const [values, setValues] = useState<Record<FieldKey, string>>({
     vacancy: toInputValue(user.overrides.vacancy),
     hr: toInputValue(user.overrides.hr),
+    profile: toInputValue(user.overrides.profile),
     tokens: toInputValue(user.overrides.tokens),
   });
   const mutation = useSetAdminUserLimits();
@@ -53,6 +55,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
       setValues({
         vacancy: toInputValue(user.overrides.vacancy),
         hr: toInputValue(user.overrides.hr),
+        profile: toInputValue(user.overrides.profile),
         tokens: toInputValue(user.overrides.tokens),
       });
     }
@@ -75,6 +78,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
         userId: user.id,
         vacancyGenerationLimit: values.vacancy.trim() === "" ? null : Number(values.vacancy),
         hrGenerationLimit: values.hr.trim() === "" ? null : Number(values.hr),
+        profileGenerationLimit: values.profile.trim() === "" ? null : Number(values.profile),
         tokenLimit: values.tokens.trim() === "" ? null : Number(values.tokens),
       },
       {

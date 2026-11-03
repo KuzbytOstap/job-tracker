@@ -20,6 +20,7 @@ export const ai = {
   quota: {
     vacancyTitle: "Daily vacancy analysis limit reached",
     hrTitle: "Daily HR question limit reached",
+    profileTitle: "Daily profile AI limit reached",
     tokenTitle: "Daily AI token limit reached",
     usage: "Used {used} / {limit} today. Resets {resetAt}.",
     pending: "More usage requested — awaiting admin approval.",

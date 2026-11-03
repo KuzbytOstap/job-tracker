@@ -43,9 +43,9 @@ function adminUser(overrides: Partial<AdminUserDTO> = {}): AdminUserDTO {
     email: "ada@example.com",
     role: "USER",
     aiAccessStatus: "APPROVED",
-    usage: { vacancy: 3, hr: 1, tokens: 400 },
-    limits: { vacancy: 10, hr: 10, tokens: 20_000 },
-    overrides: { vacancy: null, hr: null, tokens: null },
+    usage: { vacancy: 3, hr: 1, profile: 4, tokens: 400 },
+    limits: { vacancy: 10, hr: 10, profile: 50, tokens: 20_000 },
+    overrides: { vacancy: null, hr: null, profile: null, tokens: null },
     ...overrides,
   };
 }
@@ -54,6 +54,7 @@ function globalLimits(overrides: Partial<AiGlobalLimitsDTO> = {}): AiGlobalLimit
   return {
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
+    profileGenerationLimit: 50,
     tokenLimit: 20_000,
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
@@ -103,6 +104,16 @@ describe("UsersSection", () => {
     expect(await screen.findByText("Ada Lovelace")).toBeInTheDocument();
     expect(screen.getByText("Approved")).toBeInTheDocument();
     expect(screen.getAllByText(/\/ 10/).length).toBeGreaterThan(0);
+  });
+
+  it("shows a Profile column with usage against the profile limit", async () => {
+    getAdminUsersMock.mockResolvedValue({ users: [adminUser()] });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+
+    renderSection();
+
+    expect(await screen.findByRole("columnheader", { name: "Profile" })).toBeInTheDocument();
+    expect(screen.getByText("/ 50")).toBeInTheDocument();
   });
 
   it("filters users by search", async () => {
