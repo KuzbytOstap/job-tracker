@@ -26,6 +26,7 @@ import { errors } from "./errors";
 import { dnd } from "./dnd";
 import { profile } from "./profile";
 import { coverLetter } from "./coverLetter";
+import { fit } from "./fit";
 
 export const uk: Messages = {
   common,
@@ -55,4 +56,5 @@ export const uk: Messages = {
   dnd,
   profile,
   coverLetter,
+  fit,
 };

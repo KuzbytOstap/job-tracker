@@ -1,0 +1,40 @@
+import type { Messages } from "@/lib/i18n/messages/types";
+
+export const fit: Messages["fit"] = {
+  title: "Відповідність вакансії",
+  trigger: "Проаналізувати",
+  refresh: "Оновити",
+  analyzing: "Аналізую…",
+  empty: "Ще не аналізувалось",
+  emptyHint: "Порівнює текст вакансії з вашим CV і параметрами пошуку за кожним критерієм.",
+  needsVacancy: "Додайте текст вакансії, щоб проаналізувати відповідність.",
+  analyzedWhen: "Проаналізовано {when}",
+  usage: "Кожен аналіз використовує один із ваших щоденних аналізів (сьогодні використано {used} із {limit}).",
+  summaryAllMatch: "Усі критерії збігаються",
+  summaryPartial: "Розбіжностей немає, але {unknown} із {total} критеріїв не вдалося перевірити",
+  updated: "Аналіз оновлено. {summary}",
+  mismatchCount: {
+    one: "{count} розбіжність",
+    few: "{count} розбіжності",
+    many: "{count} розбіжностей",
+    other: "{count} розбіжності",
+  },
+  criteria: {
+    SALARY: "Зарплата",
+    WORK_FORMAT: "Формат роботи",
+    EMPLOYMENT_TYPE: "Тип зайнятості",
+    EXPERIENCE_YEARS: "Роки досвіду",
+    TECHNOLOGIES: "Технології",
+  },
+  verdicts: {
+    MATCH: "Збігається",
+    MISMATCH: "Розбіжність",
+    UNKNOWN: "Невідомо",
+  },
+  vacancyLabel: "Вакансія",
+  yourLabel: "У вас",
+  notSpecified: "Не вказано",
+  noData: "Немає даних",
+  openProfile: "Відкрити профіль",
+  failed: "Не вдалося проаналізувати відповідність. Спробуйте ще раз.",
+};

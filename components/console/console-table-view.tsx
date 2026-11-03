@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { ReviewChip } from "@/components/applications/review-chip";
+import { FitMismatchChip } from "@/components/applications/fit-mismatch-chip";
 import { useI18n } from "@/components/i18n/i18n-provider";
 import { getVisibleReviewReasons } from "@/lib/review-reasons";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
@@ -94,6 +95,7 @@ export function ConsoleTableView({ applications, onSelectApplication }: ConsoleT
                   <div className="flex flex-wrap items-center gap-1.5">
                     {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
                     <ReviewChip reasons={getVisibleReviewReasons(application)} />
+                    <FitMismatchChip count={application.fitMismatchCount} />
                   </div>
                 </td>
                 <td className="px-3 py-2.5 text-right">

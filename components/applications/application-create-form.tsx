@@ -11,6 +11,7 @@ import { ApplicationExtractionPanel } from "@/components/applications/applicatio
 import { UnsavedChangesDialog } from "@/components/overlay/unsaved-changes-dialog";
 import { useT } from "@/components/i18n/i18n-provider";
 import { useCreateApplication } from "@/hooks/use-create-application";
+import { useAnalyzeApplicationFit } from "@/hooks/use-analyze-application-fit";
 import {
   applicationFormSchema,
   applicationFormValuesToCreatePayload,
@@ -40,6 +41,7 @@ export function ApplicationCreateForm({
   const t = useT();
   const router = useRouter();
   const mutation = useCreateApplication();
+  const analyzeFit = useAnalyzeApplicationFit();
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const [jobPostingText, setJobPostingText] = useState("");
   const [coverLetterText, setCoverLetterText] = useState("");
@@ -101,6 +103,9 @@ export function ApplicationCreateForm({
         form.reset(defaultApplicationFormValues());
         setJobPostingText("");
         setCoverLetterText("");
+        if (created.jobPostingText?.trim()) {
+          analyzeFit.mutate(created.id);
+        }
         onCreated(created);
       },
     });
