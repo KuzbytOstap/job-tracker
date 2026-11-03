@@ -30,7 +30,13 @@ function fakeProvider(name: "mock" | "openai") {
     countInputTokens: vi.fn().mockResolvedValue(10),
     run: vi.fn().mockResolvedValue({ weight: "MINOR", impact: null }),
   };
-  const provider = { name, extractCv: operation, scoreContextItem: operation, suggestCvUpdates: operation };
+  const provider = {
+    name,
+    extractCv: operation,
+    scoreContextItem: operation,
+    suggestCvUpdates: operation,
+    generateCoverLetter: operation,
+  };
   return { operation, provider };
 }
 
@@ -75,6 +81,39 @@ describe("runProfileOperation", () => {
     expect(operation.run).toHaveBeenCalledWith(INPUT, { onUsage: expect.any(Function) });
     expect(mocks.requireAiAccessApproved).not.toHaveBeenCalled();
     expect(outcome.ok).toBe(true);
+  });
+
+  it("reserves the feature it is given instead of PROFILE", async () => {
+    const { provider } = fakeProvider("openai");
+    mocks.getProfileProvider.mockReturnValue(provider);
+    mocks.runGatedAiCall.mockImplementation(async (params: { call: (report: () => void) => Promise<unknown> }) =>
+      params.call(vi.fn()),
+    );
+
+    await runProfileOperation({
+      userId: "user_1",
+      select: (p) => p.scoreContextItem,
+      input: INPUT,
+      feature: AiFeature.COVER_LETTER,
+    });
+
+    expect(mocks.runGatedAiCall).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user_1", feature: AiFeature.COVER_LETTER }),
+    );
+  });
+
+  it("returns the cover letter quota code when the gated call is rejected for that quota", async () => {
+    mocks.getProfileProvider.mockReturnValue(fakeProvider("openai").provider);
+    mocks.runGatedAiCall.mockRejectedValue(new AiAccessError("COVER_LETTER_LIMIT_REACHED", "limit"));
+
+    await expect(
+      runProfileOperation({
+        userId: "user_1",
+        select: (p) => p.scoreContextItem,
+        input: INPUT,
+        feature: AiFeature.COVER_LETTER,
+      }),
+    ).resolves.toEqual({ ok: false, reason: "COVER_LETTER_LIMIT_REACHED" });
   });
 
   it("returns the access error code instead of throwing", async () => {

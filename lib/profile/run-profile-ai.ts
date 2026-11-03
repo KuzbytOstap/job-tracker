@@ -16,8 +16,9 @@ export async function runProfileOperation<I, O>(params: {
   userId: string;
   select: (provider: ProfileAiProvider) => ProfileAiOperation<I, O>;
   input: I;
+  feature?: AiFeature;
 }): Promise<ProfileAiOutcome<O>> {
-  const { userId, select, input } = params;
+  const { userId, select, input, feature = AiFeature.PROFILE } = params;
 
   try {
     const provider = getProfileProvider();
@@ -30,7 +31,7 @@ export async function runProfileOperation<I, O>(params: {
 
     const result = await runGatedAiCall({
       userId,
-      feature: AiFeature.PROFILE,
+      feature,
       maxOutputTokens: operation.maxOutputTokens,
       countInputTokens: () => operation.countInputTokens(input),
       call: (reportUsage) => operation.run(input, { onUsage: reportUsage }),

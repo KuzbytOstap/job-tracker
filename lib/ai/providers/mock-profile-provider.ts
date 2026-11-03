@@ -2,6 +2,8 @@ import {
   ProfileAiProviderError,
   type ContextScoreInput,
   type ContextScoreResult,
+  type CoverLetterInput,
+  type CoverLetterResult,
   type CvExtractionInput,
   type CvExtractionResult,
   type CvSuggestionsInput,
@@ -59,6 +61,22 @@ export class MockProfileAiProvider implements ProfileAiProvider {
     (input: CvSuggestionsInput): CvSuggestionsResult => {
       failIfMarked(input.cvText, ...input.items.map((item) => item.text));
       return { suggestions: input.items.map((item) => ({ itemId: item.id, bullet: item.text })) };
+    },
+  );
+
+  readonly generateCoverLetter: ProfileAiOperation<CoverLetterInput, CoverLetterResult> = mockOperation(
+    4_000,
+    (input: CoverLetterInput): CoverLetterResult => {
+      failIfMarked(input.vacancyText, input.cvText);
+      const company = input.company ?? "your company";
+      const position = input.position ?? "this role";
+      const lines = [
+        `Hello ${company} team,`,
+        "",
+        `This is a mock cover letter for the ${position} role, written from the CV and ${input.contextItems.length} extra notes.`,
+      ];
+      if (input.signatureName) lines.push("", input.signatureName);
+      return { letter: lines.join("\n") };
     },
   );
 }

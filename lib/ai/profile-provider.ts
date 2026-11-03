@@ -37,6 +37,12 @@ export const cvSuggestionsResultSchema = z
   })
   .strict();
 
+export const coverLetterResultSchema = z
+  .object({
+    letter: z.string().trim().min(1).max(8000),
+  })
+  .strict();
+
 export type CvExtractionInput = { fileName: string; pdfBase64: string };
 export type CvExtractionResult = z.infer<typeof cvExtractionResultSchema>;
 
@@ -45,6 +51,18 @@ export type ContextScoreResult = z.infer<typeof contextScoreResultSchema>;
 
 export type CvSuggestionsInput = { cvText: string; items: { id: string; text: string }[] };
 export type CvSuggestionsResult = z.infer<typeof cvSuggestionsResultSchema>;
+
+export type CoverLetterInput = {
+  basePrompt: string;
+  cvText: string;
+  contextItems: string[];
+  examples: { vacancyText: string; letterText: string }[];
+  signatureName: string | null;
+  vacancyText: string;
+  company: string | null;
+  position: string | null;
+};
+export type CoverLetterResult = z.infer<typeof coverLetterResultSchema>;
 
 export type ProfileAiOperation<I, O> = {
   readonly maxOutputTokens: number;
@@ -57,6 +75,7 @@ export interface ProfileAiProvider {
   readonly extractCv: ProfileAiOperation<CvExtractionInput, CvExtractionResult>;
   readonly scoreContextItem: ProfileAiOperation<ContextScoreInput, ContextScoreResult>;
   readonly suggestCvUpdates: ProfileAiOperation<CvSuggestionsInput, CvSuggestionsResult>;
+  readonly generateCoverLetter: ProfileAiOperation<CoverLetterInput, CoverLetterResult>;
 }
 
 export type ProfileAiProviderErrorKind =
