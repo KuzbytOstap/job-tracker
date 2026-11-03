@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fitItemsSchema } from "@/lib/fit-analysis";
 import { CV_TEXT_MAX_LENGTH } from "@/lib/profile/limits";
 import type { AiUsageReport } from "@/lib/ai/token-usage";
 
@@ -43,6 +44,8 @@ export const coverLetterResultSchema = z
   })
   .strict();
 
+export const fitAnalysisResultSchema = z.object({ items: fitItemsSchema }).strict();
+
 export type CvExtractionInput = { fileName: string; pdfBase64: string };
 export type CvExtractionResult = z.infer<typeof cvExtractionResultSchema>;
 
@@ -64,6 +67,22 @@ export type CoverLetterInput = {
 };
 export type CoverLetterResult = z.infer<typeof coverLetterResultSchema>;
 
+export type FitAnalysisInput = {
+  vacancyText: string;
+  cvText: string;
+  contextItems: string[];
+  searchPreferences: {
+    salaryAmount: number | null;
+    salaryCurrency: string | null;
+    salaryPeriod: string | null;
+    employmentTypes: string[];
+    workFormats: string[];
+  };
+  company: string | null;
+  position: string | null;
+};
+export type FitAnalysisResult = z.infer<typeof fitAnalysisResultSchema>;
+
 export type ProfileAiOperation<I, O> = {
   readonly maxOutputTokens: number;
   countInputTokens(input: I): Promise<number>;
@@ -76,6 +95,7 @@ export interface ProfileAiProvider {
   readonly scoreContextItem: ProfileAiOperation<ContextScoreInput, ContextScoreResult>;
   readonly suggestCvUpdates: ProfileAiOperation<CvSuggestionsInput, CvSuggestionsResult>;
   readonly generateCoverLetter: ProfileAiOperation<CoverLetterInput, CoverLetterResult>;
+  readonly analyzeFit: ProfileAiOperation<FitAnalysisInput, FitAnalysisResult>;
 }
 
 export type ProfileAiProviderErrorKind =

@@ -5,6 +5,7 @@ import type {
   Prisma,
 } from "@/app/generated/prisma/client";
 import { effectiveStatus } from "@/lib/status";
+import { parseStoredFitAnalysis } from "@/lib/fit-analysis";
 import { parseStoredHrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 import type { SortOption } from "@/lib/validation";
 import type { ApplicationDTO, ApplicationListItemDTO } from "@/lib/api-types";
@@ -48,6 +49,7 @@ export const APPLICATION_LIST_ITEM_SELECT = {
   hasTestTask: true,
   testTaskDone: true,
   salaryExpectation: true,
+  fitMismatchCount: true,
   appliedAt: true,
   lastActivityAt: true,
   updatedAt: true,
@@ -116,7 +118,14 @@ export function toApplicationWithMeta(
 export function toApplicationDTO(application: ApplicationWithMeta): ApplicationDTO {
   // userId, hrEnhancementClaimedAt, and hrEnhancementClaimToken are internal
   // columns, not part of the public API shape.
-  const { userId, hrEnhancementClaimedAt, hrEnhancementClaimToken, ...rest } = application;
+  const {
+    userId,
+    hrEnhancementClaimedAt,
+    hrEnhancementClaimToken,
+    fitAnalyzedAt,
+    fitMismatchCount,
+    ...rest
+  } = application;
 
   return {
     ...rest,
@@ -132,6 +141,7 @@ export function toApplicationDTO(application: ApplicationWithMeta): ApplicationD
       ...change,
       changedAt: change.changedAt.toISOString(),
     })),
+    fitAnalysis: parseStoredFitAnalysis(application.fitAnalysis),
   };
 }
 

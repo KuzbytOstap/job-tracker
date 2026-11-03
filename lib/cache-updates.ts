@@ -6,6 +6,7 @@ import type {
   CreateApplicationPayload,
   CustomPlatformRefDTO,
 } from "@/lib/api-types";
+import { countFitMismatches } from "@/lib/fit-analysis";
 import type { ApplicationsListParams } from "@/lib/query-keys";
 import type { SortOption } from "@/lib/validation";
 
@@ -31,6 +32,9 @@ export function toApplicationListItem(application: ApplicationDTO): ApplicationL
     hasTestTask: application.hasTestTask,
     testTaskDone: application.testTaskDone,
     salaryExpectation: application.salaryExpectation,
+    fitMismatchCount: application.fitAnalysis
+      ? countFitMismatches(application.fitAnalysis.items)
+      : application.fitAnalysis,
     appliedAt: application.appliedAt,
     lastActivityAt: application.lastActivityAt,
     updatedAt: application.updatedAt,

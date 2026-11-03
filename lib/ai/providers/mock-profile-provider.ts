@@ -8,6 +8,8 @@ import {
   type CvExtractionResult,
   type CvSuggestionsInput,
   type CvSuggestionsResult,
+  type FitAnalysisInput,
+  type FitAnalysisResult,
   type ProfileAiOperation,
   type ProfileAiProvider,
 } from "@/lib/ai/profile-provider";
@@ -76,6 +78,52 @@ export class MockProfileAiProvider implements ProfileAiProvider {
       ];
       if (input.signatureName) lines.push("", input.signatureName);
       return { letter: lines.join("\n") };
+    },
+  );
+
+  readonly analyzeFit: ProfileAiOperation<FitAnalysisInput, FitAnalysisResult> = mockOperation(
+    2_500,
+    (input: FitAnalysisInput): FitAnalysisResult => {
+      failIfMarked(input.vacancyText, input.cvText);
+      return {
+        items: [
+          {
+            criterion: "SALARY",
+            verdict: "MISMATCH",
+            vacancyValue: "Up to 3000 USD per month",
+            yourValue: "At least 4000 USD per month",
+            reason: "The offered salary is below your expectation.",
+          },
+          {
+            criterion: "WORK_FORMAT",
+            verdict: "MATCH",
+            vacancyValue: "Remote",
+            yourValue: "Remote",
+            reason: "The vacancy is remote and you prefer remote work.",
+          },
+          {
+            criterion: "EMPLOYMENT_TYPE",
+            verdict: "UNKNOWN",
+            vacancyValue: null,
+            yourValue: null,
+            reason: "The vacancy does not mention the employment type.",
+          },
+          {
+            criterion: "EXPERIENCE_YEARS",
+            verdict: "MISMATCH",
+            vacancyValue: "7+ years",
+            yourValue: "About 5 years in the CV",
+            reason: "The vacancy asks for 7 years and the CV shows about 5 years of relevant experience.",
+          },
+          {
+            criterion: "TECHNOLOGIES",
+            verdict: "MATCH",
+            vacancyValue: "React, TypeScript",
+            yourValue: "React, TypeScript in the CV",
+            reason: "Both required technologies are confirmed by the CV.",
+          },
+        ],
+      };
     },
   );
 }
