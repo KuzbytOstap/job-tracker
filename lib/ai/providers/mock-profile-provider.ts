@@ -68,12 +68,11 @@ export class MockProfileAiProvider implements ProfileAiProvider {
     4_000,
     (input: CoverLetterInput): CoverLetterResult => {
       failIfMarked(input.vacancyText, input.cvText);
-      const company = input.company ?? "your company";
-      const position = input.position ?? "this role";
+      const role = input.position ? `the ${input.position} role` : "this role";
       const lines = [
-        `Hello ${company} team,`,
+        input.company ? `Hello ${input.company} team,` : "Hello,",
         "",
-        `This is a mock cover letter for the ${position} role, written from the CV and ${input.contextItems.length} extra notes.`,
+        `This is a mock cover letter for ${role}, written from the CV and ${input.contextItems.length} extra notes.`,
       ];
       if (input.signatureName) lines.push("", input.signatureName);
       return { letter: lines.join("\n") };

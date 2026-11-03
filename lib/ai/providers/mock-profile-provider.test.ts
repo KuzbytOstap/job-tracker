@@ -31,8 +31,8 @@ describe("MockProfileAiProvider.generateCoverLetter", () => {
       signatureName: null,
     });
 
-    expect(result.letter).toContain("your company");
-    expect(result.letter).toContain("this role");
+    expect(result.letter.startsWith("Hello,")).toBe(true);
+    expect(result.letter).toContain("mock cover letter for this role,");
     expect(result.letter).not.toContain("Ada Lovelace");
   });
 

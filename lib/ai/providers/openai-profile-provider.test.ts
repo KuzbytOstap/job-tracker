@@ -406,6 +406,86 @@ describe("OpenAIProfileAiProvider.generateCoverLetter", () => {
   });
 });
 
+describe("OpenAIProfileAiProvider token counting request", () => {
+  it("never sends the generation only fields to the token counter", async () => {
+    inputTokensCountMock.mockResolvedValue({ input_tokens: 10 });
+    const provider = new OpenAIProfileAiProvider();
+
+    await provider.generateCoverLetter.countInputTokens(LETTER_INPUT);
+    await provider.scoreContextItem.countInputTokens({ cvText: "cv", itemText: "note" });
+    await provider.extractCv.countInputTokens(CV_INPUT);
+
+    expect(inputTokensCountMock).toHaveBeenCalledTimes(3);
+    for (const [countBody] of inputTokensCountMock.mock.calls) {
+      expect(countBody).not.toHaveProperty("store");
+      expect(countBody).not.toHaveProperty("max_output_tokens");
+      expect(countBody).toHaveProperty("model", "gpt-6-luna");
+      expect(countBody).toHaveProperty("instructions");
+      expect(countBody).toHaveProperty("input");
+      expect(countBody).toHaveProperty("reasoning");
+      expect(countBody).toHaveProperty("text");
+    }
+  });
+
+  it("still sends store false and the output ceiling when generating", async () => {
+    parseMock.mockResolvedValue(completed({ letter: "Dear team" }));
+
+    await new OpenAIProfileAiProvider().generateCoverLetter.run(LETTER_INPUT);
+
+    expect(parseMock.mock.calls[0][0]).toMatchObject({ store: false, max_output_tokens: 4_000 });
+  });
+});
+
+describe("OpenAIProfileAiProvider failure logging", () => {
+  it("logs the status, code and request id of an API failure without any of the user's text", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    parseMock.mockRejectedValueOnce(
+      new OpenAI.BadRequestError(
+        400,
+        { message: "Unsupported value: reasoning.effort", code: "unsupported_value", type: "invalid_request_error" },
+        "Unsupported value: reasoning.effort",
+        new Headers({ "x-request-id": "req_123" }),
+      ),
+    );
+
+    await expect(
+      new OpenAIProfileAiProvider().generateCoverLetter.run({
+        ...LETTER_INPUT,
+        vacancyText: "SECRET VACANCY TEXT",
+        cvText: "SECRET CV TEXT",
+      }),
+    ).rejects.toMatchObject({ kind: "invalid_result" });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[profile-ai] OpenAI failure",
+      expect.objectContaining({ stage: "request", status: 400, code: "unsupported_value", requestId: "req_123" }),
+    );
+    const logged = JSON.stringify(consoleErrorSpy.mock.calls);
+    expect(logged).not.toContain("SECRET VACANCY TEXT");
+    expect(logged).not.toContain("SECRET CV TEXT");
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("logs the stage and reason of an incomplete response without its content", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    parseMock.mockResolvedValueOnce({
+      status: "incomplete",
+      incomplete_details: { reason: "max_output_tokens" },
+      output_parsed: null,
+    });
+
+    await expect(new OpenAIProfileAiProvider().generateCoverLetter.run(LETTER_INPUT)).rejects.toMatchObject({
+      kind: "invalid_result",
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[profile-ai] OpenAI failure",
+      expect.objectContaining({ stage: "incomplete_response", incompleteReason: "max_output_tokens" }),
+    );
+    consoleErrorSpy.mockRestore();
+  });
+});
+
 describe("OpenAIProfileAiProvider error mapping", () => {
   const input = { cvText: "cv", itemText: "note" };
 

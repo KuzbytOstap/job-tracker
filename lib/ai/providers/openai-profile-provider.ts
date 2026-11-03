@@ -244,10 +244,34 @@ function buildCoverLetterParams(input: CoverLetterInput): ProfileResponseParams 
   );
 }
 
+function toCountParams({ model, instructions, input, tools, text, reasoning }: ProfileResponseParams) {
+  return { model, instructions, input, tools, text, reasoning };
+}
+
+function logProfileFailure(stage: "request" | "incomplete_response" | "validation_failure", details: object): void {
+  console.error("[profile-ai] OpenAI failure", { stage, ...details });
+}
+
+function describeOpenAIError(error: unknown): object {
+  if (error instanceof OpenAI.APIError) {
+    return {
+      errorName: error.name,
+      status: error.status,
+      code: error.code,
+      type: error.type,
+      requestId: error.requestID,
+      message: error.message,
+    };
+  }
+  return { errorName: error instanceof Error ? error.name : "unknown", message: error instanceof Error ? error.message : undefined };
+}
+
 function mapOpenAIError(error: unknown): never {
   if (error instanceof ProfileAiProviderError) {
     throw error;
   }
+
+  logProfileFailure("request", describeOpenAIError(error));
 
   if (error instanceof OpenAIConfigurationError) {
     throw new ProfileAiProviderError("Profile AI is not configured correctly.", "configuration");
@@ -285,7 +309,7 @@ function createOperation<I, O>(config: {
       let response;
       try {
         const client = getOpenAIClient();
-        response = await client.responses.inputTokens.count(config.buildParams(input));
+        response = await client.responses.inputTokens.count(toCountParams(config.buildParams(input)));
       } catch (error) {
         mapOpenAIError(error);
       }
@@ -310,12 +334,18 @@ function createOperation<I, O>(config: {
       const chargeFailedRun = config.chargeFailedRuns === true && Boolean(response.usage);
 
       if (response.status !== "completed" || response.output_parsed === null) {
+        logProfileFailure("incomplete_response", {
+          status: response.status,
+          incompleteReason: response.incomplete_details?.reason,
+          hasParsedOutput: response.output_parsed !== null,
+        });
         if (chargeFailedRun) options?.onUsage?.(usageReport);
         throw new ProfileAiProviderError("Profile AI request failed.");
       }
 
       const validated = config.resultSchema.safeParse(response.output_parsed);
       if (!validated.success) {
+        logProfileFailure("validation_failure", { issues: validated.error.issues.map((issue) => issue.code) });
         if (chargeFailedRun) options?.onUsage?.(usageReport);
         throw new ProfileAiProviderError("Profile AI request failed.");
       }
