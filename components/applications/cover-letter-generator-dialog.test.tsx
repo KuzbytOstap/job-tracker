@@ -116,6 +116,23 @@ describe("CoverLetterGeneratorDialog trigger", () => {
   });
 });
 
+describe("CoverLetterGeneratorDialog for users whose AI access was rejected", () => {
+  it("shows no entry point at all", () => {
+    state.access = { data: { status: "REJECTED" } };
+    renderDialog();
+
+    expect(screen.queryByRole("button", { name: "Generate cover letter" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Add the job posting text to generate a letter.")).not.toBeInTheDocument();
+  });
+
+  it("keeps the entry point while the access status is still loading", () => {
+    state.access = { data: undefined };
+    renderDialog();
+
+    expect(screen.getByRole("button", { name: "Generate cover letter" })).toBeEnabled();
+  });
+});
+
 describe("CoverLetterGeneratorDialog generation", () => {
   it("generates for the primary CV and shows the letter in a read only field", async () => {
     succeedWith("Dear Acme team");

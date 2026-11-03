@@ -50,7 +50,12 @@ export function CoverLetterGeneratorDialog({
   const t = useT();
   const hintId = useId();
   const [open, setOpen] = useState(false);
+  const aiAccess = useAiAccessStatus();
   const hasVacancy = jobPostingText.trim().length > 0;
+
+  if (aiAccess.data?.status === AiAccessStatus.REJECTED) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-1">

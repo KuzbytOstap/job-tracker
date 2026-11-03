@@ -331,24 +331,76 @@ describe("OpenAIProfileAiProvider.generateCoverLetter", () => {
     });
   });
 
-  it("rejects an incomplete, null or empty letter as an invalid result and never reports usage", async () => {
-    const onUsage = vi.fn();
+  it("rejects an incomplete, null or empty letter as an invalid result", async () => {
     const provider = new OpenAIProfileAiProvider();
 
     parseMock.mockResolvedValueOnce({ status: "incomplete", output_parsed: null });
-    await expect(provider.generateCoverLetter.run(LETTER_INPUT, { onUsage })).rejects.toMatchObject({
-      kind: "invalid_result",
-    });
+    await expect(provider.generateCoverLetter.run(LETTER_INPUT)).rejects.toMatchObject({ kind: "invalid_result" });
 
     parseMock.mockResolvedValueOnce({ status: "incomplete", output_parsed: { letter: "Half a lett" } });
+    await expect(provider.generateCoverLetter.run(LETTER_INPUT)).rejects.toMatchObject({ kind: "invalid_result" });
+
+    parseMock.mockResolvedValueOnce(completed({ letter: "   " }));
+    await expect(provider.generateCoverLetter.run(LETTER_INPUT)).rejects.toMatchObject({ kind: "invalid_result" });
+  });
+
+  it("reports the tokens a failed letter run actually used so they are still charged", async () => {
+    const onUsage = vi.fn();
+    const provider = new OpenAIProfileAiProvider();
+
+    parseMock.mockResolvedValueOnce({
+      status: "incomplete",
+      output_parsed: null,
+      usage: { input_tokens: 900, output_tokens: 4000, total_tokens: 4900 },
+    });
     await expect(provider.generateCoverLetter.run(LETTER_INPUT, { onUsage })).rejects.toMatchObject({
+      kind: "invalid_result",
+    });
+    expect(onUsage).toHaveBeenCalledTimes(1);
+    expect(onUsage).toHaveBeenLastCalledWith({
+      model: "gpt-6-luna",
+      inputTokens: 900,
+      outputTokens: 4000,
+      totalTokens: 4900,
+    });
+
+    parseMock.mockResolvedValueOnce(
+      completed({ letter: "   " }, { input_tokens: 900, output_tokens: 50, total_tokens: 950 }),
+    );
+    await expect(provider.generateCoverLetter.run(LETTER_INPUT, { onUsage })).rejects.toMatchObject({
+      kind: "invalid_result",
+    });
+    expect(onUsage).toHaveBeenCalledTimes(2);
+    expect(onUsage).toHaveBeenLastCalledWith({
+      model: "gpt-6-luna",
+      inputTokens: 900,
+      outputTokens: 50,
+      totalTokens: 950,
+    });
+  });
+
+  it("reports nothing for a failed letter run whose response carries no usage", async () => {
+    const onUsage = vi.fn();
+
+    parseMock.mockResolvedValueOnce({ status: "incomplete", output_parsed: null });
+    await expect(new OpenAIProfileAiProvider().generateCoverLetter.run(LETTER_INPUT, { onUsage })).rejects.toMatchObject({
       kind: "invalid_result",
     });
 
-    parseMock.mockResolvedValueOnce(completed({ letter: "   " }));
-    await expect(provider.generateCoverLetter.run(LETTER_INPUT, { onUsage })).rejects.toMatchObject({
-      kind: "invalid_result",
+    expect(onUsage).not.toHaveBeenCalled();
+  });
+
+  it("does not charge failed runs of the other profile operations", async () => {
+    const onUsage = vi.fn();
+
+    parseMock.mockResolvedValueOnce({
+      status: "incomplete",
+      output_parsed: null,
+      usage: { input_tokens: 10, output_tokens: 60, total_tokens: 70 },
     });
+    await expect(
+      new OpenAIProfileAiProvider().scoreContextItem.run({ cvText: "cv", itemText: "note" }, { onUsage }),
+    ).rejects.toMatchObject({ kind: "invalid_result" });
 
     expect(onUsage).not.toHaveBeenCalled();
   });

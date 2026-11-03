@@ -623,6 +623,54 @@ describe("runGatedAiCall", () => {
     expect(usageEventCreateMock).not.toHaveBeenCalled();
   });
 
+  it("keeps the quota consumed and records the reported usage when the call fails after reporting it", async () => {
+    const call = vi.fn(async (reportUsage: (usage: AiUsageReport) => void) => {
+      reportUsage({ model: "gpt-6-luna", inputTokens: 80, outputTokens: 4000, totalTokens: 4080 });
+      throw new Error("incomplete response");
+    });
+
+    await expect(
+      runGatedAiCall({
+        userId: "user_1",
+        feature: AiFeature.COVER_LETTER,
+        maxOutputTokens: 4000,
+        countInputTokens: () => Promise.resolve(100),
+        call,
+      }),
+    ).rejects.toThrow("incomplete response");
+
+    expect(usageEventCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ feature: AiFeature.COVER_LETTER, totalTokens: 4080 }),
+      }),
+    );
+    expect(dailyUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { tokenCount: { increment: 4080 - 4100 } } }),
+    );
+    expect(dailyUpdateMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ coverLetterGenerationCount: { decrement: 1 } }) }),
+    );
+  });
+
+  it("still rethrows the call error when recording the usage of a failed call also fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    usageEventCreateMock.mockRejectedValueOnce(new Error("db down"));
+    const call = vi.fn(async (reportUsage: (usage: AiUsageReport) => void) => {
+      reportUsage({ model: "gpt-6-luna", inputTokens: 80, outputTokens: 10, totalTokens: 90 });
+      throw new Error("incomplete response");
+    });
+
+    await expect(
+      runGatedAiCall({
+        userId: "user_1",
+        feature: AiFeature.COVER_LETTER,
+        maxOutputTokens: 4000,
+        countInputTokens: () => Promise.resolve(100),
+        call,
+      }),
+    ).rejects.toThrow("incomplete response");
+  });
+
   it("rolls back the reservation and rethrows when the call fails, without recording usage", async () => {
     const call = vi.fn().mockRejectedValue(new Error("provider exploded"));
 

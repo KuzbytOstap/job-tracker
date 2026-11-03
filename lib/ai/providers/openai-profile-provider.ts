@@ -276,6 +276,7 @@ function createOperation<I, O>(config: {
   maxOutputTokens: number;
   buildParams: (input: I) => ProfileResponseParams;
   resultSchema: z.ZodType<O>;
+  chargeFailedRuns?: boolean;
 }): ProfileAiOperation<I, O> {
   return {
     maxOutputTokens: config.maxOutputTokens,
@@ -300,21 +301,26 @@ function createOperation<I, O>(config: {
         mapOpenAIError(error);
       }
 
+      const usageReport: AiUsageReport = {
+        model: OPENAI_PROFILE_MODEL,
+        inputTokens: response.usage?.input_tokens ?? 0,
+        outputTokens: response.usage?.output_tokens ?? 0,
+        totalTokens: response.usage?.total_tokens ?? 0,
+      };
+      const chargeFailedRun = config.chargeFailedRuns === true && Boolean(response.usage);
+
       if (response.status !== "completed" || response.output_parsed === null) {
+        if (chargeFailedRun) options?.onUsage?.(usageReport);
         throw new ProfileAiProviderError("Profile AI request failed.");
       }
 
       const validated = config.resultSchema.safeParse(response.output_parsed);
       if (!validated.success) {
+        if (chargeFailedRun) options?.onUsage?.(usageReport);
         throw new ProfileAiProviderError("Profile AI request failed.");
       }
 
-      options?.onUsage?.({
-        model: OPENAI_PROFILE_MODEL,
-        inputTokens: response.usage?.input_tokens ?? 0,
-        outputTokens: response.usage?.output_tokens ?? 0,
-        totalTokens: response.usage?.total_tokens ?? 0,
-      });
+      options?.onUsage?.(usageReport);
 
       return validated.data;
     },
@@ -346,5 +352,6 @@ export class OpenAIProfileAiProvider implements ProfileAiProvider {
     maxOutputTokens: COVER_LETTER_MAX_OUTPUT_TOKENS,
     buildParams: buildCoverLetterParams,
     resultSchema: coverLetterResultSchema,
+    chargeFailedRuns: true,
   });
 }

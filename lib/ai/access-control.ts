@@ -353,23 +353,36 @@ export async function runGatedAiCall<T>(params: {
       usage = report;
     });
   } catch (error) {
-    await rollbackAiReservation(reservation);
+    const reportedUsage = usage as AiUsageReport | null;
+    if (reportedUsage === null) {
+      await rollbackAiReservation(reservation);
+    } else {
+      await finalizeUsageQuietly({ reservation, applicationId: params.applicationId, usage: reportedUsage });
+    }
     throw error;
   }
 
+  await finalizeUsageQuietly({
+    reservation,
+    applicationId: params.applicationId,
+    usage: usage ?? { model: "unknown", inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+  });
+
+  return result;
+}
+
+async function finalizeUsageQuietly(params: {
+  reservation: AiQuotaReservation;
+  applicationId?: string | null;
+  usage: AiUsageReport;
+}): Promise<void> {
   try {
-    await finalizeAiUsage({
-      reservation,
-      applicationId: params.applicationId,
-      usage: usage ?? { model: "unknown", inputTokens: 0, outputTokens: 0, totalTokens: 0 },
-    });
+    await finalizeAiUsage(params);
   } catch (finalizeError) {
-    console.error("[ai-access-control] failed to finalize AI usage after a successful call; quota stays consumed", {
-      userId: reservation.userId,
-      feature: reservation.feature,
+    console.error("[ai-access-control] failed to finalize AI usage after a provider call; quota stays consumed", {
+      userId: params.reservation.userId,
+      feature: params.reservation.feature,
       error: finalizeError,
     });
   }
-
-  return result;
 }
