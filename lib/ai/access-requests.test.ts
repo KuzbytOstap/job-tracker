@@ -42,6 +42,7 @@ function usageStatus(overrides: Record<string, { used: number; limit: number; ex
     vacancy: { used: 0, limit: 10, exhausted: false },
     hr: { used: 0, limit: 10, exhausted: false },
     profile: { used: 0, limit: 50, exhausted: false },
+    coverLetter: { used: 0, limit: 20, exhausted: false },
     tokens: { used: 0, limit: 20_000, exhausted: false },
     ...overrides,
   };

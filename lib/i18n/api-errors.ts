@@ -8,6 +8,7 @@ const CODE_KEYS: Record<string, MessageKey> = {
   VACANCY_LIMIT_REACHED: "errors.codes.vacancyLimit",
   HR_LIMIT_REACHED: "errors.codes.hrLimit",
   PROFILE_LIMIT_REACHED: "errors.codes.profileLimit",
+  COVER_LETTER_LIMIT_REACHED: "errors.codes.coverLetterLimit",
   CV_NOT_PDF: "errors.codes.cvNotPdf",
   CV_TOO_LARGE: "errors.codes.cvTooLarge",
   CV_LIMIT: "errors.codes.cvLimit",

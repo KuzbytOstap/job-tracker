@@ -16,6 +16,7 @@ const REASON_COPY: Record<AiQuotaReasonCode, { title: MessageKey }> = {
   VACANCY_LIMIT_REACHED: { title: "ai.quota.vacancyTitle" },
   HR_LIMIT_REACHED: { title: "ai.quota.hrTitle" },
   PROFILE_LIMIT_REACHED: { title: "ai.quota.profileTitle" },
+  COVER_LETTER_LIMIT_REACHED: { title: "ai.quota.coverLetterTitle" },
   TOKEN_LIMIT_REACHED: { title: "ai.quota.tokenTitle" },
 };
 
@@ -30,7 +31,10 @@ export function AiQuotaNotice({ reason, quota, resetAt, className }: AiQuotaNoti
   const { t, locale } = useI18n();
   const mutation = useRequestMoreAiUsage();
   const copy = REASON_COPY[reason];
-  const requestType = reason === "PROFILE_LIMIT_REACHED" ? null : AI_QUOTA_REQUEST_TYPE[reason];
+  const requestType =
+    reason === "PROFILE_LIMIT_REACHED" || reason === "COVER_LETTER_LIMIT_REACHED"
+      ? null
+      : AI_QUOTA_REQUEST_TYPE[reason];
 
   function handleRequest() {
     if (requestType === null) return;

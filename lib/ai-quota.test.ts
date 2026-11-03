@@ -13,6 +13,7 @@ function usage(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusRes
     vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
+    coverLetter: { used: 0, limit: 20, exhausted: false, pendingRequest: false },
     tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
     ...overrides,
   };
@@ -62,6 +63,30 @@ describe("resolveAiQuotaReason", () => {
     expect(resolveAiQuotaReason(status, "PROFILE")).toBeNull();
   });
 
+  it("reports COVER_LETTER_LIMIT_REACHED for COVER_LETTER when only the cover letter quota is exhausted", () => {
+    const status = usage({ coverLetter: { used: 20, limit: 20, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(status, "COVER_LETTER")).toBe("COVER_LETTER_LIMIT_REACHED");
+  });
+
+  it("never reports the cover letter reason for other features, nor other feature reasons for COVER_LETTER", () => {
+    const letterExhausted = usage({ coverLetter: { used: 20, limit: 20, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(letterExhausted, "VACANCY_GENERATION")).toBeNull();
+    expect(resolveAiQuotaReason(letterExhausted, "HR_GENERATION")).toBeNull();
+    expect(resolveAiQuotaReason(letterExhausted, "PROFILE")).toBeNull();
+
+    const othersExhausted = usage({
+      vacancy: { used: 10, limit: 10, exhausted: true, pendingRequest: false },
+      hr: { used: 10, limit: 10, exhausted: true, pendingRequest: false },
+      profile: { used: 50, limit: 50, exhausted: true, pendingRequest: false },
+    });
+    expect(resolveAiQuotaReason(othersExhausted, "COVER_LETTER")).toBeNull();
+  });
+
+  it("reports TOKEN_LIMIT_REACHED for COVER_LETTER when only the token budget is exhausted", () => {
+    const status = usage({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(status, "COVER_LETTER")).toBe("TOKEN_LIMIT_REACHED");
+  });
+
   it("reports TOKEN_LIMIT_REACHED for both features when only the token budget is exhausted", () => {
     const status = usage({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } });
     expect(resolveAiQuotaReason(status, "VACANCY_GENERATION")).toBe("TOKEN_LIMIT_REACHED");
@@ -88,6 +113,7 @@ describe("quotaForReason", () => {
     expect(quotaForReason(status, "VACANCY_LIMIT_REACHED")).toBe(status.vacancy);
     expect(quotaForReason(status, "HR_LIMIT_REACHED")).toBe(status.hr);
     expect(quotaForReason(status, "PROFILE_LIMIT_REACHED")).toBe(status.profile);
+    expect(quotaForReason(status, "COVER_LETTER_LIMIT_REACHED")).toBe(status.coverLetter);
     expect(quotaForReason(status, "TOKEN_LIMIT_REACHED")).toBe(status.tokens);
   });
 });
@@ -98,6 +124,11 @@ describe("AI_QUOTA_REQUEST_TYPE", () => {
     expect(AI_QUOTA_REQUEST_TYPE.HR_LIMIT_REACHED).toBe("HR_LIMIT");
     expect(AI_QUOTA_REQUEST_TYPE.TOKEN_LIMIT_REACHED).toBe("TOKEN_LIMIT");
   });
+
+  it("has no request-more-usage type for the profile or cover letter limits", () => {
+    expect(Object.keys(AI_QUOTA_REQUEST_TYPE)).not.toContain("PROFILE_LIMIT_REACHED");
+    expect(Object.keys(AI_QUOTA_REQUEST_TYPE)).not.toContain("COVER_LETTER_LIMIT_REACHED");
+  });
 });
 
 describe("extractAiQuotaReasonFromError", () => {
@@ -107,6 +138,12 @@ describe("extractAiQuotaReasonFromError", () => {
 
   it("extracts the profile quota reason code", () => {
     expect(extractAiQuotaReasonFromError({ code: "PROFILE_LIMIT_REACHED" })).toBe("PROFILE_LIMIT_REACHED");
+  });
+
+  it("extracts the cover letter quota reason code", () => {
+    expect(extractAiQuotaReasonFromError({ code: "COVER_LETTER_LIMIT_REACHED" })).toBe(
+      "COVER_LETTER_LIMIT_REACHED",
+    );
   });
 
   it("returns null for an unrelated code", () => {

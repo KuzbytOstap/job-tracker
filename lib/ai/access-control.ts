@@ -8,6 +8,7 @@ export type AiAccessErrorCode =
   | "VACANCY_LIMIT_REACHED"
   | "HR_LIMIT_REACHED"
   | "PROFILE_LIMIT_REACHED"
+  | "COVER_LETTER_LIMIT_REACHED"
   | "TOKEN_LIMIT_REACHED";
 
 export class AiAccessError extends Error {
@@ -28,6 +29,7 @@ export function aiAccessErrorStatus(code: AiAccessErrorCode): number {
     case "VACANCY_LIMIT_REACHED":
     case "HR_LIMIT_REACHED":
     case "PROFILE_LIMIT_REACHED":
+    case "COVER_LETTER_LIMIT_REACHED":
     case "TOKEN_LIMIT_REACHED":
       return 429;
   }
@@ -60,10 +62,12 @@ type EffectiveLimitsAndUsage = {
   vacancyLimit: number;
   hrLimit: number;
   profileLimit: number;
+  coverLetterLimit: number;
   tokenLimit: number;
   vacancyUsed: number;
   hrUsed: number;
   profileUsed: number;
+  coverLetterUsed: number;
   tokenUsed: number;
 };
 
@@ -83,10 +87,12 @@ async function loadEffectiveLimitsAndUsage(userId: string, date: Date): Promise<
       (userLimit?.vacancyGenerationLimit ?? globalLimits.vacancyGenerationLimit) + daily.vacancyGenerationBonus,
     hrLimit: (userLimit?.hrGenerationLimit ?? globalLimits.hrGenerationLimit) + daily.hrGenerationBonus,
     profileLimit: userLimit?.profileGenerationLimit ?? globalLimits.profileGenerationLimit,
+    coverLetterLimit: userLimit?.coverLetterGenerationLimit ?? globalLimits.coverLetterGenerationLimit,
     tokenLimit: (userLimit?.tokenLimit ?? globalLimits.tokenLimit) + daily.tokenBonus,
     vacancyUsed: daily.vacancyGenerationCount,
     hrUsed: daily.hrGenerationCount,
     profileUsed: daily.profileGenerationCount,
+    coverLetterUsed: daily.coverLetterGenerationCount,
     tokenUsed: daily.tokenCount,
   };
 }
@@ -95,6 +101,7 @@ type DailyCounts = {
   vacancyGenerationCount: number;
   hrGenerationCount: number;
   profileGenerationCount: number;
+  coverLetterGenerationCount: number;
 };
 
 type FeatureCounter = {
@@ -131,6 +138,14 @@ const FEATURE_COUNTERS: Record<AiFeature, FeatureCounter> = {
     decrement: { profileGenerationCount: { decrement: 1 } },
     limitError: { code: "PROFILE_LIMIT_REACHED", message: "Daily profile AI limit reached." },
   },
+  [AiFeature.COVER_LETTER]: {
+    limitOf: (limits) => limits.coverLetterLimit,
+    countOf: (daily) => daily.coverLetterGenerationCount,
+    where: (limit) => ({ coverLetterGenerationCount: { lt: limit } }),
+    increment: { coverLetterGenerationCount: { increment: 1 } },
+    decrement: { coverLetterGenerationCount: { decrement: 1 } },
+    limitError: { code: "COVER_LETTER_LIMIT_REACHED", message: "Daily cover letter limit reached." },
+  },
 };
 
 export type AiQuotaStatus = {
@@ -144,6 +159,7 @@ export type AiUsageStatus = {
   vacancy: AiQuotaStatus;
   hr: AiQuotaStatus;
   profile: AiQuotaStatus;
+  coverLetter: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 
@@ -159,8 +175,18 @@ export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
   await requireAiAccessApproved(userId);
 
   const date = utcDateOnly(new Date());
-  const { vacancyLimit, hrLimit, profileLimit, tokenLimit, vacancyUsed, hrUsed, profileUsed, tokenUsed } =
-    await loadEffectiveLimitsAndUsage(userId, date);
+  const {
+    vacancyLimit,
+    hrLimit,
+    profileLimit,
+    coverLetterLimit,
+    tokenLimit,
+    vacancyUsed,
+    hrUsed,
+    profileUsed,
+    coverLetterUsed,
+    tokenUsed,
+  } = await loadEffectiveLimitsAndUsage(userId, date);
 
   const resetAt = new Date(date);
   resetAt.setUTCDate(resetAt.getUTCDate() + 1);
@@ -170,6 +196,11 @@ export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
     vacancy: { used: vacancyUsed, limit: vacancyLimit, exhausted: vacancyUsed >= vacancyLimit },
     hr: { used: hrUsed, limit: hrLimit, exhausted: hrUsed >= hrLimit },
     profile: { used: profileUsed, limit: profileLimit, exhausted: profileUsed >= profileLimit },
+    coverLetter: {
+      used: coverLetterUsed,
+      limit: coverLetterLimit,
+      exhausted: coverLetterUsed >= coverLetterLimit,
+    },
     tokens: { used: tokenUsed, limit: tokenLimit, exhausted: tokenUsed >= tokenLimit },
   };
 }

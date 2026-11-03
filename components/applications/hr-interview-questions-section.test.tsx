@@ -44,6 +44,7 @@ function usageStatus(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageSta
     vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
+    coverLetter: { used: 0, limit: 20, exhausted: false, pendingRequest: false },
     tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
     ...overrides,
   };

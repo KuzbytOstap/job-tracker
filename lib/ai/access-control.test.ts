@@ -29,6 +29,7 @@ vi.mock("@/lib/prisma", () => ({
 import { AiAccessStatus, AiFeature } from "@/app/generated/prisma/client";
 import {
   AiAccessError,
+  aiAccessErrorStatus,
   finalizeAiUsage,
   getAiUsageStatus,
   requireAiAccessApproved,
@@ -46,6 +47,7 @@ function dailyRow(overrides: Record<string, unknown> = {}) {
     vacancyGenerationCount: 0,
     hrGenerationCount: 0,
     profileGenerationCount: 0,
+    coverLetterGenerationCount: 0,
     tokenCount: 0,
     vacancyGenerationBonus: 0,
     hrGenerationBonus: 0,
@@ -72,6 +74,7 @@ beforeEach(() => {
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
     profileGenerationLimit: 50,
+    coverLetterGenerationLimit: 20,
     tokenLimit: 20_000,
   });
   userLimitFindUniqueMock.mockResolvedValue(null);
@@ -304,6 +307,77 @@ describe("reserveAiQuota — PROFILE feature", () => {
   });
 });
 
+describe("reserveAiQuota — COVER_LETTER feature", () => {
+  it("reserves against the cover letter counter and the shared token counter without touching other counters", async () => {
+    const reservation = await reserveAiQuota({
+      userId: "user_1",
+      feature: AiFeature.COVER_LETTER,
+      estimatedTokens: 3000,
+    });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        date: expect.any(Date),
+        coverLetterGenerationCount: { lt: 20 },
+        tokenCount: { lte: 20_000 - 3000 },
+      },
+      data: {
+        coverLetterGenerationCount: { increment: 1 },
+        tokenCount: { increment: 3000 },
+      },
+    });
+    expect(reservation.feature).toBe(AiFeature.COVER_LETTER);
+    expect(reservation.reservedTokens).toBe(3000);
+  });
+
+  it("applies a per-user cover letter override in place of the global default", async () => {
+    userLimitFindUniqueMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: 3,
+      tokenLimit: null,
+    });
+
+    await reserveAiQuota({ userId: "user_1", feature: AiFeature.COVER_LETTER, estimatedTokens: 100 });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ coverLetterGenerationCount: { lt: 3 } }) }),
+    );
+  });
+
+  it("is not blocked when only the profile counter is exhausted", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ profileGenerationCount: 50 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.COVER_LETTER, estimatedTokens: 100 }),
+    ).resolves.toMatchObject({ feature: AiFeature.COVER_LETTER });
+  });
+
+  it("throws COVER_LETTER_LIMIT_REACHED when the cover letter counter is already at the limit", async () => {
+    dailyUpdateManyMock.mockResolvedValue({ count: 0 });
+    dailyFindUniqueMock.mockResolvedValue(dailyRow({ coverLetterGenerationCount: 20 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.COVER_LETTER, estimatedTokens: 100 }),
+    ).rejects.toMatchObject({ code: "COVER_LETTER_LIMIT_REACHED" });
+  });
+
+  it("throws TOKEN_LIMIT_REACHED when only the shared token budget is exhausted", async () => {
+    dailyUpdateManyMock.mockResolvedValue({ count: 0 });
+    dailyFindUniqueMock.mockResolvedValue(dailyRow({ coverLetterGenerationCount: 1, tokenCount: 19_999 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.COVER_LETTER, estimatedTokens: 3000 }),
+    ).rejects.toMatchObject({ code: "TOKEN_LIMIT_REACHED" });
+  });
+
+  it("maps COVER_LETTER_LIMIT_REACHED to HTTP 429", () => {
+    expect(aiAccessErrorStatus("COVER_LETTER_LIMIT_REACHED")).toBe(429);
+  });
+});
+
 describe("getAiUsageStatus", () => {
   it("throws AI_ACCESS_REQUIRED / AI_SUSPENDED for a non-approved user without touching quota tables", async () => {
     userFindUniqueMock.mockResolvedValue({ aiAccessStatus: AiAccessStatus.PENDING });
@@ -355,6 +429,23 @@ describe("getAiUsageStatus", () => {
     expect(withOverride.profile).toEqual({ used: 7, limit: 7, exhausted: true });
   });
 
+  it("reports the cover letter quota against the global default or the per-user override, without any bonus", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ coverLetterGenerationCount: 4 }));
+
+    const withDefault = await getAiUsageStatus("user_1");
+    expect(withDefault.coverLetter).toEqual({ used: 4, limit: 20, exhausted: false });
+
+    userLimitFindUniqueMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: 4,
+      tokenLimit: null,
+    });
+    const withOverride = await getAiUsageStatus("user_1");
+    expect(withOverride.coverLetter).toEqual({ used: 4, limit: 4, exhausted: true });
+  });
+
   it("resolves resetAt to the next UTC midnight after today", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-09T14:32:00.000Z"));
@@ -394,6 +485,20 @@ describe("rollbackAiReservation", () => {
     expect(dailyUpdateMock).toHaveBeenCalledWith({
       where: { userId_date: { userId: "user_1", date: new Date("2026-08-09T00:00:00.000Z") } },
       data: { profileGenerationCount: { decrement: 1 }, tokenCount: { decrement: 300 } },
+    });
+  });
+
+  it("decrements only the cover letter counter and the reserved tokens for COVER_LETTER", async () => {
+    await rollbackAiReservation({
+      userId: "user_1",
+      feature: AiFeature.COVER_LETTER,
+      date: new Date("2026-08-09T00:00:00.000Z"),
+      reservedTokens: 3000,
+    });
+
+    expect(dailyUpdateMock).toHaveBeenCalledWith({
+      where: { userId_date: { userId: "user_1", date: new Date("2026-08-09T00:00:00.000Z") } },
+      data: { coverLetterGenerationCount: { decrement: 1 }, tokenCount: { decrement: 3000 } },
     });
   });
 

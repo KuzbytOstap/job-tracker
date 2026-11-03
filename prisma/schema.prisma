@@ -50,6 +50,7 @@ enum AiFeature {
   VACANCY_GENERATION
   HR_GENERATION
   PROFILE
+  COVER_LETTER
 }
 
 enum AiRequestType {
@@ -96,32 +97,32 @@ enum ProfileContextWeight {
 }
 
 model JobApplication {
-  id                      String    @id @default(cuid())
+  id                      String          @id @default(cuid())
   company                 String
   position                String
   platform                Platform
   customPlatformId        String?
   customPlatform          CustomPlatform? @relation(fields: [customPlatformId], references: [id], onDelete: SetNull)
   suggestedPlatformName   String?
-  reviewReasons           String[]  @default([])
+  reviewReasons           String[]        @default([])
   link                    String?
-  status                  Status    @default(APPLIED)
-  hasTestTask             Boolean   @default(false)
-  testTaskDone            Boolean   @default(false)
+  status                  Status          @default(APPLIED)
+  hasTestTask             Boolean         @default(false)
+  testTaskDone            Boolean         @default(false)
   salaryExpectation       String?
   notes                   String?
   jobPostingText          String?
-  sourceUrls              String[]  @default([])
+  sourceUrls              String[]        @default([])
   coverLetterText         String?
   hrCallTranscript        String?
   hrInterviewQuestions    Json?
   hrQuestionsGeneratedAt  DateTime?
   hrEnhancementClaimedAt  DateTime?
   hrEnhancementClaimToken String?
-  appliedAt               DateTime  @default(now())
-  lastActivityAt          DateTime  @default(now())
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  appliedAt               DateTime        @default(now())
+  lastActivityAt          DateTime        @default(now())
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -168,18 +169,18 @@ model User {
   role           Role           @default(USER)
   aiAccessStatus AiAccessStatus @default(NOT_REQUESTED)
 
-  autoIgnoreAfterDays Int? @default(21)
+  autoIgnoreAfterDays Int?    @default(21)
   locale              String?
 
-  accounts          Account[]
-  jobApplications   JobApplication[]
-  aiUserLimit       AiUserLimit?
-  aiUsageDaily      AiUsageDaily[]
-  aiUsageEvents     AiUsageEvent[]
-  aiAccessRequests  AiAccessRequest[] @relation("AiAccessRequestUser")
-  aiDecidedRequests AiAccessRequest[] @relation("AiAccessRequestDecider")
-  customPlatforms        CustomPlatform[] @relation("CustomPlatformOwner")
-  decidedCustomPlatforms CustomPlatform[] @relation("CustomPlatformDecider")
+  accounts               Account[]
+  jobApplications        JobApplication[]
+  aiUserLimit            AiUserLimit?
+  aiUsageDaily           AiUsageDaily[]
+  aiUsageEvents          AiUsageEvent[]
+  aiAccessRequests       AiAccessRequest[]    @relation("AiAccessRequestUser")
+  aiDecidedRequests      AiAccessRequest[]    @relation("AiAccessRequestDecider")
+  customPlatforms        CustomPlatform[]     @relation("CustomPlatformOwner")
+  decidedCustomPlatforms CustomPlatform[]     @relation("CustomPlatformDecider")
   profile                UserProfile?
   cvs                    UserCv[]
   profileContextItems    ProfileContextItem[]
@@ -187,39 +188,42 @@ model User {
 }
 
 model AiGlobalLimits {
-  id                     Int      @id @default(1)
-  vacancyGenerationLimit Int      @default(10)
-  hrGenerationLimit      Int      @default(10)
-  profileGenerationLimit Int      @default(50)
-  tokenLimit             Int      @default(20000)
-  updatedAt              DateTime @updatedAt
+  id                         Int      @id @default(1)
+  vacancyGenerationLimit     Int      @default(10)
+  hrGenerationLimit          Int      @default(10)
+  profileGenerationLimit     Int      @default(50)
+  coverLetterGenerationLimit Int      @default(20)
+  tokenLimit                 Int      @default(20000)
+  updatedAt                  DateTime @updatedAt
 }
 
 model AiUserLimit {
-  id                     String   @id @default(cuid())
-  userId                 String   @unique
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vacancyGenerationLimit Int?
-  hrGenerationLimit      Int?
-  profileGenerationLimit Int?
-  tokenLimit             Int?
-  updatedAt              DateTime @updatedAt
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vacancyGenerationLimit     Int?
+  hrGenerationLimit          Int?
+  profileGenerationLimit     Int?
+  coverLetterGenerationLimit Int?
+  tokenLimit                 Int?
+  updatedAt                  DateTime @updatedAt
 }
 
 model AiUsageDaily {
-  id                     String   @id @default(cuid())
-  userId                 String
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date                   DateTime @db.Date
-  vacancyGenerationCount Int      @default(0)
-  hrGenerationCount      Int      @default(0)
-  profileGenerationCount Int      @default(0)
-  tokenCount             Int      @default(0)
-  vacancyGenerationBonus Int      @default(0)
-  hrGenerationBonus      Int      @default(0)
-  tokenBonus             Int      @default(0)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                         String   @id @default(cuid())
+  userId                     String
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                       DateTime @db.Date
+  vacancyGenerationCount     Int      @default(0)
+  hrGenerationCount          Int      @default(0)
+  profileGenerationCount     Int      @default(0)
+  coverLetterGenerationCount Int      @default(0)
+  tokenCount                 Int      @default(0)
+  vacancyGenerationBonus     Int      @default(0)
+  hrGenerationBonus          Int      @default(0)
+  tokenBonus                 Int      @default(0)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([date])

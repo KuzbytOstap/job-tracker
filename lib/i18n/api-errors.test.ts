@@ -44,6 +44,12 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage(uk, error, "errors.saveFailed")).toBe("Досягнуто денний ліміт AI для профілю.");
   });
 
+  it("maps COVER_LETTER_LIMIT_REACHED to a localized message", () => {
+    const error = new ApiError(429, "limit", { code: "COVER_LETTER_LIMIT_REACHED" });
+    expect(getApiErrorMessage(en, error, "errors.saveFailed")).toBe("The daily cover letter limit is reached.");
+    expect(getApiErrorMessage(uk, error, "errors.saveFailed")).toBe("Досягнуто денний ліміт листів.");
+  });
+
   it("localizes the CV and example limit codes ahead of the generic status text", () => {
     expect(getApiErrorMessage(en, new ApiError(415, "x", { code: "CV_NOT_PDF" }), "errors.saveFailed")).toBe(
       "Only PDF files are accepted.",

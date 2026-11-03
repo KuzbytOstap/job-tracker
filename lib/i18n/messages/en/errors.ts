@@ -17,6 +17,7 @@ export const errors = {
     vacancyLimit: "The daily vacancy analysis limit is reached.",
     hrLimit: "The daily HR question limit is reached.",
     profileLimit: "The daily profile AI limit is reached.",
+    coverLetterLimit: "The daily cover letter limit is reached.",
     cvNotPdf: "Only PDF files are accepted.",
     cvTooLarge: "The file is over 4 MB.",
     cvLimit: "You've reached the limit of stored CVs.",

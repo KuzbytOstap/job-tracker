@@ -250,6 +250,7 @@ export type AiUsageStatusResponse = {
   vacancy: AiQuotaStatus;
   hr: AiQuotaStatus;
   profile: AiQuotaStatus;
+  coverLetter: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 

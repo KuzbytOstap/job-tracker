@@ -13,7 +13,10 @@ afterEach(() => {
   cleanup();
 });
 
-function renderNotice(reason: "VACANCY_LIMIT_REACHED" | "PROFILE_LIMIT_REACHED", pendingRequest = false) {
+function renderNotice(
+  reason: "VACANCY_LIMIT_REACHED" | "PROFILE_LIMIT_REACHED" | "COVER_LETTER_LIMIT_REACHED",
+  pendingRequest = false,
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
@@ -31,6 +34,13 @@ describe("AiQuotaNotice", () => {
     renderNotice("PROFILE_LIMIT_REACHED");
 
     expect(screen.getByText("Daily profile AI limit reached")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows the cover letter title without any request-more control", () => {
+    renderNotice("COVER_LETTER_LIMIT_REACHED");
+
+    expect(screen.getByText("Daily cover letter limit reached")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
