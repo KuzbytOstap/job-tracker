@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Plus, ShieldCheck } from "lucide-react";
+import { LogOut, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -57,6 +57,14 @@ export function AppHeader({
             <Plus data-icon="inline-start" />
             {t("dashboard.header.add")}
           </Button>
+          <Link
+            href="/profile"
+            title={t("nav.profile")}
+            aria-label={t("nav.profile")}
+            className={buttonVariants({ variant: "ghost", size: "icon-touch" })}
+          >
+            <UserRound />
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"

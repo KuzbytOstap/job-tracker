@@ -4,6 +4,15 @@ export const profile = {
   loadFailed: "Couldn't load your profile.",
   saved: "Saved",
   saveFailed: "Couldn't save your profile. Try again.",
+  backToBoard: "Back to board",
+  retry: "Retry",
+  validation: {
+    invalidEmail: "Enter a valid email address.",
+    invalidNumber: "Enter a whole number.",
+    invalidCurrency: "Use a 3 letter currency code, for example USD.",
+    periodRequired: "Choose how often this amount is paid.",
+    tooLong: "This text is too long.",
+  },
   ai: {
     unavailable: "AI isn't available for this step, so it was skipped. You can continue manually.",
     reasons: {
@@ -158,6 +167,8 @@ export const profile = {
     exampleDeleted: "Example deleted",
     exampleDeleteFailed: "Couldn't delete the example.",
     exampleLimit: "You can store up to {count} examples.",
+    exampleDeleteTitle: "Delete this example?",
+    exampleDeleteDescription: "The example will be removed permanently.",
     exampleTitle: "Example {number}",
     empty: "No examples yet.",
     delete: "Delete",

@@ -6,6 +6,15 @@ export const profile: Messages["profile"] = {
   loadFailed: "Не вдалося завантажити профіль.",
   saved: "Збережено",
   saveFailed: "Не вдалося зберегти профіль. Спробуйте ще раз.",
+  backToBoard: "Назад до дошки",
+  retry: "Спробувати ще раз",
+  validation: {
+    invalidEmail: "Введіть коректну адресу пошти.",
+    invalidNumber: "Введіть ціле число.",
+    invalidCurrency: "Використайте код валюти з трьох літер, наприклад USD.",
+    periodRequired: "Оберіть, за який період ця сума.",
+    tooLong: "Цей текст задовгий.",
+  },
   ai: {
     unavailable: "AI недоступний для цього кроку, тож його пропущено. Можете продовжити вручну.",
     reasons: {
@@ -167,6 +176,8 @@ export const profile: Messages["profile"] = {
     exampleDeleted: "Приклад видалено",
     exampleDeleteFailed: "Не вдалося видалити приклад.",
     exampleLimit: "Можна зберігати до {count} прикладів.",
+    exampleDeleteTitle: "Видалити цей приклад?",
+    exampleDeleteDescription: "Приклад буде видалено назавжди.",
     exampleTitle: "Приклад {number}",
     empty: "Ще немає прикладів.",
     delete: "Видалити",
