@@ -51,6 +51,7 @@ enum AiFeature {
   HR_GENERATION
   PROFILE
   COVER_LETTER
+  FIT_ANALYSIS
 }
 
 enum AiRequestType {
@@ -119,6 +120,9 @@ model JobApplication {
   hrQuestionsGeneratedAt  DateTime?
   hrEnhancementClaimedAt  DateTime?
   hrEnhancementClaimToken String?
+  fitAnalysis             Json?
+  fitAnalyzedAt           DateTime?
+  fitMismatchCount        Int?
   appliedAt               DateTime        @default(now())
   lastActivityAt          DateTime        @default(now())
   createdAt               DateTime        @default(now())
@@ -193,6 +197,7 @@ model AiGlobalLimits {
   hrGenerationLimit          Int      @default(10)
   profileGenerationLimit     Int      @default(50)
   coverLetterGenerationLimit Int      @default(20)
+  fitAnalysisGenerationLimit Int      @default(30)
   tokenLimit                 Int      @default(20000)
   updatedAt                  DateTime @updatedAt
 }
@@ -205,6 +210,7 @@ model AiUserLimit {
   hrGenerationLimit          Int?
   profileGenerationLimit     Int?
   coverLetterGenerationLimit Int?
+  fitAnalysisGenerationLimit Int?
   tokenLimit                 Int?
   updatedAt                  DateTime @updatedAt
 }
@@ -218,6 +224,7 @@ model AiUsageDaily {
   hrGenerationCount          Int      @default(0)
   profileGenerationCount     Int      @default(0)
   coverLetterGenerationCount Int      @default(0)
+  fitAnalysisGenerationCount Int      @default(0)
   tokenCount                 Int      @default(0)
   vacancyGenerationBonus     Int      @default(0)
   hrGenerationBonus          Int      @default(0)

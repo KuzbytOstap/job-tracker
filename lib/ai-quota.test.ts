@@ -14,6 +14,7 @@ function usage(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusRes
     hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
     coverLetter: { used: 0, limit: 20, exhausted: false, pendingRequest: false },
+    fitAnalysis: { used: 0, limit: 30, exhausted: false, pendingRequest: false },
     tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
     ...overrides,
   };
@@ -87,6 +88,32 @@ describe("resolveAiQuotaReason", () => {
     expect(resolveAiQuotaReason(status, "COVER_LETTER")).toBe("TOKEN_LIMIT_REACHED");
   });
 
+  it("reports FIT_ANALYSIS_LIMIT_REACHED for FIT_ANALYSIS when only the fit analysis quota is exhausted", () => {
+    const status = usage({ fitAnalysis: { used: 30, limit: 30, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(status, "FIT_ANALYSIS")).toBe("FIT_ANALYSIS_LIMIT_REACHED");
+  });
+
+  it("never reports the fit analysis reason for other features, nor other feature reasons for FIT_ANALYSIS", () => {
+    const fitExhausted = usage({ fitAnalysis: { used: 30, limit: 30, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(fitExhausted, "VACANCY_GENERATION")).toBeNull();
+    expect(resolveAiQuotaReason(fitExhausted, "HR_GENERATION")).toBeNull();
+    expect(resolveAiQuotaReason(fitExhausted, "PROFILE")).toBeNull();
+    expect(resolveAiQuotaReason(fitExhausted, "COVER_LETTER")).toBeNull();
+
+    const othersExhausted = usage({
+      vacancy: { used: 10, limit: 10, exhausted: true, pendingRequest: false },
+      hr: { used: 10, limit: 10, exhausted: true, pendingRequest: false },
+      profile: { used: 50, limit: 50, exhausted: true, pendingRequest: false },
+      coverLetter: { used: 20, limit: 20, exhausted: true, pendingRequest: false },
+    });
+    expect(resolveAiQuotaReason(othersExhausted, "FIT_ANALYSIS")).toBeNull();
+  });
+
+  it("reports TOKEN_LIMIT_REACHED for FIT_ANALYSIS when only the token budget is exhausted", () => {
+    const status = usage({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(status, "FIT_ANALYSIS")).toBe("TOKEN_LIMIT_REACHED");
+  });
+
   it("reports TOKEN_LIMIT_REACHED for both features when only the token budget is exhausted", () => {
     const status = usage({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } });
     expect(resolveAiQuotaReason(status, "VACANCY_GENERATION")).toBe("TOKEN_LIMIT_REACHED");
@@ -114,6 +141,7 @@ describe("quotaForReason", () => {
     expect(quotaForReason(status, "HR_LIMIT_REACHED")).toBe(status.hr);
     expect(quotaForReason(status, "PROFILE_LIMIT_REACHED")).toBe(status.profile);
     expect(quotaForReason(status, "COVER_LETTER_LIMIT_REACHED")).toBe(status.coverLetter);
+    expect(quotaForReason(status, "FIT_ANALYSIS_LIMIT_REACHED")).toBe(status.fitAnalysis);
     expect(quotaForReason(status, "TOKEN_LIMIT_REACHED")).toBe(status.tokens);
   });
 });
@@ -125,9 +153,10 @@ describe("AI_QUOTA_REQUEST_TYPE", () => {
     expect(AI_QUOTA_REQUEST_TYPE.TOKEN_LIMIT_REACHED).toBe("TOKEN_LIMIT");
   });
 
-  it("has no request-more-usage type for the profile or cover letter limits", () => {
+  it("has no request-more-usage type for the profile, cover letter or fit analysis limits", () => {
     expect(Object.keys(AI_QUOTA_REQUEST_TYPE)).not.toContain("PROFILE_LIMIT_REACHED");
     expect(Object.keys(AI_QUOTA_REQUEST_TYPE)).not.toContain("COVER_LETTER_LIMIT_REACHED");
+    expect(Object.keys(AI_QUOTA_REQUEST_TYPE)).not.toContain("FIT_ANALYSIS_LIMIT_REACHED");
   });
 });
 
@@ -144,6 +173,10 @@ describe("extractAiQuotaReasonFromError", () => {
     expect(extractAiQuotaReasonFromError({ code: "COVER_LETTER_LIMIT_REACHED" })).toBe(
       "COVER_LETTER_LIMIT_REACHED",
     );
+  });
+
+  it("extracts the fit analysis quota reason code", () => {
+    expect(extractAiQuotaReasonFromError({ code: "FIT_ANALYSIS_LIMIT_REACHED" })).toBe("FIT_ANALYSIS_LIMIT_REACHED");
   });
 
   it("returns null for an unrelated code", () => {

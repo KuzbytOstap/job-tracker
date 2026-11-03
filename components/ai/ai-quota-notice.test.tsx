@@ -14,7 +14,11 @@ afterEach(() => {
 });
 
 function renderNotice(
-  reason: "VACANCY_LIMIT_REACHED" | "PROFILE_LIMIT_REACHED" | "COVER_LETTER_LIMIT_REACHED",
+  reason:
+    | "VACANCY_LIMIT_REACHED"
+    | "PROFILE_LIMIT_REACHED"
+    | "COVER_LETTER_LIMIT_REACHED"
+    | "FIT_ANALYSIS_LIMIT_REACHED",
   pendingRequest = false,
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -41,6 +45,13 @@ describe("AiQuotaNotice", () => {
     renderNotice("COVER_LETTER_LIMIT_REACHED");
 
     expect(screen.getByText("Daily cover letter limit reached")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows the fit analysis title without any request-more control", () => {
+    renderNotice("FIT_ANALYSIS_LIMIT_REACHED");
+
+    expect(screen.getByText("Daily fit analysis limit reached")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 

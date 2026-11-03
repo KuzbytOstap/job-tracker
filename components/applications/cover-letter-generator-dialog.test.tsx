@@ -52,6 +52,7 @@ function usage(coverLetter: Partial<AiUsageStatusResponse["coverLetter"]> = {}):
     hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
     coverLetter: { used: 2, limit: 20, exhausted: false, pendingRequest: false, ...coverLetter },
+    fitAnalysis: { used: 0, limit: 30, exhausted: false, pendingRequest: false },
     tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
   };
 }

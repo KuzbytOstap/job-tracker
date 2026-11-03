@@ -19,6 +19,7 @@ type FieldKey =
   | "hrGenerationLimit"
   | "profileGenerationLimit"
   | "coverLetterGenerationLimit"
+  | "fitAnalysisGenerationLimit"
   | "tokenLimit";
 
 const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; descriptionKey: MessageKey }> = [
@@ -30,6 +31,11 @@ const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; descriptionKey:
     labelKey: "admin.limits.coverLetterField",
     descriptionKey: "admin.settings.coverLetterDescription",
   },
+  {
+    key: "fitAnalysisGenerationLimit",
+    labelKey: "admin.limits.fitAnalysisField",
+    descriptionKey: "admin.settings.fitAnalysisDescription",
+  },
   { key: "tokenLimit", labelKey: "admin.limits.tokensField", descriptionKey: "admin.settings.tokensDescription" },
 ];
 
@@ -39,6 +45,7 @@ function toValues(limits: AiGlobalLimitsDTO): Record<FieldKey, string> {
     hrGenerationLimit: String(limits.hrGenerationLimit),
     profileGenerationLimit: String(limits.profileGenerationLimit),
     coverLetterGenerationLimit: String(limits.coverLetterGenerationLimit),
+    fitAnalysisGenerationLimit: String(limits.fitAnalysisGenerationLimit),
     tokenLimit: String(limits.tokenLimit),
   };
 }
@@ -80,6 +87,7 @@ export function SettingsSection() {
         hrGenerationLimit: Number(values.hrGenerationLimit),
         profileGenerationLimit: Number(values.profileGenerationLimit),
         coverLetterGenerationLimit: Number(values.coverLetterGenerationLimit),
+        fitAnalysisGenerationLimit: Number(values.fitAnalysisGenerationLimit),
         tokenLimit: Number(values.tokenLimit),
       },
       {

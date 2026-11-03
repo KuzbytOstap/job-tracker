@@ -41,6 +41,7 @@ describe("listAdminUsers", () => {
       hrGenerationLimit: 10,
       profileGenerationLimit: 50,
       coverLetterGenerationLimit: 20,
+      fitAnalysisGenerationLimit: 30,
       tokenLimit: 20_000,
     });
     userFindManyMock.mockResolvedValue([
@@ -55,6 +56,7 @@ describe("listAdminUsers", () => {
           hrGenerationLimit: null,
           profileGenerationLimit: 5,
           coverLetterGenerationLimit: 4,
+          fitAnalysisGenerationLimit: 3,
           tokenLimit: null,
         },
         aiUsageDaily: [
@@ -63,6 +65,7 @@ describe("listAdminUsers", () => {
             hrGenerationCount: 2,
             profileGenerationCount: 3,
             coverLetterGenerationCount: 2,
+            fitAnalysisGenerationCount: 1,
             tokenCount: 500,
             vacancyGenerationBonus: 2,
             hrGenerationBonus: 0,
@@ -89,9 +92,9 @@ describe("listAdminUsers", () => {
       email: "ada@example.com",
       role: Role.USER,
       aiAccessStatus: AiAccessStatus.APPROVED,
-      usage: { vacancy: 4, hr: 2, profile: 3, coverLetter: 2, tokens: 500 },
-      limits: { vacancy: 17, hr: 10, profile: 5, coverLetter: 4, tokens: 20_100 },
-      overrides: { vacancy: 15, hr: null, profile: 5, coverLetter: 4, tokens: null },
+      usage: { vacancy: 4, hr: 2, profile: 3, coverLetter: 2, fitAnalysis: 1, tokens: 500 },
+      limits: { vacancy: 17, hr: 10, profile: 5, coverLetter: 4, fitAnalysis: 3, tokens: 20_100 },
+      overrides: { vacancy: 15, hr: null, profile: 5, coverLetter: 4, fitAnalysis: 3, tokens: null },
     });
     expect(result[1]).toEqual({
       id: "user_2",
@@ -99,9 +102,9 @@ describe("listAdminUsers", () => {
       email: "grace@example.com",
       role: Role.ADMIN,
       aiAccessStatus: AiAccessStatus.NOT_REQUESTED,
-      usage: { vacancy: 0, hr: 0, profile: 0, coverLetter: 0, tokens: 0 },
-      limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, tokens: 20_000 },
-      overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, tokens: null },
+      usage: { vacancy: 0, hr: 0, profile: 0, coverLetter: 0, fitAnalysis: 0, tokens: 0 },
+      limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, fitAnalysis: 30, tokens: 20_000 },
+      overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, fitAnalysis: null, tokens: null },
     });
   });
 });
@@ -158,6 +161,7 @@ describe("setAiUserLimitOverrides", () => {
       hrGenerationLimit: null,
       profileGenerationLimit: null,
       coverLetterGenerationLimit: null,
+      fitAnalysisGenerationLimit: null,
       tokenLimit: null,
     });
 
@@ -171,11 +175,19 @@ describe("setAiUserLimitOverrides", () => {
         hrGenerationLimit: null,
         profileGenerationLimit: null,
         coverLetterGenerationLimit: null,
+        fitAnalysisGenerationLimit: null,
         tokenLimit: null,
       },
       update: { vacancyGenerationLimit: 20 },
     });
-    expect(result).toEqual({ vacancy: 20, hr: null, profile: null, coverLetter: null, tokens: null });
+    expect(result).toEqual({
+      vacancy: 20,
+      hr: null,
+      profile: null,
+      coverLetter: null,
+      fitAnalysis: null,
+      tokens: null,
+    });
   });
 
   it("pins and clears the profile override independently of the other limits", async () => {
@@ -226,6 +238,33 @@ describe("setAiUserLimitOverrides", () => {
 
     expect(aiUserLimitUpsertMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ update: { coverLetterGenerationLimit: null } }),
+    );
+  });
+
+  it("pins and clears the fit analysis override independently of the other limits", async () => {
+    aiUserLimitUpsertMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: null,
+      fitAnalysisGenerationLimit: 9,
+      tokenLimit: null,
+    });
+
+    const pinned = await setAiUserLimitOverrides("user_1", { fitAnalysisGenerationLimit: 9 });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ fitAnalysisGenerationLimit: 9, coverLetterGenerationLimit: null }),
+        update: { fitAnalysisGenerationLimit: 9 },
+      }),
+    );
+    expect(pinned.fitAnalysis).toBe(9);
+
+    await setAiUserLimitOverrides("user_1", { fitAnalysisGenerationLimit: null });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ update: { fitAnalysisGenerationLimit: null } }),
     );
   });
 

@@ -5,11 +5,12 @@ export type AiQuotaReasonCode =
   | "HR_LIMIT_REACHED"
   | "PROFILE_LIMIT_REACHED"
   | "COVER_LETTER_LIMIT_REACHED"
+  | "FIT_ANALYSIS_LIMIT_REACHED"
   | "TOKEN_LIMIT_REACHED";
 
 export type RequestableAiQuotaReasonCode = Exclude<
   AiQuotaReasonCode,
-  "PROFILE_LIMIT_REACHED" | "COVER_LETTER_LIMIT_REACHED"
+  "PROFILE_LIMIT_REACHED" | "COVER_LETTER_LIMIT_REACHED" | "FIT_ANALYSIS_LIMIT_REACHED"
 >;
 
 export const AI_QUOTA_REQUEST_TYPE: Record<RequestableAiQuotaReasonCode, AiUsageRequestType> = {
@@ -30,7 +31,7 @@ export const AI_QUOTA_REQUEST_TYPE: Record<RequestableAiQuotaReasonCode, AiUsage
  */
 export function resolveAiQuotaReason(
   usage: AiUsageStatusResponse | undefined,
-  feature: "VACANCY_GENERATION" | "HR_GENERATION" | "PROFILE" | "COVER_LETTER",
+  feature: "VACANCY_GENERATION" | "HR_GENERATION" | "PROFILE" | "COVER_LETTER" | "FIT_ANALYSIS",
 ): AiQuotaReasonCode | null {
   if (!usage) return null;
 
@@ -38,6 +39,7 @@ export function resolveAiQuotaReason(
   if (feature === "HR_GENERATION" && usage.hr.exhausted) return "HR_LIMIT_REACHED";
   if (feature === "PROFILE" && usage.profile.exhausted) return "PROFILE_LIMIT_REACHED";
   if (feature === "COVER_LETTER" && usage.coverLetter.exhausted) return "COVER_LETTER_LIMIT_REACHED";
+  if (feature === "FIT_ANALYSIS" && usage.fitAnalysis.exhausted) return "FIT_ANALYSIS_LIMIT_REACHED";
   if (usage.tokens.exhausted) return "TOKEN_LIMIT_REACHED";
   return null;
 }
@@ -52,6 +54,8 @@ export function quotaForReason(usage: AiUsageStatusResponse, reason: AiQuotaReas
       return usage.profile;
     case "COVER_LETTER_LIMIT_REACHED":
       return usage.coverLetter;
+    case "FIT_ANALYSIS_LIMIT_REACHED":
+      return usage.fitAnalysis;
     case "TOKEN_LIMIT_REACHED":
       return usage.tokens;
   }
@@ -70,6 +74,7 @@ export function extractAiQuotaReasonFromError(details: unknown): AiQuotaReasonCo
     code === "HR_LIMIT_REACHED" ||
     code === "PROFILE_LIMIT_REACHED" ||
     code === "COVER_LETTER_LIMIT_REACHED" ||
+    code === "FIT_ANALYSIS_LIMIT_REACHED" ||
     code === "TOKEN_LIMIT_REACHED"
   ) {
     return code;

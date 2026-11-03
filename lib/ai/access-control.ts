@@ -9,6 +9,7 @@ export type AiAccessErrorCode =
   | "HR_LIMIT_REACHED"
   | "PROFILE_LIMIT_REACHED"
   | "COVER_LETTER_LIMIT_REACHED"
+  | "FIT_ANALYSIS_LIMIT_REACHED"
   | "TOKEN_LIMIT_REACHED";
 
 export class AiAccessError extends Error {
@@ -30,6 +31,7 @@ export function aiAccessErrorStatus(code: AiAccessErrorCode): number {
     case "HR_LIMIT_REACHED":
     case "PROFILE_LIMIT_REACHED":
     case "COVER_LETTER_LIMIT_REACHED":
+    case "FIT_ANALYSIS_LIMIT_REACHED":
     case "TOKEN_LIMIT_REACHED":
       return 429;
   }
@@ -63,11 +65,13 @@ type EffectiveLimitsAndUsage = {
   hrLimit: number;
   profileLimit: number;
   coverLetterLimit: number;
+  fitAnalysisLimit: number;
   tokenLimit: number;
   vacancyUsed: number;
   hrUsed: number;
   profileUsed: number;
   coverLetterUsed: number;
+  fitAnalysisUsed: number;
   tokenUsed: number;
 };
 
@@ -88,11 +92,13 @@ async function loadEffectiveLimitsAndUsage(userId: string, date: Date): Promise<
     hrLimit: (userLimit?.hrGenerationLimit ?? globalLimits.hrGenerationLimit) + daily.hrGenerationBonus,
     profileLimit: userLimit?.profileGenerationLimit ?? globalLimits.profileGenerationLimit,
     coverLetterLimit: userLimit?.coverLetterGenerationLimit ?? globalLimits.coverLetterGenerationLimit,
+    fitAnalysisLimit: userLimit?.fitAnalysisGenerationLimit ?? globalLimits.fitAnalysisGenerationLimit,
     tokenLimit: (userLimit?.tokenLimit ?? globalLimits.tokenLimit) + daily.tokenBonus,
     vacancyUsed: daily.vacancyGenerationCount,
     hrUsed: daily.hrGenerationCount,
     profileUsed: daily.profileGenerationCount,
     coverLetterUsed: daily.coverLetterGenerationCount,
+    fitAnalysisUsed: daily.fitAnalysisGenerationCount,
     tokenUsed: daily.tokenCount,
   };
 }
@@ -102,6 +108,7 @@ type DailyCounts = {
   hrGenerationCount: number;
   profileGenerationCount: number;
   coverLetterGenerationCount: number;
+  fitAnalysisGenerationCount: number;
 };
 
 type FeatureCounter = {
@@ -146,6 +153,14 @@ const FEATURE_COUNTERS: Record<AiFeature, FeatureCounter> = {
     decrement: { coverLetterGenerationCount: { decrement: 1 } },
     limitError: { code: "COVER_LETTER_LIMIT_REACHED", message: "Daily cover letter limit reached." },
   },
+  [AiFeature.FIT_ANALYSIS]: {
+    limitOf: (limits) => limits.fitAnalysisLimit,
+    countOf: (daily) => daily.fitAnalysisGenerationCount,
+    where: (limit) => ({ fitAnalysisGenerationCount: { lt: limit } }),
+    increment: { fitAnalysisGenerationCount: { increment: 1 } },
+    decrement: { fitAnalysisGenerationCount: { decrement: 1 } },
+    limitError: { code: "FIT_ANALYSIS_LIMIT_REACHED", message: "Daily fit analysis limit reached." },
+  },
 };
 
 export type AiQuotaStatus = {
@@ -160,6 +175,7 @@ export type AiUsageStatus = {
   hr: AiQuotaStatus;
   profile: AiQuotaStatus;
   coverLetter: AiQuotaStatus;
+  fitAnalysis: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 
@@ -180,11 +196,13 @@ export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
     hrLimit,
     profileLimit,
     coverLetterLimit,
+    fitAnalysisLimit,
     tokenLimit,
     vacancyUsed,
     hrUsed,
     profileUsed,
     coverLetterUsed,
+    fitAnalysisUsed,
     tokenUsed,
   } = await loadEffectiveLimitsAndUsage(userId, date);
 
@@ -200,6 +218,11 @@ export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
       used: coverLetterUsed,
       limit: coverLetterLimit,
       exhausted: coverLetterUsed >= coverLetterLimit,
+    },
+    fitAnalysis: {
+      used: fitAnalysisUsed,
+      limit: fitAnalysisLimit,
+      exhausted: fitAnalysisUsed >= fitAnalysisLimit,
     },
     tokens: { used: tokenUsed, limit: tokenLimit, exhausted: tokenUsed >= tokenLimit },
   };

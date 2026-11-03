@@ -20,6 +20,7 @@ export const errors: Messages["errors"] = {
     hrLimit: "Досягнуто денний ліміт HR-питань.",
     profileLimit: "Досягнуто денний ліміт AI для профілю.",
     coverLetterLimit: "Досягнуто денний ліміт листів.",
+    fitAnalysisLimit: "Досягнуто денний ліміт аналізів відповідності.",
     cvNotPdf: "Приймаються лише PDF-файли.",
     cvTooLarge: "Файл більший за 4 МБ.",
     cvLimit: "Досягнуто ліміт збережених CV.",

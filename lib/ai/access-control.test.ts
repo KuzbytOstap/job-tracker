@@ -48,6 +48,7 @@ function dailyRow(overrides: Record<string, unknown> = {}) {
     hrGenerationCount: 0,
     profileGenerationCount: 0,
     coverLetterGenerationCount: 0,
+    fitAnalysisGenerationCount: 0,
     tokenCount: 0,
     vacancyGenerationBonus: 0,
     hrGenerationBonus: 0,
@@ -75,6 +76,7 @@ beforeEach(() => {
     hrGenerationLimit: 10,
     profileGenerationLimit: 50,
     coverLetterGenerationLimit: 20,
+    fitAnalysisGenerationLimit: 30,
     tokenLimit: 20_000,
   });
   userLimitFindUniqueMock.mockResolvedValue(null);
@@ -378,6 +380,78 @@ describe("reserveAiQuota — COVER_LETTER feature", () => {
   });
 });
 
+describe("reserveAiQuota — FIT_ANALYSIS feature", () => {
+  it("reserves against the fit analysis counter and the shared token counter without touching other counters", async () => {
+    const reservation = await reserveAiQuota({
+      userId: "user_1",
+      feature: AiFeature.FIT_ANALYSIS,
+      estimatedTokens: 4000,
+    });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        date: expect.any(Date),
+        fitAnalysisGenerationCount: { lt: 30 },
+        tokenCount: { lte: 20_000 - 4000 },
+      },
+      data: {
+        fitAnalysisGenerationCount: { increment: 1 },
+        tokenCount: { increment: 4000 },
+      },
+    });
+    expect(reservation.feature).toBe(AiFeature.FIT_ANALYSIS);
+    expect(reservation.reservedTokens).toBe(4000);
+  });
+
+  it("applies a per-user fit analysis override in place of the global default", async () => {
+    userLimitFindUniqueMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: null,
+      fitAnalysisGenerationLimit: 2,
+      tokenLimit: null,
+    });
+
+    await reserveAiQuota({ userId: "user_1", feature: AiFeature.FIT_ANALYSIS, estimatedTokens: 100 });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ fitAnalysisGenerationCount: { lt: 2 } }) }),
+    );
+  });
+
+  it("is not blocked when only the cover letter counter is exhausted", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ coverLetterGenerationCount: 20 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.FIT_ANALYSIS, estimatedTokens: 100 }),
+    ).resolves.toMatchObject({ feature: AiFeature.FIT_ANALYSIS });
+  });
+
+  it("throws FIT_ANALYSIS_LIMIT_REACHED when the fit analysis counter is already at the limit", async () => {
+    dailyUpdateManyMock.mockResolvedValue({ count: 0 });
+    dailyFindUniqueMock.mockResolvedValue(dailyRow({ fitAnalysisGenerationCount: 30 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.FIT_ANALYSIS, estimatedTokens: 100 }),
+    ).rejects.toMatchObject({ code: "FIT_ANALYSIS_LIMIT_REACHED" });
+  });
+
+  it("throws TOKEN_LIMIT_REACHED when only the shared token budget is exhausted", async () => {
+    dailyUpdateManyMock.mockResolvedValue({ count: 0 });
+    dailyFindUniqueMock.mockResolvedValue(dailyRow({ fitAnalysisGenerationCount: 1, tokenCount: 19_999 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.FIT_ANALYSIS, estimatedTokens: 4000 }),
+    ).rejects.toMatchObject({ code: "TOKEN_LIMIT_REACHED" });
+  });
+
+  it("maps FIT_ANALYSIS_LIMIT_REACHED to HTTP 429", () => {
+    expect(aiAccessErrorStatus("FIT_ANALYSIS_LIMIT_REACHED")).toBe(429);
+  });
+});
+
 describe("getAiUsageStatus", () => {
   it("throws AI_ACCESS_REQUIRED / AI_SUSPENDED for a non-approved user without touching quota tables", async () => {
     userFindUniqueMock.mockResolvedValue({ aiAccessStatus: AiAccessStatus.PENDING });
@@ -446,6 +520,24 @@ describe("getAiUsageStatus", () => {
     expect(withOverride.coverLetter).toEqual({ used: 4, limit: 4, exhausted: true });
   });
 
+  it("reports the fit analysis quota against the global default or the per-user override, without any bonus", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ fitAnalysisGenerationCount: 5 }));
+
+    const withDefault = await getAiUsageStatus("user_1");
+    expect(withDefault.fitAnalysis).toEqual({ used: 5, limit: 30, exhausted: false });
+
+    userLimitFindUniqueMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: null,
+      fitAnalysisGenerationLimit: 5,
+      tokenLimit: null,
+    });
+    const withOverride = await getAiUsageStatus("user_1");
+    expect(withOverride.fitAnalysis).toEqual({ used: 5, limit: 5, exhausted: true });
+  });
+
   it("resolves resetAt to the next UTC midnight after today", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-09T14:32:00.000Z"));
@@ -499,6 +591,20 @@ describe("rollbackAiReservation", () => {
     expect(dailyUpdateMock).toHaveBeenCalledWith({
       where: { userId_date: { userId: "user_1", date: new Date("2026-08-09T00:00:00.000Z") } },
       data: { coverLetterGenerationCount: { decrement: 1 }, tokenCount: { decrement: 3000 } },
+    });
+  });
+
+  it("decrements only the fit analysis counter and the reserved tokens for FIT_ANALYSIS", async () => {
+    await rollbackAiReservation({
+      userId: "user_1",
+      feature: AiFeature.FIT_ANALYSIS,
+      date: new Date("2026-08-09T00:00:00.000Z"),
+      reservedTokens: 4000,
+    });
+
+    expect(dailyUpdateMock).toHaveBeenCalledWith({
+      where: { userId_date: { userId: "user_1", date: new Date("2026-08-09T00:00:00.000Z") } },
+      data: { fitAnalysisGenerationCount: { decrement: 1 }, tokenCount: { decrement: 4000 } },
     });
   });
 

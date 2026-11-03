@@ -22,6 +22,7 @@ export const ai = {
     hrTitle: "Daily HR question limit reached",
     profileTitle: "Daily profile AI limit reached",
     coverLetterTitle: "Daily cover letter limit reached",
+    fitAnalysisTitle: "Daily fit analysis limit reached",
     tokenTitle: "Daily AI token limit reached",
     usage: "Used {used} / {limit} today. Resets {resetAt}.",
     pending: "More usage requested — awaiting admin approval.",

@@ -22,6 +22,7 @@ import type {
   CoverLetterExamplePayload,
   CvDTO,
   CoverLetterGenerationDTO,
+  FitAnalysisOutcomeDTO,
   CvSuggestionsResponseDTO,
   GenerateCoverLetterPayload,
   CvUpdateHintDTO,
@@ -132,6 +133,10 @@ export function deleteApplication(id: string): Promise<DeleteResponse> {
  */
 export function generateHrQuestions(id: string): Promise<ApplicationDTO> {
   return request<ApplicationDTO>(`/api/applications/${id}/hr-questions`, { method: "POST" });
+}
+
+export function analyzeApplicationFit(id: string): Promise<FitAnalysisOutcomeDTO> {
+  return request<FitAnalysisOutcomeDTO>(`/api/applications/${id}/fit-analysis`, { method: "POST" });
 }
 
 export function getStats(): Promise<StatsResponse> {
@@ -263,6 +268,7 @@ export type SetAdminUserLimitsPayload = {
   hrGenerationLimit?: number | null;
   profileGenerationLimit?: number | null;
   coverLetterGenerationLimit?: number | null;
+  fitAnalysisGenerationLimit?: number | null;
   tokenLimit?: number | null;
 };
 
@@ -285,6 +291,7 @@ export type UpdateAdminSettingsPayload = {
   hrGenerationLimit?: number;
   profileGenerationLimit?: number;
   coverLetterGenerationLimit?: number;
+  fitAnalysisGenerationLimit?: number;
   tokenLimit?: number;
 };
 

@@ -12,6 +12,17 @@ import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 type WithStringDates<T, K extends keyof T> = Omit<T, K> & { [P in K]: string };
 
+export type FitCriterionValue = "SALARY" | "WORK_FORMAT" | "EMPLOYMENT_TYPE" | "EXPERIENCE_YEARS" | "TECHNOLOGIES";
+export type FitVerdictValue = "MATCH" | "MISMATCH" | "UNKNOWN";
+export type FitItemDTO = {
+  criterion: FitCriterionValue;
+  verdict: FitVerdictValue;
+  vacancyValue: string | null;
+  yourValue: string | null;
+  reason: string;
+};
+export type FitAnalysisDTO = { items: FitItemDTO[]; analyzedAt: string };
+
 export type StatusChangeDTO = WithStringDates<StatusChange, "changedAt">;
 
 export type CustomPlatformRefDTO = {
@@ -27,6 +38,9 @@ export type ApplicationDTO = Omit<
   | "userId"
   | "hrEnhancementClaimedAt"
   | "hrEnhancementClaimToken"
+  | "fitAnalysis"
+  | "fitAnalyzedAt"
+  | "fitMismatchCount"
   | "reviewReasons"
   | "suggestedPlatformName"
   | "customPlatformId"
@@ -40,6 +54,7 @@ export type ApplicationDTO = Omit<
   statusChanges: StatusChangeDTO[];
   hrInterviewQuestions: HrInterviewQuestionSet | null;
   hrQuestionsGeneratedAt: string | null;
+  fitAnalysis?: FitAnalysisDTO | null;
 };
 
 // Lightweight projection returned by the list endpoint. It carries only what
@@ -66,6 +81,7 @@ export type ApplicationListItemDTO = {
   appliedAt: string;
   lastActivityAt: string;
   updatedAt: string;
+  fitMismatchCount?: number | null;
 };
 
 export type ApplicationsListResponse = {
@@ -176,6 +192,10 @@ export type CoverLetterGenerationDTO =
   | { status: "ok"; letter: string }
   | { status: "skipped"; reason: string };
 
+export type FitAnalysisOutcomeDTO =
+  | { status: "ok"; application: ApplicationDTO }
+  | { status: "skipped"; reason: string };
+
 export type ContextItemWeightValue = "COVERED" | "SUBSTANTIAL" | "MINOR";
 
 export type ContextItemDTO = {
@@ -262,6 +282,7 @@ export type AiUsageStatusResponse = {
   hr: AiQuotaStatus;
   profile: AiQuotaStatus;
   coverLetter: AiQuotaStatus;
+  fitAnalysis: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 
@@ -366,6 +387,7 @@ export type AdminQuotaAmounts = {
   hr: number;
   profile: number;
   coverLetter: number;
+  fitAnalysis: number;
   tokens: number;
 };
 
@@ -374,6 +396,7 @@ export type AdminUserOverrides = {
   hr: number | null;
   profile: number | null;
   coverLetter: number | null;
+  fitAnalysis: number | null;
   tokens: number | null;
 };
 
@@ -397,6 +420,7 @@ export type AiGlobalLimitsDTO = {
   hrGenerationLimit: number;
   profileGenerationLimit: number;
   coverLetterGenerationLimit: number;
+  fitAnalysisGenerationLimit: number;
   tokenLimit: number;
   updatedAt: string;
 };

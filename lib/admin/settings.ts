@@ -10,6 +10,7 @@ export type AiGlobalLimitsInput = {
   hrGenerationLimit?: number;
   profileGenerationLimit?: number;
   coverLetterGenerationLimit?: number;
+  fitAnalysisGenerationLimit?: number;
   tokenLimit?: number;
 };
 

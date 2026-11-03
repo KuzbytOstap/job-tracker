@@ -14,6 +14,7 @@ const settingsBodySchema = z
     hrGenerationLimit: z.number().int().nonnegative().optional(),
     profileGenerationLimit: z.number().int().nonnegative().optional(),
     coverLetterGenerationLimit: z.number().int().nonnegative().optional(),
+    fitAnalysisGenerationLimit: z.number().int().nonnegative().optional(),
     tokenLimit: z.number().int().nonnegative().optional(),
   })
   .strict();
@@ -23,6 +24,7 @@ function toDTO(limits: {
   hrGenerationLimit: number;
   profileGenerationLimit: number;
   coverLetterGenerationLimit: number;
+  fitAnalysisGenerationLimit: number;
   tokenLimit: number;
   updatedAt: Date;
 }): AiGlobalLimitsDTO {
@@ -31,6 +33,7 @@ function toDTO(limits: {
     hrGenerationLimit: limits.hrGenerationLimit,
     profileGenerationLimit: limits.profileGenerationLimit,
     coverLetterGenerationLimit: limits.coverLetterGenerationLimit,
+    fitAnalysisGenerationLimit: limits.fitAnalysisGenerationLimit,
     tokenLimit: limits.tokenLimit,
     updatedAt: limits.updatedAt.toISOString(),
   };

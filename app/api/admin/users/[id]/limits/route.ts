@@ -18,6 +18,7 @@ const limitsBodySchema = z
     hrGenerationLimit: nonNegativeIntOrNull,
     profileGenerationLimit: nonNegativeIntOrNull,
     coverLetterGenerationLimit: nonNegativeIntOrNull,
+    fitAnalysisGenerationLimit: nonNegativeIntOrNull,
     tokenLimit: nonNegativeIntOrNull,
   })
   .strict();

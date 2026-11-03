@@ -27,13 +27,14 @@ type UserLimitsDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-type FieldKey = "vacancy" | "hr" | "profile" | "coverLetter" | "tokens";
+type FieldKey = "vacancy" | "hr" | "profile" | "coverLetter" | "fitAnalysis" | "tokens";
 
 const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; globalKey: keyof AiGlobalLimitsDTO }> = [
   { key: "vacancy", labelKey: "admin.limits.vacancyField", globalKey: "vacancyGenerationLimit" },
   { key: "hr", labelKey: "admin.limits.hrField", globalKey: "hrGenerationLimit" },
   { key: "profile", labelKey: "admin.limits.profileField", globalKey: "profileGenerationLimit" },
   { key: "coverLetter", labelKey: "admin.limits.coverLetterField", globalKey: "coverLetterGenerationLimit" },
+  { key: "fitAnalysis", labelKey: "admin.limits.fitAnalysisField", globalKey: "fitAnalysisGenerationLimit" },
   { key: "tokens", labelKey: "admin.limits.tokensField", globalKey: "tokenLimit" },
 ];
 
@@ -48,6 +49,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
     hr: toInputValue(user.overrides.hr),
     profile: toInputValue(user.overrides.profile),
     coverLetter: toInputValue(user.overrides.coverLetter),
+    fitAnalysis: toInputValue(user.overrides.fitAnalysis),
     tokens: toInputValue(user.overrides.tokens),
   });
   const mutation = useSetAdminUserLimits();
@@ -59,6 +61,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
         hr: toInputValue(user.overrides.hr),
         profile: toInputValue(user.overrides.profile),
         coverLetter: toInputValue(user.overrides.coverLetter),
+        fitAnalysis: toInputValue(user.overrides.fitAnalysis),
         tokens: toInputValue(user.overrides.tokens),
       });
     }
@@ -83,6 +86,7 @@ export function UserLimitsDialog({ user, globalLimits, open, onOpenChange }: Use
         hrGenerationLimit: values.hr.trim() === "" ? null : Number(values.hr),
         profileGenerationLimit: values.profile.trim() === "" ? null : Number(values.profile),
         coverLetterGenerationLimit: values.coverLetter.trim() === "" ? null : Number(values.coverLetter),
+        fitAnalysisGenerationLimit: values.fitAnalysis.trim() === "" ? null : Number(values.fitAnalysis),
         tokenLimit: values.tokens.trim() === "" ? null : Number(values.tokens),
       },
       {

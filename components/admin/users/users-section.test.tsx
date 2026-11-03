@@ -44,9 +44,9 @@ function adminUser(overrides: Partial<AdminUserDTO> = {}): AdminUserDTO {
     email: "ada@example.com",
     role: "USER",
     aiAccessStatus: "APPROVED",
-    usage: { vacancy: 3, hr: 1, profile: 4, coverLetter: 2, tokens: 400 },
-    limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, tokens: 20_000 },
-    overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, tokens: null },
+    usage: { vacancy: 3, hr: 1, profile: 4, coverLetter: 2, fitAnalysis: 6, tokens: 400 },
+    limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, fitAnalysis: 30, tokens: 20_000 },
+    overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, fitAnalysis: null, tokens: null },
     ...overrides,
   };
 }
@@ -57,6 +57,7 @@ function globalLimits(overrides: Partial<AiGlobalLimitsDTO> = {}): AiGlobalLimit
     hrGenerationLimit: 10,
     profileGenerationLimit: 50,
     coverLetterGenerationLimit: 20,
+    fitAnalysisGenerationLimit: 30,
     tokenLimit: 20_000,
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
@@ -132,8 +133,8 @@ describe("UsersSection", () => {
     getAdminUsersMock.mockResolvedValue({
       users: [
         adminUser({
-          limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 5, tokens: 20_000 },
-          overrides: { vacancy: null, hr: null, profile: null, coverLetter: 5, tokens: null },
+          limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 5, fitAnalysis: 30, tokens: 20_000 },
+          overrides: { vacancy: null, hr: null, profile: null, coverLetter: 5, fitAnalysis: null, tokens: null },
         }),
       ],
     });
@@ -143,6 +144,33 @@ describe("UsersSection", () => {
 
     expect(await screen.findByText("/ 5")).toBeInTheDocument();
     expect(screen.getByText("override 5")).toBeInTheDocument();
+  });
+
+  it("shows a Fit column with usage against the fit analysis limit", async () => {
+    getAdminUsersMock.mockResolvedValue({ users: [adminUser()] });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+
+    renderSection();
+
+    expect(await screen.findByRole("columnheader", { name: "Fit" })).toBeInTheDocument();
+    expect(screen.getByText("/ 30")).toBeInTheDocument();
+  });
+
+  it("marks a fit analysis limit pinned for one user as an override", async () => {
+    getAdminUsersMock.mockResolvedValue({
+      users: [
+        adminUser({
+          limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, fitAnalysis: 3, tokens: 20_000 },
+          overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, fitAnalysis: 3, tokens: null },
+        }),
+      ],
+    });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+
+    renderSection();
+
+    expect(await screen.findByText("/ 3")).toBeInTheDocument();
+    expect(screen.getByText("override 3")).toBeInTheDocument();
   });
 
   it("filters users by search", async () => {
@@ -172,6 +200,7 @@ describe("UsersSection", () => {
       hr: null,
       profile: null,
       coverLetter: 7,
+      fitAnalysis: null,
       tokens: null,
     });
 
@@ -190,6 +219,41 @@ describe("UsersSection", () => {
         hrGenerationLimit: null,
         profileGenerationLimit: null,
         coverLetterGenerationLimit: 7,
+        fitAnalysisGenerationLimit: null,
+        tokenLimit: null,
+      }),
+    );
+  });
+
+  it("pins a fit analysis limit for one user from the limits dialog and leaves the other limits unpinned", async () => {
+    const user = userEvent.setup();
+    getAdminUsersMock.mockResolvedValue({ users: [adminUser()] });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    setAdminUserLimitsMock.mockResolvedValue({
+      vacancy: null,
+      hr: null,
+      profile: null,
+      coverLetter: null,
+      fitAnalysis: 4,
+      tokens: null,
+    });
+
+    renderSection();
+
+    await user.click(await screen.findByRole("button", { name: "Edit limits" }));
+    const dialog = await screen.findByRole("dialog");
+    const input = within(dialog).getByLabelText("Fit analyses / day");
+    expect(input).toHaveAttribute("placeholder", "Default: 30");
+    await user.type(input, "4");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(setAdminUserLimitsMock).toHaveBeenCalledWith("user-1", {
+        vacancyGenerationLimit: null,
+        hrGenerationLimit: null,
+        profileGenerationLimit: null,
+        coverLetterGenerationLimit: null,
+        fitAnalysisGenerationLimit: 4,
         tokenLimit: null,
       }),
     );

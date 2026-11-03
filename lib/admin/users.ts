@@ -49,6 +49,7 @@ export async function listAdminUsers(): Promise<AdminUserDTO[]> {
             hrGenerationLimit: true,
             profileGenerationLimit: true,
             coverLetterGenerationLimit: true,
+            fitAnalysisGenerationLimit: true,
             tokenLimit: true,
           },
         },
@@ -59,6 +60,7 @@ export async function listAdminUsers(): Promise<AdminUserDTO[]> {
             hrGenerationCount: true,
             profileGenerationCount: true,
             coverLetterGenerationCount: true,
+            fitAnalysisGenerationCount: true,
             tokenCount: true,
             vacancyGenerationBonus: true,
             hrGenerationBonus: true,
@@ -85,6 +87,7 @@ export async function listAdminUsers(): Promise<AdminUserDTO[]> {
         hr: daily?.hrGenerationCount ?? 0,
         profile: daily?.profileGenerationCount ?? 0,
         coverLetter: daily?.coverLetterGenerationCount ?? 0,
+        fitAnalysis: daily?.fitAnalysisGenerationCount ?? 0,
         tokens: daily?.tokenCount ?? 0,
       },
       limits: {
@@ -94,6 +97,7 @@ export async function listAdminUsers(): Promise<AdminUserDTO[]> {
         hr: (user.aiUserLimit?.hrGenerationLimit ?? globalLimits.hrGenerationLimit) + (daily?.hrGenerationBonus ?? 0),
         profile: user.aiUserLimit?.profileGenerationLimit ?? globalLimits.profileGenerationLimit,
         coverLetter: user.aiUserLimit?.coverLetterGenerationLimit ?? globalLimits.coverLetterGenerationLimit,
+        fitAnalysis: user.aiUserLimit?.fitAnalysisGenerationLimit ?? globalLimits.fitAnalysisGenerationLimit,
         tokens: (user.aiUserLimit?.tokenLimit ?? globalLimits.tokenLimit) + (daily?.tokenBonus ?? 0),
       },
       overrides: {
@@ -101,6 +105,7 @@ export async function listAdminUsers(): Promise<AdminUserDTO[]> {
         hr: user.aiUserLimit?.hrGenerationLimit ?? null,
         profile: user.aiUserLimit?.profileGenerationLimit ?? null,
         coverLetter: user.aiUserLimit?.coverLetterGenerationLimit ?? null,
+        fitAnalysis: user.aiUserLimit?.fitAnalysisGenerationLimit ?? null,
         tokens: user.aiUserLimit?.tokenLimit ?? null,
       },
     };
@@ -160,6 +165,7 @@ export type AiUserLimitOverridesInput = {
   hrGenerationLimit?: number | null;
   profileGenerationLimit?: number | null;
   coverLetterGenerationLimit?: number | null;
+  fitAnalysisGenerationLimit?: number | null;
   tokenLimit?: number | null;
 };
 
@@ -182,6 +188,9 @@ export async function setAiUserLimitOverrides(
   if ("coverLetterGenerationLimit" in overrides) {
     updateData.coverLetterGenerationLimit = overrides.coverLetterGenerationLimit;
   }
+  if ("fitAnalysisGenerationLimit" in overrides) {
+    updateData.fitAnalysisGenerationLimit = overrides.fitAnalysisGenerationLimit;
+  }
   if ("tokenLimit" in overrides) updateData.tokenLimit = overrides.tokenLimit;
 
   try {
@@ -193,6 +202,7 @@ export async function setAiUserLimitOverrides(
         hrGenerationLimit: overrides.hrGenerationLimit ?? null,
         profileGenerationLimit: overrides.profileGenerationLimit ?? null,
         coverLetterGenerationLimit: overrides.coverLetterGenerationLimit ?? null,
+        fitAnalysisGenerationLimit: overrides.fitAnalysisGenerationLimit ?? null,
         tokenLimit: overrides.tokenLimit ?? null,
       },
       update: updateData,
@@ -203,6 +213,7 @@ export async function setAiUserLimitOverrides(
       hr: result.hrGenerationLimit,
       profile: result.profileGenerationLimit,
       coverLetter: result.coverLetterGenerationLimit,
+      fitAnalysis: result.fitAnalysisGenerationLimit,
       tokens: result.tokenLimit,
     };
   } catch (error) {

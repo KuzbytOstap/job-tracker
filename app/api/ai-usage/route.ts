@@ -32,6 +32,7 @@ export async function GET() {
       hr: { ...usage.hr, pendingRequest: pendingTypes.includes("HR_LIMIT") },
       profile: { ...usage.profile, pendingRequest: false },
       coverLetter: { ...usage.coverLetter, pendingRequest: false },
+      fitAnalysis: { ...usage.fitAnalysis, pendingRequest: false },
       tokens: { ...usage.tokens, pendingRequest: pendingTypes.includes("TOKEN_LIMIT") },
     };
     return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });

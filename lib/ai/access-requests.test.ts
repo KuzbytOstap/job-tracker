@@ -43,6 +43,7 @@ function usageStatus(overrides: Record<string, { used: number; limit: number; ex
     hr: { used: 0, limit: 10, exhausted: false },
     profile: { used: 0, limit: 50, exhausted: false },
     coverLetter: { used: 0, limit: 20, exhausted: false },
+    fitAnalysis: { used: 0, limit: 30, exhausted: false },
     tokens: { used: 0, limit: 20_000, exhausted: false },
     ...overrides,
   };

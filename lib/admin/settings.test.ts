@@ -88,6 +88,27 @@ describe("updateAiGlobalLimits", () => {
     });
   });
 
+  it("writes the fit analysis generation limit like any other global limit", async () => {
+    aiGlobalLimitsUpsertMock.mockResolvedValue({
+      id: 1,
+      vacancyGenerationLimit: 10,
+      hrGenerationLimit: 10,
+      profileGenerationLimit: 50,
+      coverLetterGenerationLimit: 20,
+      fitAnalysisGenerationLimit: 45,
+      tokenLimit: 20_000,
+      updatedAt: new Date(),
+    });
+
+    await updateAiGlobalLimits({ fitAnalysisGenerationLimit: 45 });
+
+    expect(aiGlobalLimitsUpsertMock).toHaveBeenCalledWith({
+      where: { id: 1 },
+      create: { id: 1, fitAnalysisGenerationLimit: 45 },
+      update: { fitAnalysisGenerationLimit: 45 },
+    });
+  });
+
   it("passes an empty update through unchanged when no fields are provided", async () => {
     aiGlobalLimitsUpsertMock.mockResolvedValue({
       id: 1,
