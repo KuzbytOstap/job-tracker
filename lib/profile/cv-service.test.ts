@@ -1,35 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const findManyMock = vi.fn();
-const countMock = vi.fn();
-const createMock = vi.fn();
-const updateMock = vi.fn();
-const updateManyMock = vi.fn();
-const findFirstMock = vi.fn();
-const deleteManyMock = vi.fn();
-const invalidateMock = vi.fn();
+const mocks = vi.hoisted(() => {
+  const userCv = {
+    findMany: vi.fn(),
+    count: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+    findFirst: vi.fn(),
+    deleteMany: vi.fn(),
+  };
+  return { userCv, tx: { userCv }, invalidate: vi.fn() };
+});
 
-const userCvDelegate = {
-  findMany: (...args: unknown[]) => findManyMock(...args),
-  count: (...args: unknown[]) => countMock(...args),
-  create: (...args: unknown[]) => createMock(...args),
-  update: (...args: unknown[]) => updateMock(...args),
-  updateMany: (...args: unknown[]) => updateManyMock(...args),
-  findFirst: (...args: unknown[]) => findFirstMock(...args),
-  deleteMany: (...args: unknown[]) => deleteManyMock(...args),
-};
-
-const txClient = { userCv: userCvDelegate };
+const findManyMock = mocks.userCv.findMany;
+const countMock = mocks.userCv.count;
+const createMock = mocks.userCv.create;
+const updateMock = mocks.userCv.update;
+const updateManyMock = mocks.userCv.updateMany;
+const findFirstMock = mocks.userCv.findFirst;
+const deleteManyMock = mocks.userCv.deleteMany;
+const invalidateMock = mocks.invalidate;
+const txClient = mocks.tx;
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    userCv: userCvDelegate,
-    $transaction: (callback: (tx: unknown) => unknown) => callback(txClient),
+    userCv: mocks.userCv,
+    $transaction: (callback: (tx: unknown) => unknown) => callback(mocks.tx),
   },
 }));
 
 vi.mock("@/lib/profile/context-items-service", () => ({
-  invalidateContextItemWeights: (...args: unknown[]) => invalidateMock(...args),
+  invalidateContextItemWeights: (...args: unknown[]) => mocks.invalidate(...args),
 }));
 
 import {
