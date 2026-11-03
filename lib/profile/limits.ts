@@ -1,0 +1,21 @@
+export const CV_MAX_BYTES = 4 * 1024 * 1024;
+export const CV_MAX_COUNT = 5;
+export const CV_LABEL_MAX_LENGTH = 80;
+export const CV_LANGUAGE_MAX_LENGTH = 16;
+export const CV_TEXT_MAX_LENGTH = 100_000;
+
+export const PROFILE_FIELD_MAX_LENGTH = 200;
+export const PROFILE_EMAIL_MAX_LENGTH = 254;
+export const PROFILE_PHONE_MAX_LENGTH = 40;
+export const SALARY_AMOUNT_MAX = 1_000_000_000;
+
+export const CONTEXT_ITEM_MAX_LENGTH = 1000;
+export const CONTEXT_SCORE_BATCH_SIZE = 5;
+
+export const COVER_LETTER_PROMPT_MAX_LENGTH = 4000;
+export const COVER_LETTER_EXAMPLE_MAX_COUNT = 3;
+export const COVER_LETTER_EXAMPLE_MAX_LENGTH = 4000;
+
+export const CV_HINT_SNOOZE_DAYS = 7;
+export const CV_HINT_IMPACT_SUM_THRESHOLD = 6;
+export const CV_HINT_SINGLE_ITEM_IMPACT = 5;

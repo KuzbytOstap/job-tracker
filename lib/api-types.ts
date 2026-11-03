@@ -101,6 +101,40 @@ export type AutoIgnoreSettingsDTO = {
   autoIgnoreAfterDays: number | null;
 };
 
+export type SalaryPeriodValue = "HOUR" | "MONTH" | "YEAR";
+export type EmploymentTypeValue = "FULL_TIME" | "PART_TIME" | "CONTRACT";
+export type WorkFormatValue = "REMOTE" | "ONSITE" | "HYBRID";
+
+export type ProfileDTO = {
+  firstName: string | null;
+  lastName: string | null;
+  contactEmail: string | null;
+  phone: string | null;
+  address: {
+    street: string | null;
+    postalCode: string | null;
+    city: string | null;
+    region: string | null;
+    country: string | null;
+  };
+  salary: {
+    amount: number | null;
+    currency: string | null;
+    period: SalaryPeriodValue | null;
+  };
+  employmentTypes: EmploymentTypeValue[];
+  workFormats: WorkFormatValue[];
+  coverLetterPrompt: string | null;
+  defaultCoverLetterPrompt: string;
+};
+
+export type CoverLetterExampleDTO = {
+  id: string;
+  vacancyText: string;
+  letterText: string;
+  createdAt: string;
+};
+
 export type AiAccessStatusResponse = {
   status: AiAccessStatus;
 };
