@@ -38,6 +38,12 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage(uk, error, "errors.saveFailed")).toBe("Досягнуто денний ліміт аналізу вакансій.");
   });
 
+  it("maps PROFILE_LIMIT_REACHED to a localized message", () => {
+    const error = new ApiError(429, "limit", { code: "PROFILE_LIMIT_REACHED" });
+    expect(getApiErrorMessage(en, error, "errors.saveFailed")).toBe("The daily profile AI limit is reached.");
+    expect(getApiErrorMessage(uk, error, "errors.saveFailed")).toBe("Досягнуто денний ліміт AI для профілю.");
+  });
+
   it("falls back to the status when the code is unknown", () => {
     const error = new ApiError(403, "no", { code: "SOMETHING_ELSE" });
     expect(getApiErrorMessage(en, error, "errors.saveFailed")).toBe("You don't have access to this.");

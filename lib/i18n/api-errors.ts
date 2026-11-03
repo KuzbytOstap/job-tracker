@@ -7,6 +7,7 @@ const CODE_KEYS: Record<string, MessageKey> = {
   AI_SUSPENDED: "errors.codes.aiSuspended",
   VACANCY_LIMIT_REACHED: "errors.codes.vacancyLimit",
   HR_LIMIT_REACHED: "errors.codes.hrLimit",
+  PROFILE_LIMIT_REACHED: "errors.codes.profileLimit",
   TOKEN_LIMIT_REACHED: "errors.codes.tokenLimit",
   LIMIT_REACHED: "errors.codes.platformLimit",
 };

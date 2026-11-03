@@ -18,6 +18,7 @@ export const errors: Messages["errors"] = {
     aiSuspended: "AI-доступ призупинено.",
     vacancyLimit: "Досягнуто денний ліміт аналізу вакансій.",
     hrLimit: "Досягнуто денний ліміт HR-питань.",
+    profileLimit: "Досягнуто денний ліміт AI для профілю.",
     tokenLimit: "Досягнуто денний ліміт AI-токенів.",
     platformLimit: "Досягнуто ліміт власних платформ. Оберіть наявну.",
   },

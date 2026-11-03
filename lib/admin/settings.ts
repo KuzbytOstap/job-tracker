@@ -8,6 +8,7 @@ export async function getAiGlobalLimits(): Promise<AiGlobalLimits> {
 export type AiGlobalLimitsInput = {
   vacancyGenerationLimit?: number;
   hrGenerationLimit?: number;
+  profileGenerationLimit?: number;
   tokenLimit?: number;
 };
 

@@ -12,6 +12,7 @@ function usage(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusRes
     resetAt: "2026-08-10T00:00:00.000Z",
     vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
     tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
     ...overrides,
   };
@@ -42,6 +43,25 @@ describe("resolveAiQuotaReason", () => {
     expect(resolveAiQuotaReason(status, "VACANCY_GENERATION")).toBeNull();
   });
 
+  it("reports PROFILE_LIMIT_REACHED for PROFILE when only the profile quota is exhausted", () => {
+    const status = usage({ profile: { used: 50, limit: 50, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(status, "PROFILE")).toBe("PROFILE_LIMIT_REACHED");
+  });
+
+  it("never reports the profile reason for vacancy or HR generation", () => {
+    const status = usage({ profile: { used: 50, limit: 50, exhausted: true, pendingRequest: false } });
+    expect(resolveAiQuotaReason(status, "VACANCY_GENERATION")).toBeNull();
+    expect(resolveAiQuotaReason(status, "HR_GENERATION")).toBeNull();
+  });
+
+  it("never reports the vacancy or HR reason for PROFILE", () => {
+    const status = usage({
+      vacancy: { used: 10, limit: 10, exhausted: true, pendingRequest: false },
+      hr: { used: 10, limit: 10, exhausted: true, pendingRequest: false },
+    });
+    expect(resolveAiQuotaReason(status, "PROFILE")).toBeNull();
+  });
+
   it("reports TOKEN_LIMIT_REACHED for both features when only the token budget is exhausted", () => {
     const status = usage({ tokens: { used: 20_000, limit: 20_000, exhausted: true, pendingRequest: false } });
     expect(resolveAiQuotaReason(status, "VACANCY_GENERATION")).toBe("TOKEN_LIMIT_REACHED");
@@ -67,6 +87,7 @@ describe("quotaForReason", () => {
 
     expect(quotaForReason(status, "VACANCY_LIMIT_REACHED")).toBe(status.vacancy);
     expect(quotaForReason(status, "HR_LIMIT_REACHED")).toBe(status.hr);
+    expect(quotaForReason(status, "PROFILE_LIMIT_REACHED")).toBe(status.profile);
     expect(quotaForReason(status, "TOKEN_LIMIT_REACHED")).toBe(status.tokens);
   });
 });
@@ -82,6 +103,10 @@ describe("AI_QUOTA_REQUEST_TYPE", () => {
 describe("extractAiQuotaReasonFromError", () => {
   it("extracts a known quota reason code", () => {
     expect(extractAiQuotaReasonFromError({ code: "HR_LIMIT_REACHED" })).toBe("HR_LIMIT_REACHED");
+  });
+
+  it("extracts the profile quota reason code", () => {
+    expect(extractAiQuotaReasonFromError({ code: "PROFILE_LIMIT_REACHED" })).toBe("PROFILE_LIMIT_REACHED");
   });
 
   it("returns null for an unrelated code", () => {

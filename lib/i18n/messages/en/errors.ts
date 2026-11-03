@@ -16,6 +16,7 @@ export const errors = {
     aiSuspended: "AI access is suspended.",
     vacancyLimit: "The daily vacancy analysis limit is reached.",
     hrLimit: "The daily HR question limit is reached.",
+    profileLimit: "The daily profile AI limit is reached.",
     tokenLimit: "The daily AI token limit is reached.",
     platformLimit: "You've reached the limit of custom platforms. Pick an existing one instead.",
   },

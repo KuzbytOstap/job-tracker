@@ -118,6 +118,7 @@ export type AiUsageStatusResponse = {
   resetAt: string;
   vacancy: AiQuotaStatus;
   hr: AiQuotaStatus;
+  profile: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 
@@ -220,12 +221,14 @@ export type AdminAiRequestsListResponse = {
 export type AdminQuotaAmounts = {
   vacancy: number;
   hr: number;
+  profile: number;
   tokens: number;
 };
 
 export type AdminUserOverrides = {
   vacancy: number | null;
   hr: number | null;
+  profile: number | null;
   tokens: number | null;
 };
 
@@ -247,6 +250,7 @@ export type AdminUsersListResponse = {
 export type AiGlobalLimitsDTO = {
   vacancyGenerationLimit: number;
   hrGenerationLimit: number;
+  profileGenerationLimit: number;
   tokenLimit: number;
   updatedAt: string;
 };

@@ -247,6 +247,7 @@ export function restoreAdminUserAiAccess(userId: string): Promise<AiAccessStatus
 export type SetAdminUserLimitsPayload = {
   vacancyGenerationLimit?: number | null;
   hrGenerationLimit?: number | null;
+  profileGenerationLimit?: number | null;
   tokenLimit?: number | null;
 };
 
@@ -267,6 +268,7 @@ export function getAdminSettings(): Promise<AiGlobalLimitsDTO> {
 export type UpdateAdminSettingsPayload = {
   vacancyGenerationLimit?: number;
   hrGenerationLimit?: number;
+  profileGenerationLimit?: number;
   tokenLimit?: number;
 };
 

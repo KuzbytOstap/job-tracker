@@ -12,14 +12,22 @@ const settingsBodySchema = z
   .object({
     vacancyGenerationLimit: z.number().int().nonnegative().optional(),
     hrGenerationLimit: z.number().int().nonnegative().optional(),
+    profileGenerationLimit: z.number().int().nonnegative().optional(),
     tokenLimit: z.number().int().nonnegative().optional(),
   })
   .strict();
 
-function toDTO(limits: { vacancyGenerationLimit: number; hrGenerationLimit: number; tokenLimit: number; updatedAt: Date }): AiGlobalLimitsDTO {
+function toDTO(limits: {
+  vacancyGenerationLimit: number;
+  hrGenerationLimit: number;
+  profileGenerationLimit: number;
+  tokenLimit: number;
+  updatedAt: Date;
+}): AiGlobalLimitsDTO {
   return {
     vacancyGenerationLimit: limits.vacancyGenerationLimit,
     hrGenerationLimit: limits.hrGenerationLimit,
+    profileGenerationLimit: limits.profileGenerationLimit,
     tokenLimit: limits.tokenLimit,
     updatedAt: limits.updatedAt.toISOString(),
   };

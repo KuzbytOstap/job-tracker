@@ -45,6 +45,7 @@ function dailyRow(overrides: Record<string, unknown> = {}) {
     date: new Date("2026-08-09T00:00:00.000Z"),
     vacancyGenerationCount: 0,
     hrGenerationCount: 0,
+    profileGenerationCount: 0,
     tokenCount: 0,
     vacancyGenerationBonus: 0,
     hrGenerationBonus: 0,
@@ -70,6 +71,7 @@ beforeEach(() => {
     id: 1,
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
+    profileGenerationLimit: 50,
     tokenLimit: 20_000,
   });
   userLimitFindUniqueMock.mockResolvedValue(null);
@@ -230,6 +232,78 @@ describe("reserveAiQuota — limits and reservation", () => {
   });
 });
 
+describe("reserveAiQuota — PROFILE feature", () => {
+  it("reserves against the profile counter and the shared token counter without touching vacancy or hr counters", async () => {
+    const reservation = await reserveAiQuota({ userId: "user_1", feature: AiFeature.PROFILE, estimatedTokens: 300 });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        date: expect.any(Date),
+        profileGenerationCount: { lt: 50 },
+        tokenCount: { lte: 20_000 - 300 },
+      },
+      data: {
+        profileGenerationCount: { increment: 1 },
+        tokenCount: { increment: 300 },
+      },
+    });
+    expect(reservation.feature).toBe(AiFeature.PROFILE);
+    expect(reservation.reservedTokens).toBe(300);
+  });
+
+  it("applies a per-user profile override in place of the global default", async () => {
+    userLimitFindUniqueMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: 2,
+      tokenLimit: null,
+    });
+
+    await reserveAiQuota({ userId: "user_1", feature: AiFeature.PROFILE, estimatedTokens: 100 });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ profileGenerationCount: { lt: 2 } }) }),
+    );
+  });
+
+  it("does not let vacancy or hr bonuses raise the profile limit", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ vacancyGenerationBonus: 5, hrGenerationBonus: 5 }));
+
+    await reserveAiQuota({ userId: "user_1", feature: AiFeature.PROFILE, estimatedTokens: 100 });
+
+    expect(dailyUpdateManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ profileGenerationCount: { lt: 50 } }) }),
+    );
+  });
+
+  it("is not blocked when only the vacancy and hr counters are exhausted", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ vacancyGenerationCount: 10, hrGenerationCount: 10 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.PROFILE, estimatedTokens: 100 }),
+    ).resolves.toMatchObject({ feature: AiFeature.PROFILE });
+  });
+
+  it("throws PROFILE_LIMIT_REACHED when the profile counter is already at the limit", async () => {
+    dailyUpdateManyMock.mockResolvedValue({ count: 0 });
+    dailyFindUniqueMock.mockResolvedValue(dailyRow({ profileGenerationCount: 50 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.PROFILE, estimatedTokens: 100 }),
+    ).rejects.toMatchObject({ code: "PROFILE_LIMIT_REACHED" });
+  });
+
+  it("throws TOKEN_LIMIT_REACHED when only the shared token budget is exhausted", async () => {
+    dailyUpdateManyMock.mockResolvedValue({ count: 0 });
+    dailyFindUniqueMock.mockResolvedValue(dailyRow({ profileGenerationCount: 1, tokenCount: 19_999 }));
+
+    await expect(
+      reserveAiQuota({ userId: "user_1", feature: AiFeature.PROFILE, estimatedTokens: 500 }),
+    ).rejects.toMatchObject({ code: "TOKEN_LIMIT_REACHED" });
+  });
+});
+
 describe("getAiUsageStatus", () => {
   it("throws AI_ACCESS_REQUIRED / AI_SUSPENDED for a non-approved user without touching quota tables", async () => {
     userFindUniqueMock.mockResolvedValue({ aiAccessStatus: AiAccessStatus.PENDING });
@@ -265,6 +339,22 @@ describe("getAiUsageStatus", () => {
     expect(status.hr).toEqual({ used: 12, limit: 15, exhausted: false });
   });
 
+  it("reports the profile quota against the global default or the per-user override, without any bonus", async () => {
+    dailyUpsertMock.mockResolvedValue(dailyRow({ profileGenerationCount: 7 }));
+
+    const withDefault = await getAiUsageStatus("user_1");
+    expect(withDefault.profile).toEqual({ used: 7, limit: 50, exhausted: false });
+
+    userLimitFindUniqueMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: 7,
+      tokenLimit: null,
+    });
+    const withOverride = await getAiUsageStatus("user_1");
+    expect(withOverride.profile).toEqual({ used: 7, limit: 7, exhausted: true });
+  });
+
   it("resolves resetAt to the next UTC midnight after today", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-09T14:32:00.000Z"));
@@ -290,6 +380,20 @@ describe("rollbackAiReservation", () => {
     expect(dailyUpdateMock).toHaveBeenCalledWith({
       where: { userId_date: { userId: "user_1", date: new Date("2026-08-09T00:00:00.000Z") } },
       data: { vacancyGenerationCount: { decrement: 1 }, tokenCount: { decrement: 500 } },
+    });
+  });
+
+  it("decrements only the profile counter and the reserved tokens for PROFILE", async () => {
+    await rollbackAiReservation({
+      userId: "user_1",
+      feature: AiFeature.PROFILE,
+      date: new Date("2026-08-09T00:00:00.000Z"),
+      reservedTokens: 300,
+    });
+
+    expect(dailyUpdateMock).toHaveBeenCalledWith({
+      where: { userId_date: { userId: "user_1", date: new Date("2026-08-09T00:00:00.000Z") } },
+      data: { profileGenerationCount: { decrement: 1 }, tokenCount: { decrement: 300 } },
     });
   });
 

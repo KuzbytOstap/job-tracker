@@ -1,4 +1,4 @@
-export type QuotaField = "vacancy" | "hr" | "tokens";
+export type QuotaField = "vacancy" | "hr" | "profile" | "tokens";
 
 /**
  * Decomposes a user's effective limit for one quota field back into its
