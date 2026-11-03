@@ -133,6 +133,8 @@ export const profile = {
     weightSubstantial: "Adds something new",
     weightMinor: "Minor detail",
     scoringPaused: "Scoring is paused: {reason}",
+    deleteTitle: "Delete this item?",
+    deleteDescription: "The item will be removed permanently.",
     maxLength: "Up to {count} characters.",
   },
   hint: {
@@ -145,6 +147,7 @@ export const profile = {
     loading: "Preparing suggestions…",
     remindLater: "Remind me later",
     suggestionsTitle: "Suggested CV bullets",
+    copy: "Copy",
     noSuggestions: "No suggestions right now.",
     suggestionsFailed: "Couldn't prepare suggestions.",
     snoozed: "We'll remind you later",

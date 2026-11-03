@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverLetterSection } from "@/components/profile/cover-letter-section";
+import { ContextItemsSection } from "@/components/profile/context-items-section";
 import { CvSection } from "@/components/profile/cv-section";
+import { CvUpdateHintBanner } from "@/components/profile/cv-update-hint-banner";
 import { PersonalSection } from "@/components/profile/personal-section";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SearchPreferencesSection } from "@/components/profile/search-preferences-section";
@@ -33,9 +35,11 @@ export function ProfileShell() {
           </div>
         ) : (
           <>
+            <CvUpdateHintBanner />
             <PersonalSection profile={profileQuery.data} />
             <SearchPreferencesSection profile={profileQuery.data} />
             <CvSection profile={profileQuery.data} />
+            <ContextItemsSection />
             <CoverLetterSection profile={profileQuery.data} />
           </>
         )}

@@ -140,6 +140,8 @@ export const profile: Messages["profile"] = {
     weightSubstantial: "Додає нове",
     weightMinor: "Дрібниця",
     scoringPaused: "Оцінювання призупинено: {reason}",
+    deleteTitle: "Видалити цей пункт?",
+    deleteDescription: "Пункт буде видалено назавжди.",
     maxLength: "До {count} символів.",
   },
   hint: {
@@ -154,6 +156,7 @@ export const profile: Messages["profile"] = {
     loading: "Готуємо пропозиції…",
     remindLater: "Нагадати пізніше",
     suggestionsTitle: "Пропозиції для CV",
+    copy: "Копіювати",
     noSuggestions: "Зараз пропозицій немає.",
     suggestionsFailed: "Не вдалося підготувати пропозиції.",
     snoozed: "Нагадаємо пізніше",
