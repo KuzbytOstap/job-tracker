@@ -24,6 +24,7 @@ import { admin } from "./admin";
 import { errors } from "./errors";
 import { dnd } from "./dnd";
 import { profile } from "./profile";
+import { coverLetter } from "./coverLetter";
 
 export const en = {
   common,
@@ -52,4 +53,5 @@ export const en = {
   errors,
   dnd,
   profile,
+  coverLetter,
 } as const;

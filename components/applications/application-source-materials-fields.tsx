@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CoverLetterGeneratorDialog } from "@/components/applications/cover-letter-generator-dialog";
 import { getTranslatedUrlLabel } from "@/lib/i18n/url-label";
 import { useT } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -19,10 +20,15 @@ export function ApplicationSourceMaterialsFields() {
     register,
     control,
     getValues,
+    setValue,
     formState: { errors },
   } = useFormContext<ApplicationEditFormValues>();
 
   const { fields, append, remove } = useFieldArray({ control, name: "sourceUrls" });
+  const [jobPostingText, coverLetterText, company, position] = useWatch({
+    control,
+    name: ["jobPostingText", "coverLetterText", "company", "position"],
+  });
 
   const [open, setOpen] = useState(
     () =>
@@ -67,6 +73,13 @@ export function ApplicationSourceMaterialsFields() {
               className="min-h-20"
               aria-invalid={!!errors.coverLetterText}
               {...register("coverLetterText")}
+            />
+            <CoverLetterGeneratorDialog
+              jobPostingText={jobPostingText ?? ""}
+              company={company ?? ""}
+              position={position ?? ""}
+              currentLetter={coverLetterText ?? ""}
+              onUse={(letter) => setValue("coverLetterText", letter, { shouldDirty: true, shouldValidate: true })}
             />
             <FieldError errors={[errors.coverLetterText]} />
           </Field>

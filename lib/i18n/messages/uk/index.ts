@@ -25,6 +25,7 @@ import { admin } from "./admin";
 import { errors } from "./errors";
 import { dnd } from "./dnd";
 import { profile } from "./profile";
+import { coverLetter } from "./coverLetter";
 
 export const uk: Messages = {
   common,
@@ -53,4 +54,5 @@ export const uk: Messages = {
   errors,
   dnd,
   profile,
+  coverLetter,
 };

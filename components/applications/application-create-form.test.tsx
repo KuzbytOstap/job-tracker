@@ -9,8 +9,10 @@ import {
   ApiError,
   createApplication,
   extractApplicationFromPosting,
+  generateCoverLetter,
   getAiAccessStatus,
   getAiUsageStatus,
+  getCvs,
   requestMoreAiUsage,
 } from "@/lib/api";
 import type { ApplicationDTO, AiUsageStatusResponse } from "@/lib/api-types";
@@ -28,6 +30,8 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/api", () => ({
   createApplication: vi.fn(),
   extractApplicationFromPosting: vi.fn(),
+  generateCoverLetter: vi.fn(),
+  getCvs: vi.fn(),
   getAiAccessStatus: vi.fn(),
   requestAiAccess: vi.fn(),
   getAiUsageStatus: vi.fn(),
@@ -48,6 +52,8 @@ const extractApplicationFromPostingMock = vi.mocked(extractApplicationFromPostin
 const getAiAccessStatusMock = vi.mocked(getAiAccessStatus);
 const getAiUsageStatusMock = vi.mocked(getAiUsageStatus);
 const requestMoreAiUsageMock = vi.mocked(requestMoreAiUsage);
+const generateCoverLetterMock = vi.mocked(generateCoverLetter);
+const getCvsMock = vi.mocked(getCvs);
 
 function fakeUsageStatus(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusResponse {
   return {
@@ -142,6 +148,21 @@ beforeEach(() => {
   getAiUsageStatusMock.mockReset();
   getAiUsageStatusMock.mockResolvedValue(fakeUsageStatus());
   requestMoreAiUsageMock.mockReset();
+  generateCoverLetterMock.mockReset();
+  getCvsMock.mockReset();
+  getCvsMock.mockResolvedValue([
+    {
+      id: "cv_1",
+      label: "React Native",
+      language: "en",
+      isPrimary: true,
+      fileName: "rn.pdf",
+      fileSize: 1024,
+      hasText: true,
+      createdAt: "2026-11-01T00:00:00.000Z",
+      updatedAt: "2026-11-01T00:00:00.000Z",
+    },
+  ]);
 });
 
 afterEach(() => {
@@ -578,5 +599,33 @@ describe("ApplicationCreateForm AI quota gating", () => {
     await waitFor(() => expect(screen.getByText("Daily vacancy analysis limit reached")).toBeInTheDocument());
     expect(screen.queryByText("Daily vacancy generation limit reached.")).not.toBeInTheDocument();
     expect(getAiUsageStatusMock).toHaveBeenCalled();
+  });
+});
+
+describe("ApplicationCreateForm cover letter generation", () => {
+  it("keeps the generate button disabled until a job posting is pasted", () => {
+    renderForm();
+
+    expect(screen.getByRole("button", { name: "Generate cover letter" })).toBeDisabled();
+  });
+
+  it("writes the generated letter into the cover letter field using the typed company and position", async () => {
+    generateCoverLetterMock.mockResolvedValue({ status: "ok", letter: "Generated letter text" });
+    const user = userEvent.setup();
+    renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "We need an engineer");
+    await user.click(screen.getByRole("button", { name: "Generate cover letter" }));
+    await user.click(await screen.findByRole("button", { name: "Generate" }));
+    await user.click(await screen.findByRole("button", { name: "Use letter" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Cover letter (optional)")).toHaveValue("Generated letter text"));
+    expect(generateCoverLetterMock).toHaveBeenCalledWith({
+      vacancyText: "We need an engineer",
+      company: "Acme",
+      position: "Engineer",
+      cvId: "cv_1",
+    });
   });
 });
