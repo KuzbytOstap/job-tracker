@@ -49,6 +49,7 @@ enum AiAccessStatus {
 enum AiFeature {
   VACANCY_GENERATION
   HR_GENERATION
+  PROFILE
 }
 
 enum AiRequestType {
@@ -68,6 +69,30 @@ enum PlatformReviewStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum SalaryPeriod {
+  HOUR
+  MONTH
+  YEAR
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum WorkFormat {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum ProfileContextWeight {
+  COVERED
+  SUBSTANTIAL
+  MINOR
 }
 
 model JobApplication {
@@ -155,12 +180,17 @@ model User {
   aiDecidedRequests AiAccessRequest[] @relation("AiAccessRequestDecider")
   customPlatforms        CustomPlatform[] @relation("CustomPlatformOwner")
   decidedCustomPlatforms CustomPlatform[] @relation("CustomPlatformDecider")
+  profile                UserProfile?
+  cvs                    UserCv[]
+  profileContextItems    ProfileContextItem[]
+  coverLetterExamples    CoverLetterExample[]
 }
 
 model AiGlobalLimits {
   id                     Int      @id @default(1)
   vacancyGenerationLimit Int      @default(10)
   hrGenerationLimit      Int      @default(10)
+  profileGenerationLimit Int      @default(50)
   tokenLimit             Int      @default(20000)
   updatedAt              DateTime @updatedAt
 }
@@ -171,6 +201,7 @@ model AiUserLimit {
   user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vacancyGenerationLimit Int?
   hrGenerationLimit      Int?
+  profileGenerationLimit Int?
   tokenLimit             Int?
   updatedAt              DateTime @updatedAt
 }
@@ -182,6 +213,7 @@ model AiUsageDaily {
   date                   DateTime @db.Date
   vacancyGenerationCount Int      @default(0)
   hrGenerationCount      Int      @default(0)
+  profileGenerationCount Int      @default(0)
   tokenCount             Int      @default(0)
   vacancyGenerationBonus Int      @default(0)
   hrGenerationBonus      Int      @default(0)
@@ -263,4 +295,71 @@ model StatusChange {
   changedAt     DateTime       @default(now())
 
   @@index([applicationId])
+}
+
+model UserProfile {
+  id                String           @id @default(cuid())
+  userId            String           @unique
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName         String?
+  lastName          String?
+  contactEmail      String?
+  phone             String?
+  addressStreet     String?
+  addressPostalCode String?
+  addressCity       String?
+  addressRegion     String?
+  addressCountry    String?
+  salaryAmount      Int?
+  salaryCurrency    String?
+  salaryPeriod      SalaryPeriod?
+  employmentTypes   EmploymentType[] @default([])
+  workFormats       WorkFormat[]     @default([])
+  coverLetterPrompt String?
+  cvHintSnoozedAt   DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model UserCv {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  language      String?
+  isPrimary     Boolean  @default(false)
+  fileName      String
+  fileSize      Int
+  fileData      Bytes
+  extractedText String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId], where: { isPrimary: true }, map: "UserCv_userId_primary_key")
+  @@index([userId])
+}
+
+model ProfileContextItem {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  weight    ProfileContextWeight?
+  impact    Int?
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([userId])
+}
+
+model CoverLetterExample {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vacancyText String
+  letterText  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }
