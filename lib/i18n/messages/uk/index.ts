@@ -24,6 +24,7 @@ import { ai } from "./ai";
 import { admin } from "./admin";
 import { errors } from "./errors";
 import { dnd } from "./dnd";
+import { profile } from "./profile";
 
 export const uk: Messages = {
   common,
@@ -51,4 +52,5 @@ export const uk: Messages = {
   admin,
   errors,
   dnd,
+  profile,
 };

@@ -44,6 +44,21 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage(uk, error, "errors.saveFailed")).toBe("Досягнуто денний ліміт AI для профілю.");
   });
 
+  it("localizes the CV and example limit codes ahead of the generic status text", () => {
+    expect(getApiErrorMessage(en, new ApiError(415, "x", { code: "CV_NOT_PDF" }), "errors.saveFailed")).toBe(
+      "Only PDF files are accepted.",
+    );
+    expect(getApiErrorMessage(uk, new ApiError(413, "x", { code: "CV_TOO_LARGE" }), "errors.saveFailed")).toBe(
+      "Файл більший за 4 МБ.",
+    );
+    expect(getApiErrorMessage(en, new ApiError(409, "x", { code: "CV_LIMIT" }), "errors.saveFailed")).toBe(
+      "You've reached the limit of stored CVs.",
+    );
+    expect(getApiErrorMessage(uk, new ApiError(409, "x", { code: "EXAMPLE_LIMIT" }), "errors.saveFailed")).toBe(
+      "Досягнуто ліміт збережених прикладів.",
+    );
+  });
+
   it("falls back to the status when the code is unknown", () => {
     const error = new ApiError(403, "no", { code: "SOMETHING_ELSE" });
     expect(getApiErrorMessage(en, error, "errors.saveFailed")).toBe("You don't have access to this.");

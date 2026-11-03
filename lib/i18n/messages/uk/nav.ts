@@ -19,4 +19,5 @@ export const nav: Messages["nav"] = {
   addApplication: "Додати відгук",
   signOut: "Вийти",
   settings: "Налаштування",
+  profile: "Профіль",
 };
