@@ -1,10 +1,23 @@
-import type { CvIdentitySuggestionsDTO } from "@/lib/api-types";
-import { getCvFile, setCvText } from "@/lib/profile/cv-service";
+import type { CvIdentitySuggestionsDTO, CvUploadResultDTO } from "@/lib/api-types";
+import { getCv, getCvFile, setCvText } from "@/lib/profile/cv-service";
 import { runProfileOperation, type ProfileAiSkipReason } from "@/lib/profile/run-profile-ai";
 
 export type CvImportResult =
   | { status: "extracted"; identity: CvIdentitySuggestionsDTO }
   | { status: "skipped"; reason: ProfileAiSkipReason };
+
+export async function importCvForUpload(userId: string, cvId: string): Promise<CvUploadResultDTO | null> {
+  const imported = await importCvText(userId, cvId);
+  const cv = await getCv(userId, cvId);
+  if (!cv) return null;
+
+  return {
+    cv,
+    textStatus: imported.status === "extracted" ? "extracted" : "missing",
+    identitySuggestions: imported.status === "extracted" ? imported.identity : null,
+    skippedReason: imported.status === "skipped" ? imported.reason : null,
+  };
+}
 
 function emptyToNull(value: string | null): string | null {
   return value === null || value.trim() === "" ? null : value;

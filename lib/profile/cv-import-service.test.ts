@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  getCv: vi.fn(),
   getCvFile: vi.fn(),
   setCvText: vi.fn(),
   runProfileOperation: vi.fn(),
 }));
 
 vi.mock("@/lib/profile/cv-service", () => ({
+  getCv: (...args: unknown[]) => mocks.getCv(...args),
   getCvFile: (...args: unknown[]) => mocks.getCvFile(...args),
   setCvText: (...args: unknown[]) => mocks.setCvText(...args),
 }));
@@ -15,11 +17,12 @@ vi.mock("@/lib/profile/run-profile-ai", () => ({
   runProfileOperation: (...args: unknown[]) => mocks.runProfileOperation(...args),
 }));
 
-import { importCvText } from "@/lib/profile/cv-import-service";
+import { importCvForUpload, importCvText } from "@/lib/profile/cv-import-service";
 
 const IDENTITY = { firstName: "Ada", lastName: "Lovelace", email: "ada@example.com", phone: null, city: "Lviv" };
 
 beforeEach(() => {
+  mocks.getCv.mockReset();
   mocks.getCvFile.mockReset();
   mocks.setCvText.mockReset();
   mocks.runProfileOperation.mockReset();
@@ -83,5 +86,44 @@ describe("importCvText", () => {
     mocks.setCvText.mockResolvedValue(null);
 
     await expect(importCvText("user_1", "cv_1")).resolves.toEqual({ status: "skipped", reason: "CV_NOT_FOUND" });
+  });
+});
+
+describe("importCvForUpload", () => {
+  const CV = { id: "cv_1", label: "RN", hasText: true };
+
+  it("reports the extracted text status with identity suggestions and the refreshed CV", async () => {
+    mocks.runProfileOperation.mockResolvedValue({ ok: true, result: { text: "CV text", identity: IDENTITY } });
+    mocks.getCv.mockResolvedValue(CV);
+
+    const result = await importCvForUpload("user_1", "cv_1");
+
+    expect(result).toEqual({
+      cv: CV,
+      textStatus: "extracted",
+      identitySuggestions: IDENTITY,
+      skippedReason: null,
+    });
+  });
+
+  it("still returns the CV with a missing text status and the reason when AI is unavailable", async () => {
+    mocks.runProfileOperation.mockResolvedValue({ ok: false, reason: "PROFILE_LIMIT_REACHED" });
+    mocks.getCv.mockResolvedValue({ ...CV, hasText: false });
+
+    const result = await importCvForUpload("user_1", "cv_1");
+
+    expect(result).toEqual({
+      cv: { ...CV, hasText: false },
+      textStatus: "missing",
+      identitySuggestions: null,
+      skippedReason: "PROFILE_LIMIT_REACHED",
+    });
+  });
+
+  it("returns null when the CV no longer exists", async () => {
+    mocks.getCvFile.mockResolvedValue(null);
+    mocks.getCv.mockResolvedValue(null);
+
+    await expect(importCvForUpload("user_1", "cv_1")).resolves.toBeNull();
   });
 });

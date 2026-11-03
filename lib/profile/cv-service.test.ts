@@ -37,6 +37,7 @@ vi.mock("@/lib/profile/context-items-service", () => ({
 import {
   createCv,
   deleteCv,
+  getCv,
   getCvFile,
   getPrimaryCvText,
   listCvs,
@@ -327,6 +328,25 @@ describe("setCvText", () => {
 
     await expect(setCvText("user_2", "cv_1", "t")).resolves.toBeNull();
     expect(updateMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("getCv", () => {
+  it("returns the owner's CV without file bytes", async () => {
+    findFirstMock.mockResolvedValue(cvRow());
+
+    const cv = await getCv("user_1", "cv_1");
+
+    const args = findFirstMock.mock.calls[0][0] as { where: unknown; select: Record<string, boolean> };
+    expect(args.where).toEqual({ id: "cv_1", userId: "user_1" });
+    expect(Object.keys(args.select)).not.toContain("fileData");
+    expect(cv?.id).toBe("cv_1");
+  });
+
+  it("returns null for another user's CV", async () => {
+    findFirstMock.mockResolvedValue(null);
+
+    await expect(getCv("user_2", "cv_1")).resolves.toBeNull();
   });
 });
 

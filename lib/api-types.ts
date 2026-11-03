@@ -159,6 +159,13 @@ export type CvIdentitySuggestionsDTO = {
   city: string | null;
 };
 
+export type CvUploadResultDTO = {
+  cv: CvDTO;
+  textStatus: "extracted" | "missing";
+  identitySuggestions: CvIdentitySuggestionsDTO | null;
+  skippedReason: string | null;
+};
+
 export type CvUpdateHintDTO = {
   visible: boolean;
   substantialCount: number;

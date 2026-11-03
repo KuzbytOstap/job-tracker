@@ -54,6 +54,11 @@ export async function listCvs(userId: string): Promise<CvDTO[]> {
   return rows.map(toDTO);
 }
 
+export async function getCv(userId: string, cvId: string): Promise<CvDTO | null> {
+  const row = await prisma.userCv.findFirst({ where: { id: cvId, userId }, select: CV_SELECT });
+  return row ? toDTO(row) : null;
+}
+
 export async function createCv(
   userId: string,
   input: { label: string; language: string | null; fileName: string; bytes: Uint8Array },
