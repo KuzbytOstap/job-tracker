@@ -68,6 +68,26 @@ describe("updateAiGlobalLimits", () => {
     });
   });
 
+  it("writes the cover letter generation limit like any other global limit", async () => {
+    aiGlobalLimitsUpsertMock.mockResolvedValue({
+      id: 1,
+      vacancyGenerationLimit: 10,
+      hrGenerationLimit: 10,
+      profileGenerationLimit: 50,
+      coverLetterGenerationLimit: 35,
+      tokenLimit: 20_000,
+      updatedAt: new Date(),
+    });
+
+    await updateAiGlobalLimits({ coverLetterGenerationLimit: 35 });
+
+    expect(aiGlobalLimitsUpsertMock).toHaveBeenCalledWith({
+      where: { id: 1 },
+      create: { id: 1, coverLetterGenerationLimit: 35 },
+      update: { coverLetterGenerationLimit: 35 },
+    });
+  });
+
   it("passes an empty update through unchanged when no fields are provided", async () => {
     aiGlobalLimitsUpsertMock.mockResolvedValue({
       id: 1,

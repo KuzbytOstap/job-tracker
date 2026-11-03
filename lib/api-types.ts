@@ -365,6 +365,7 @@ export type AdminQuotaAmounts = {
   vacancy: number;
   hr: number;
   profile: number;
+  coverLetter: number;
   tokens: number;
 };
 
@@ -372,6 +373,7 @@ export type AdminUserOverrides = {
   vacancy: number | null;
   hr: number | null;
   profile: number | null;
+  coverLetter: number | null;
   tokens: number | null;
 };
 
@@ -394,6 +396,7 @@ export type AiGlobalLimitsDTO = {
   vacancyGenerationLimit: number;
   hrGenerationLimit: number;
   profileGenerationLimit: number;
+  coverLetterGenerationLimit: number;
   tokenLimit: number;
   updatedAt: string;
 };

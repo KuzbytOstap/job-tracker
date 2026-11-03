@@ -9,6 +9,7 @@ export type AiGlobalLimitsInput = {
   vacancyGenerationLimit?: number;
   hrGenerationLimit?: number;
   profileGenerationLimit?: number;
+  coverLetterGenerationLimit?: number;
   tokenLimit?: number;
 };
 

@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UsersSection } from "@/components/admin/users/users-section";
-import { getAdminUsers, getAdminSettings, suspendAdminUserAiAccess } from "@/lib/api";
+import { getAdminUsers, getAdminSettings, setAdminUserLimits, suspendAdminUserAiAccess } from "@/lib/api";
 import type { AdminUserDTO, AiGlobalLimitsDTO } from "@/lib/api-types";
 
 vi.mock("sonner", () => ({
@@ -30,6 +30,7 @@ vi.mock("@/lib/api", () => ({
 const getAdminUsersMock = vi.mocked(getAdminUsers);
 const getAdminSettingsMock = vi.mocked(getAdminSettings);
 const suspendAdminUserAiAccessMock = vi.mocked(suspendAdminUserAiAccess);
+const setAdminUserLimitsMock = vi.mocked(setAdminUserLimits);
 
 afterEach(() => {
   cleanup();
@@ -43,9 +44,9 @@ function adminUser(overrides: Partial<AdminUserDTO> = {}): AdminUserDTO {
     email: "ada@example.com",
     role: "USER",
     aiAccessStatus: "APPROVED",
-    usage: { vacancy: 3, hr: 1, profile: 4, tokens: 400 },
-    limits: { vacancy: 10, hr: 10, profile: 50, tokens: 20_000 },
-    overrides: { vacancy: null, hr: null, profile: null, tokens: null },
+    usage: { vacancy: 3, hr: 1, profile: 4, coverLetter: 2, tokens: 400 },
+    limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, tokens: 20_000 },
+    overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, tokens: null },
     ...overrides,
   };
 }
@@ -55,6 +56,7 @@ function globalLimits(overrides: Partial<AiGlobalLimitsDTO> = {}): AiGlobalLimit
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
     profileGenerationLimit: 50,
+    coverLetterGenerationLimit: 20,
     tokenLimit: 20_000,
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
@@ -116,6 +118,33 @@ describe("UsersSection", () => {
     expect(screen.getByText("/ 50")).toBeInTheDocument();
   });
 
+  it("shows a Letters column with usage against the cover letter limit", async () => {
+    getAdminUsersMock.mockResolvedValue({ users: [adminUser()] });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+
+    renderSection();
+
+    expect(await screen.findByRole("columnheader", { name: "Letters" })).toBeInTheDocument();
+    expect(screen.getByText("/ 20")).toBeInTheDocument();
+  });
+
+  it("marks a cover letter limit pinned for one user as an override", async () => {
+    getAdminUsersMock.mockResolvedValue({
+      users: [
+        adminUser({
+          limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 5, tokens: 20_000 },
+          overrides: { vacancy: null, hr: null, profile: null, coverLetter: 5, tokens: null },
+        }),
+      ],
+    });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+
+    renderSection();
+
+    expect(await screen.findByText("/ 5")).toBeInTheDocument();
+    expect(screen.getByText("override 5")).toBeInTheDocument();
+  });
+
   it("filters users by search", async () => {
     const user = userEvent.setup();
     getAdminUsersMock.mockResolvedValue({
@@ -132,6 +161,38 @@ describe("UsersSection", () => {
 
     await waitFor(() => expect(screen.queryByText("Ada Lovelace")).not.toBeInTheDocument());
     expect(screen.getByText("Grace Hopper")).toBeInTheDocument();
+  });
+
+  it("pins a cover letter limit for one user from the limits dialog and leaves the other limits unpinned", async () => {
+    const user = userEvent.setup();
+    getAdminUsersMock.mockResolvedValue({ users: [adminUser()] });
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    setAdminUserLimitsMock.mockResolvedValue({
+      vacancy: null,
+      hr: null,
+      profile: null,
+      coverLetter: 7,
+      tokens: null,
+    });
+
+    renderSection();
+
+    await user.click(await screen.findByRole("button", { name: "Edit limits" }));
+    const dialog = await screen.findByRole("dialog");
+    const input = within(dialog).getByLabelText("Cover letters / day");
+    expect(input).toHaveAttribute("placeholder", "Default: 20");
+    await user.type(input, "7");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(setAdminUserLimitsMock).toHaveBeenCalledWith("user-1", {
+        vacancyGenerationLimit: null,
+        hrGenerationLimit: null,
+        profileGenerationLimit: null,
+        coverLetterGenerationLimit: 7,
+        tokenLimit: null,
+      }),
+    );
   });
 
   it("suspends an approved user's AI access after confirmation", async () => {

@@ -37,6 +37,7 @@ function globalLimits(overrides: Partial<AiGlobalLimitsDTO> = {}): AiGlobalLimit
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
     profileGenerationLimit: 50,
+    coverLetterGenerationLimit: 20,
     tokenLimit: 20_000,
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
@@ -97,6 +98,7 @@ describe("SettingsSection", () => {
         vacancyGenerationLimit: 15,
         hrGenerationLimit: 10,
         profileGenerationLimit: 50,
+        coverLetterGenerationLimit: 20,
         tokenLimit: 20_000,
       }),
     );
@@ -123,6 +125,34 @@ describe("SettingsSection", () => {
         vacancyGenerationLimit: 10,
         hrGenerationLimit: 10,
         profileGenerationLimit: 25,
+        coverLetterGenerationLimit: 20,
+        tokenLimit: 20_000,
+      }),
+    );
+  });
+
+  it("shows the cover letter limit and saves an edited value", async () => {
+    const user = userEvent.setup();
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    updateAdminSettingsMock.mockResolvedValue(globalLimits({ coverLetterGenerationLimit: 35 }));
+
+    renderSection();
+
+    const letterInput = await screen.findByLabelText("Cover letters / day");
+    expect(letterInput).toHaveValue(20);
+    await user.clear(letterInput);
+    await user.type(letterInput, "35");
+
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+
+    await waitFor(() =>
+      expect(updateAdminSettingsMock).toHaveBeenCalledWith({
+        vacancyGenerationLimit: 10,
+        hrGenerationLimit: 10,
+        profileGenerationLimit: 50,
+        coverLetterGenerationLimit: 35,
         tokenLimit: 20_000,
       }),
     );

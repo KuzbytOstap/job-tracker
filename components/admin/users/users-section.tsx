@@ -51,7 +51,7 @@ export function UsersSection() {
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--gh-border)] bg-[var(--gh-surface)] shadow-[var(--gh-shadow)]">
-          <table className="w-full min-w-[920px] border-collapse text-left">
+          <table className="w-full min-w-[1000px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[var(--gh-border)] bg-[var(--gh-surface-secondary)] text-xs font-semibold tracking-wide text-[var(--gh-text-muted)] uppercase">
                 <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.user")}</th>
@@ -59,6 +59,7 @@ export function UsersSection() {
                 <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.vacancy")}</th>
                 <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.hr")}</th>
                 <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.profile")}</th>
+                <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.coverLetter")}</th>
                 <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.tokens")}</th>
                 <th className="px-3 py-2.5 font-semibold">{t("admin.users.columns.actions")}</th>
               </tr>

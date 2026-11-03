@@ -262,6 +262,7 @@ export type SetAdminUserLimitsPayload = {
   vacancyGenerationLimit?: number | null;
   hrGenerationLimit?: number | null;
   profileGenerationLimit?: number | null;
+  coverLetterGenerationLimit?: number | null;
   tokenLimit?: number | null;
 };
 
@@ -283,6 +284,7 @@ export type UpdateAdminSettingsPayload = {
   vacancyGenerationLimit?: number;
   hrGenerationLimit?: number;
   profileGenerationLimit?: number;
+  coverLetterGenerationLimit?: number;
   tokenLimit?: number;
 };
 

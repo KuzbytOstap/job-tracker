@@ -54,6 +54,7 @@ describe("GET /api/admin/settings", () => {
       vacancyGenerationLimit: 10,
       hrGenerationLimit: 10,
       profileGenerationLimit: 50,
+      coverLetterGenerationLimit: 20,
       tokenLimit: 20_000,
       updatedAt: new Date("2026-08-01T00:00:00.000Z"),
     });
@@ -65,6 +66,7 @@ describe("GET /api/admin/settings", () => {
       vacancyGenerationLimit: 10,
       hrGenerationLimit: 10,
       profileGenerationLimit: 50,
+      coverLetterGenerationLimit: 20,
       tokenLimit: 20_000,
       updatedAt: "2026-08-01T00:00:00.000Z",
     });
@@ -124,6 +126,34 @@ describe("PATCH /api/admin/settings", () => {
     expect(response.status).toBe(200);
     expect(updateAiGlobalLimitsMock).toHaveBeenCalledWith({ profileGenerationLimit: 75 });
     expect((await response.json()).profileGenerationLimit).toBe(75);
+  });
+
+  it("rejects a negative cover letter limit as invalid", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+
+    const response = await PATCH(patchRequest({ coverLetterGenerationLimit: -1 }));
+
+    expect(response.status).toBe(400);
+    expect(updateAiGlobalLimitsMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts and returns the cover letter limit", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+    updateAiGlobalLimitsMock.mockResolvedValue({
+      id: 1,
+      vacancyGenerationLimit: 10,
+      hrGenerationLimit: 10,
+      profileGenerationLimit: 50,
+      coverLetterGenerationLimit: 30,
+      tokenLimit: 20_000,
+      updatedAt: new Date("2026-08-09T00:00:00.000Z"),
+    });
+
+    const response = await PATCH(patchRequest({ coverLetterGenerationLimit: 30 }));
+
+    expect(response.status).toBe(200);
+    expect(updateAiGlobalLimitsMock).toHaveBeenCalledWith({ coverLetterGenerationLimit: 30 });
+    expect((await response.json()).coverLetterGenerationLimit).toBe(30);
   });
 
   it("updates only the provided fields for an admin", async () => {

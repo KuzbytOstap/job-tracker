@@ -17,6 +17,7 @@ const limitsBodySchema = z
     vacancyGenerationLimit: nonNegativeIntOrNull,
     hrGenerationLimit: nonNegativeIntOrNull,
     profileGenerationLimit: nonNegativeIntOrNull,
+    coverLetterGenerationLimit: nonNegativeIntOrNull,
     tokenLimit: nonNegativeIntOrNull,
   })
   .strict();
