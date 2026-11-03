@@ -128,6 +128,29 @@ export type ProfileDTO = {
   defaultCoverLetterPrompt: string;
 };
 
+export type ContextItemWeightValue = "COVERED" | "SUBSTANTIAL" | "MINOR";
+
+export type ContextItemDTO = {
+  id: string;
+  text: string;
+  weight: ContextItemWeightValue | null;
+  impact: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CvDTO = {
+  id: string;
+  label: string;
+  language: string | null;
+  isPrimary: boolean;
+  fileName: string;
+  fileSize: number;
+  hasText: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CoverLetterExampleDTO = {
   id: string;
   vacancyText: string;
