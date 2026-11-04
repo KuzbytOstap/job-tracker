@@ -1,8 +1,19 @@
 import type { AiQuotaStatus, AiUsageRequestType, AiUsageStatusResponse } from "@/lib/api-types";
 
-export type AiQuotaReasonCode = "VACANCY_LIMIT_REACHED" | "HR_LIMIT_REACHED" | "TOKEN_LIMIT_REACHED";
+export type AiQuotaReasonCode =
+  | "VACANCY_LIMIT_REACHED"
+  | "HR_LIMIT_REACHED"
+  | "PROFILE_LIMIT_REACHED"
+  | "COVER_LETTER_LIMIT_REACHED"
+  | "FIT_ANALYSIS_LIMIT_REACHED"
+  | "TOKEN_LIMIT_REACHED";
 
-export const AI_QUOTA_REQUEST_TYPE: Record<AiQuotaReasonCode, AiUsageRequestType> = {
+export type RequestableAiQuotaReasonCode = Exclude<
+  AiQuotaReasonCode,
+  "PROFILE_LIMIT_REACHED" | "COVER_LETTER_LIMIT_REACHED" | "FIT_ANALYSIS_LIMIT_REACHED"
+>;
+
+export const AI_QUOTA_REQUEST_TYPE: Record<RequestableAiQuotaReasonCode, AiUsageRequestType> = {
   VACANCY_LIMIT_REACHED: "VACANCY_LIMIT",
   HR_LIMIT_REACHED: "HR_LIMIT",
   TOKEN_LIMIT_REACHED: "TOKEN_LIMIT",
@@ -20,12 +31,15 @@ export const AI_QUOTA_REQUEST_TYPE: Record<AiQuotaReasonCode, AiUsageRequestType
  */
 export function resolveAiQuotaReason(
   usage: AiUsageStatusResponse | undefined,
-  feature: "VACANCY_GENERATION" | "HR_GENERATION",
+  feature: "VACANCY_GENERATION" | "HR_GENERATION" | "PROFILE" | "COVER_LETTER" | "FIT_ANALYSIS",
 ): AiQuotaReasonCode | null {
   if (!usage) return null;
 
   if (feature === "VACANCY_GENERATION" && usage.vacancy.exhausted) return "VACANCY_LIMIT_REACHED";
   if (feature === "HR_GENERATION" && usage.hr.exhausted) return "HR_LIMIT_REACHED";
+  if (feature === "PROFILE" && usage.profile.exhausted) return "PROFILE_LIMIT_REACHED";
+  if (feature === "COVER_LETTER" && usage.coverLetter.exhausted) return "COVER_LETTER_LIMIT_REACHED";
+  if (feature === "FIT_ANALYSIS" && usage.fitAnalysis.exhausted) return "FIT_ANALYSIS_LIMIT_REACHED";
   if (usage.tokens.exhausted) return "TOKEN_LIMIT_REACHED";
   return null;
 }
@@ -36,6 +50,12 @@ export function quotaForReason(usage: AiUsageStatusResponse, reason: AiQuotaReas
       return usage.vacancy;
     case "HR_LIMIT_REACHED":
       return usage.hr;
+    case "PROFILE_LIMIT_REACHED":
+      return usage.profile;
+    case "COVER_LETTER_LIMIT_REACHED":
+      return usage.coverLetter;
+    case "FIT_ANALYSIS_LIMIT_REACHED":
+      return usage.fitAnalysis;
     case "TOKEN_LIMIT_REACHED":
       return usage.tokens;
   }
@@ -49,7 +69,14 @@ export function quotaForReason(usage: AiUsageStatusResponse, reason: AiQuotaReas
 export function extractAiQuotaReasonFromError(details: unknown): AiQuotaReasonCode | null {
   if (typeof details !== "object" || details === null || !("code" in details)) return null;
   const code = (details as { code: unknown }).code;
-  if (code === "VACANCY_LIMIT_REACHED" || code === "HR_LIMIT_REACHED" || code === "TOKEN_LIMIT_REACHED") {
+  if (
+    code === "VACANCY_LIMIT_REACHED" ||
+    code === "HR_LIMIT_REACHED" ||
+    code === "PROFILE_LIMIT_REACHED" ||
+    code === "COVER_LETTER_LIMIT_REACHED" ||
+    code === "FIT_ANALYSIS_LIMIT_REACHED" ||
+    code === "TOKEN_LIMIT_REACHED"
+  ) {
     return code;
   }
   return null;

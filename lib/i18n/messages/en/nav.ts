@@ -12,4 +12,5 @@ export const nav = {
   addApplication: "Add application",
   signOut: "Sign out",
   settings: "Settings",
+  profile: "Profile",
 } as const;

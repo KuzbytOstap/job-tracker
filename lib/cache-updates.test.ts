@@ -4,6 +4,7 @@ import {
   buildOptimisticListItem,
   removeApplicationFromList,
   sortApplicationDTOs,
+  toApplicationListItem,
   upsertApplicationInList,
 } from "@/lib/cache-updates";
 import { BOARD_COLUMNS, distributeApplicationsIntoColumns, getStatusPageHref } from "@/lib/board-columns";
@@ -294,5 +295,38 @@ describe("buildOptimisticListItem", () => {
       now,
     );
     expect(optimistic.appliedAt).toBe("2026-07-01T00:00:00.000Z");
+  });
+});
+
+describe("toApplicationListItem fit mismatch count", () => {
+  it("counts the mismatches of the full application's analysis", () => {
+    const item = toApplicationListItem(
+      makeApp({
+        fitAnalysis: {
+          analyzedAt: "2026-11-03T12:00:00.000Z",
+          items: [
+            { criterion: "SALARY", verdict: "MISMATCH", vacancyValue: "3000", yourValue: "4000", reason: "Lower." },
+            { criterion: "WORK_FORMAT", verdict: "MATCH", vacancyValue: "Remote", yourValue: "Remote", reason: "Same." },
+            { criterion: "EMPLOYMENT_TYPE", verdict: "UNKNOWN", vacancyValue: null, yourValue: null, reason: "Silent." },
+            { criterion: "EXPERIENCE_YEARS", verdict: "MISMATCH", vacancyValue: "7", yourValue: "5", reason: "7 vs 5." },
+            { criterion: "TECHNOLOGIES", verdict: "MATCH", vacancyValue: "React", yourValue: "React", reason: "Same." },
+          ],
+        },
+      }),
+    );
+
+    expect(item.fitMismatchCount).toBe(2);
+  });
+
+  it("keeps null for an application that was never analysed", () => {
+    expect(toApplicationListItem(makeApp({ fitAnalysis: null })).fitMismatchCount).toBeNull();
+  });
+
+  it("leaves the count undefined when the application carries no analysis field", () => {
+    expect(toApplicationListItem(makeApp()).fitMismatchCount).toBeUndefined();
+  });
+
+  it("never copies the heavy analysis into the list item", () => {
+    expect(toApplicationListItem(makeApp({ fitAnalysis: null }))).not.toHaveProperty("fitAnalysis");
   });
 });

@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApplicationEditForm } from "@/components/applications/application-edit-form";
-import { updateApplication } from "@/lib/api";
+import { generateCoverLetter, getAiAccessStatus, getAiUsageStatus, getCvs, updateApplication } from "@/lib/api";
 import type { ApplicationDTO } from "@/lib/api-types";
 import { Status } from "@/app/generated/prisma/enums";
 
@@ -15,10 +15,18 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/lib/api", () => ({
   updateApplication: vi.fn(),
+  generateCoverLetter: vi.fn(),
+  getAiAccessStatus: vi.fn(),
+  getAiUsageStatus: vi.fn(),
+  getCvs: vi.fn(),
   ApiError: class ApiError extends Error {},
 }));
 
 const updateApplicationMock = vi.mocked(updateApplication);
+const generateCoverLetterMock = vi.mocked(generateCoverLetter);
+const getAiAccessStatusMock = vi.mocked(getAiAccessStatus);
+const getAiUsageStatusMock = vi.mocked(getAiUsageStatus);
+const getCvsMock = vi.mocked(getCvs);
 
 function fakeApplication(overrides: Partial<ApplicationDTO> = {}): ApplicationDTO {
   return {
@@ -73,10 +81,70 @@ function renderForm(application: ApplicationDTO) {
 
 beforeEach(() => {
   updateApplicationMock.mockReset();
+  generateCoverLetterMock.mockReset();
+  getAiAccessStatusMock.mockReset();
+  getAiAccessStatusMock.mockResolvedValue({ status: "APPROVED" });
+  getAiUsageStatusMock.mockReset();
+  getAiUsageStatusMock.mockResolvedValue({
+    resetAt: "2026-11-04T00:00:00.000Z",
+    vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
+    coverLetter: { used: 0, limit: 20, exhausted: false, pendingRequest: false },
+    fitAnalysis: { used: 0, limit: 30, exhausted: false, pendingRequest: false },
+    tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
+  });
+  getCvsMock.mockReset();
+  getCvsMock.mockResolvedValue([
+    {
+      id: "cv_1",
+      label: "React Native",
+      language: "en",
+      isPrimary: true,
+      fileName: "rn.pdf",
+      fileSize: 1024,
+      hasText: true,
+      createdAt: "2026-11-01T00:00:00.000Z",
+      updatedAt: "2026-11-01T00:00:00.000Z",
+    },
+  ]);
 });
 
 afterEach(() => {
   cleanup();
+});
+
+describe("ApplicationEditForm — cover letter generation", () => {
+  it("puts the generated letter into the cover letter field using the live form values", async () => {
+    generateCoverLetterMock.mockResolvedValue({ status: "ok", letter: "Generated letter text" });
+    const user = userEvent.setup();
+    renderForm(fakeApplication({ jobPostingText: "We need an engineer" }));
+
+    await user.click(screen.getByRole("button", { name: "Generate cover letter" }));
+    await user.click(await screen.findByRole("button", { name: "Generate" }));
+    await user.click(await screen.findByRole("button", { name: "Use letter" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Cover letter")).toHaveValue("Generated letter text"));
+    expect(generateCoverLetterMock).toHaveBeenCalledWith({
+      vacancyText: "We need an engineer",
+      company: "Acme",
+      position: "Engineer",
+      cvId: "cv_1",
+    });
+  });
+
+  it("keeps the stored letter when the replacement is declined", async () => {
+    generateCoverLetterMock.mockResolvedValue({ status: "ok", letter: "Generated letter text" });
+    const user = userEvent.setup();
+    renderForm(fakeApplication({ jobPostingText: "We need an engineer", coverLetterText: "Stored cover letter" }));
+
+    await user.click(screen.getByRole("button", { name: "Generate cover letter" }));
+    await user.click(await screen.findByRole("button", { name: "Generate" }));
+    await user.click(await screen.findByRole("button", { name: "Use letter" }));
+    await user.click(await screen.findByRole("button", { name: "Keep current" }));
+
+    expect(screen.getByLabelText("Cover letter")).toHaveValue("Stored cover letter");
+  });
 });
 
 describe("ApplicationEditForm — source materials", () => {

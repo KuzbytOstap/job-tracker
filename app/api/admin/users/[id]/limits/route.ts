@@ -16,6 +16,9 @@ const limitsBodySchema = z
   .object({
     vacancyGenerationLimit: nonNegativeIntOrNull,
     hrGenerationLimit: nonNegativeIntOrNull,
+    profileGenerationLimit: nonNegativeIntOrNull,
+    coverLetterGenerationLimit: nonNegativeIntOrNull,
+    fitAnalysisGenerationLimit: nonNegativeIntOrNull,
     tokenLimit: nonNegativeIntOrNull,
   })
   .strict();

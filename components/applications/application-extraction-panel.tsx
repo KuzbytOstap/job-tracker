@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Sparkles } from "lucide-react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,7 @@ import { useCreatePlatform } from "@/hooks/use-create-platform";
 import { useI18n } from "@/components/i18n/i18n-provider";
 import { platformOptionLabel } from "@/lib/i18n/label-keys";
 import { SimilarPlatformPrompt } from "@/components/applications/similar-platform-prompt";
+import { CoverLetterGeneratorDialog } from "@/components/applications/cover-letter-generator-dialog";
 import { similarPlatformFromErrorDetails } from "@/lib/platforms";
 import { useAiAccessStatus } from "@/hooks/use-ai-access-status";
 import { useAiUsageStatus } from "@/hooks/use-ai-usage-status";
@@ -52,6 +53,7 @@ export function ApplicationExtractionPanel({
   const [similarPlatform, setSimilarPlatform] = useState<PlatformOptionDTO | null>(null);
   const queryClient = useQueryClient();
   const form = useFormContext<ApplicationFormValues>();
+  const [company, position] = useWatch({ control: form.control, name: ["company", "position"] });
   const mutation = useExtractApplication();
   const createPlatformMutation = useCreatePlatform();
   const aiAccess = useAiAccessStatus();
@@ -219,6 +221,13 @@ export function ApplicationExtractionPanel({
               placeholder={t("extraction.coverLetterPlaceholder")}
               value={coverLetterText}
               onChange={(event) => onCoverLetterTextChange(event.target.value)}
+            />
+            <CoverLetterGeneratorDialog
+              jobPostingText={jobPostingText}
+              company={company ?? ""}
+              position={position ?? ""}
+              currentLetter={coverLetterText}
+              onUse={onCoverLetterTextChange}
             />
           </Field>
 

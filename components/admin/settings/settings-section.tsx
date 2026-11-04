@@ -14,11 +14,28 @@ import { useI18n } from "@/components/i18n/i18n-provider";
 import type { MessageKey } from "@/lib/i18n/messages";
 import type { AiGlobalLimitsDTO } from "@/lib/api-types";
 
-type FieldKey = "vacancyGenerationLimit" | "hrGenerationLimit" | "tokenLimit";
+type FieldKey =
+  | "vacancyGenerationLimit"
+  | "hrGenerationLimit"
+  | "profileGenerationLimit"
+  | "coverLetterGenerationLimit"
+  | "fitAnalysisGenerationLimit"
+  | "tokenLimit";
 
 const FIELD_CONFIG: Array<{ key: FieldKey; labelKey: MessageKey; descriptionKey: MessageKey }> = [
   { key: "vacancyGenerationLimit", labelKey: "admin.limits.vacancyField", descriptionKey: "admin.settings.vacancyDescription" },
   { key: "hrGenerationLimit", labelKey: "admin.limits.hrField", descriptionKey: "admin.settings.hrDescription" },
+  { key: "profileGenerationLimit", labelKey: "admin.limits.profileField", descriptionKey: "admin.settings.profileDescription" },
+  {
+    key: "coverLetterGenerationLimit",
+    labelKey: "admin.limits.coverLetterField",
+    descriptionKey: "admin.settings.coverLetterDescription",
+  },
+  {
+    key: "fitAnalysisGenerationLimit",
+    labelKey: "admin.limits.fitAnalysisField",
+    descriptionKey: "admin.settings.fitAnalysisDescription",
+  },
   { key: "tokenLimit", labelKey: "admin.limits.tokensField", descriptionKey: "admin.settings.tokensDescription" },
 ];
 
@@ -26,6 +43,9 @@ function toValues(limits: AiGlobalLimitsDTO): Record<FieldKey, string> {
   return {
     vacancyGenerationLimit: String(limits.vacancyGenerationLimit),
     hrGenerationLimit: String(limits.hrGenerationLimit),
+    profileGenerationLimit: String(limits.profileGenerationLimit),
+    coverLetterGenerationLimit: String(limits.coverLetterGenerationLimit),
+    fitAnalysisGenerationLimit: String(limits.fitAnalysisGenerationLimit),
     tokenLimit: String(limits.tokenLimit),
   };
 }
@@ -65,6 +85,9 @@ export function SettingsSection() {
       {
         vacancyGenerationLimit: Number(values.vacancyGenerationLimit),
         hrGenerationLimit: Number(values.hrGenerationLimit),
+        profileGenerationLimit: Number(values.profileGenerationLimit),
+        coverLetterGenerationLimit: Number(values.coverLetterGenerationLimit),
+        fitAnalysisGenerationLimit: Number(values.fitAnalysisGenerationLimit),
         tokenLimit: Number(values.tokenLimit),
       },
       {

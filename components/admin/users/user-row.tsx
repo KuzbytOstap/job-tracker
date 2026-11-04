@@ -26,6 +26,9 @@ type UserRowProps = {
 const GLOBAL_KEY: Record<QuotaField, Exclude<keyof AiGlobalLimitsDTO, "updatedAt">> = {
   vacancy: "vacancyGenerationLimit",
   hr: "hrGenerationLimit",
+  profile: "profileGenerationLimit",
+  coverLetter: "coverLetterGenerationLimit",
+  fitAnalysis: "fitAnalysisGenerationLimit",
   tokens: "tokenLimit",
 };
 
@@ -118,6 +121,9 @@ export function UserRow({ user, globalLimits }: UserRowProps) {
       </td>
       <QuotaCell user={user} globalLimits={globalLimits} field="vacancy" />
       <QuotaCell user={user} globalLimits={globalLimits} field="hr" />
+      <QuotaCell user={user} globalLimits={globalLimits} field="profile" />
+      <QuotaCell user={user} globalLimits={globalLimits} field="coverLetter" />
+      <QuotaCell user={user} globalLimits={globalLimits} field="fitAnalysis" />
       <QuotaCell user={user} globalLimits={globalLimits} field="tokens" />
       <td className="px-3 py-2.5 align-top whitespace-nowrap">
         <Button type="button" variant="outline" size="sm" onClick={() => setLimitsOpen(true)}>

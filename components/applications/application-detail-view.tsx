@@ -17,6 +17,7 @@ import { StatusHistory } from "@/components/applications/status-history";
 import { SourceMaterialsSection } from "@/components/applications/source-materials-section";
 import { ApplicationLinksSection } from "@/components/applications/application-links-section";
 import { HrInterviewQuestionsSection } from "@/components/applications/hr-interview-questions-section";
+import { FitAnalysisSection } from "@/components/applications/fit-analysis-section";
 import { CopyButton } from "@/components/ui/copy-button";
 import { formatExactDateTime, formatRelativeDate } from "@/lib/relative-date";
 import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog";
@@ -240,6 +241,13 @@ export function ApplicationDetailView({ application, onEdit, onDeleted }: Applic
       <SourceMaterialsSection
         jobPostingText={application.jobPostingText}
         coverLetterText={application.coverLetterText}
+      />
+
+      <FitAnalysisSection
+        key={application.id}
+        application={application}
+        aiAccessStatus={aiAccess.data?.status}
+        aiUsage={aiUsage.data}
       />
 
       {application.hrInterviewQuestions && (

@@ -35,7 +35,15 @@ beforeEach(() => {
 
 describe("listAdminUsers", () => {
   it("computes effective limits from global defaults, per-user overrides, and today's bonus", async () => {
-    globalLimitsUpsertMock.mockResolvedValue({ id: 1, vacancyGenerationLimit: 10, hrGenerationLimit: 10, tokenLimit: 20_000 });
+    globalLimitsUpsertMock.mockResolvedValue({
+      id: 1,
+      vacancyGenerationLimit: 10,
+      hrGenerationLimit: 10,
+      profileGenerationLimit: 50,
+      coverLetterGenerationLimit: 20,
+      fitAnalysisGenerationLimit: 30,
+      tokenLimit: 20_000,
+    });
     userFindManyMock.mockResolvedValue([
       {
         id: "user_1",
@@ -43,11 +51,21 @@ describe("listAdminUsers", () => {
         email: "ada@example.com",
         role: Role.USER,
         aiAccessStatus: AiAccessStatus.APPROVED,
-        aiUserLimit: { vacancyGenerationLimit: 15, hrGenerationLimit: null, tokenLimit: null },
+        aiUserLimit: {
+          vacancyGenerationLimit: 15,
+          hrGenerationLimit: null,
+          profileGenerationLimit: 5,
+          coverLetterGenerationLimit: 4,
+          fitAnalysisGenerationLimit: 3,
+          tokenLimit: null,
+        },
         aiUsageDaily: [
           {
             vacancyGenerationCount: 4,
             hrGenerationCount: 2,
+            profileGenerationCount: 3,
+            coverLetterGenerationCount: 2,
+            fitAnalysisGenerationCount: 1,
             tokenCount: 500,
             vacancyGenerationBonus: 2,
             hrGenerationBonus: 0,
@@ -74,9 +92,9 @@ describe("listAdminUsers", () => {
       email: "ada@example.com",
       role: Role.USER,
       aiAccessStatus: AiAccessStatus.APPROVED,
-      usage: { vacancy: 4, hr: 2, tokens: 500 },
-      limits: { vacancy: 17, hr: 10, tokens: 20_100 },
-      overrides: { vacancy: 15, hr: null, tokens: null },
+      usage: { vacancy: 4, hr: 2, profile: 3, coverLetter: 2, fitAnalysis: 1, tokens: 500 },
+      limits: { vacancy: 17, hr: 10, profile: 5, coverLetter: 4, fitAnalysis: 3, tokens: 20_100 },
+      overrides: { vacancy: 15, hr: null, profile: 5, coverLetter: 4, fitAnalysis: 3, tokens: null },
     });
     expect(result[1]).toEqual({
       id: "user_2",
@@ -84,9 +102,9 @@ describe("listAdminUsers", () => {
       email: "grace@example.com",
       role: Role.ADMIN,
       aiAccessStatus: AiAccessStatus.NOT_REQUESTED,
-      usage: { vacancy: 0, hr: 0, tokens: 0 },
-      limits: { vacancy: 10, hr: 10, tokens: 20_000 },
-      overrides: { vacancy: null, hr: null, tokens: null },
+      usage: { vacancy: 0, hr: 0, profile: 0, coverLetter: 0, fitAnalysis: 0, tokens: 0 },
+      limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, fitAnalysis: 30, tokens: 20_000 },
+      overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, fitAnalysis: null, tokens: null },
     });
   });
 });
@@ -138,20 +156,125 @@ describe("restoreAiAccess", () => {
 
 describe("setAiUserLimitOverrides", () => {
   it("creates an override row with only the fields provided", async () => {
-    aiUserLimitUpsertMock.mockResolvedValue({ vacancyGenerationLimit: 20, hrGenerationLimit: null, tokenLimit: null });
+    aiUserLimitUpsertMock.mockResolvedValue({
+      vacancyGenerationLimit: 20,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: null,
+      fitAnalysisGenerationLimit: null,
+      tokenLimit: null,
+    });
 
     const result = await setAiUserLimitOverrides("user_1", { vacancyGenerationLimit: 20 });
 
     expect(aiUserLimitUpsertMock).toHaveBeenCalledWith({
       where: { userId: "user_1" },
-      create: { userId: "user_1", vacancyGenerationLimit: 20, hrGenerationLimit: null, tokenLimit: null },
+      create: {
+        userId: "user_1",
+        vacancyGenerationLimit: 20,
+        hrGenerationLimit: null,
+        profileGenerationLimit: null,
+        coverLetterGenerationLimit: null,
+        fitAnalysisGenerationLimit: null,
+        tokenLimit: null,
+      },
       update: { vacancyGenerationLimit: 20 },
     });
-    expect(result).toEqual({ vacancy: 20, hr: null, tokens: null });
+    expect(result).toEqual({
+      vacancy: 20,
+      hr: null,
+      profile: null,
+      coverLetter: null,
+      fitAnalysis: null,
+      tokens: null,
+    });
+  });
+
+  it("pins and clears the profile override independently of the other limits", async () => {
+    aiUserLimitUpsertMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: 8,
+      tokenLimit: null,
+    });
+
+    const pinned = await setAiUserLimitOverrides("user_1", { profileGenerationLimit: 8 });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ profileGenerationLimit: 8 }),
+        update: { profileGenerationLimit: 8 },
+      }),
+    );
+    expect(pinned.profile).toBe(8);
+
+    await setAiUserLimitOverrides("user_1", { profileGenerationLimit: null });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ update: { profileGenerationLimit: null } }),
+    );
+  });
+
+  it("pins and clears the cover letter override independently of the other limits", async () => {
+    aiUserLimitUpsertMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: 6,
+      tokenLimit: null,
+    });
+
+    const pinned = await setAiUserLimitOverrides("user_1", { coverLetterGenerationLimit: 6 });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ coverLetterGenerationLimit: 6 }),
+        update: { coverLetterGenerationLimit: 6 },
+      }),
+    );
+    expect(pinned.coverLetter).toBe(6);
+
+    await setAiUserLimitOverrides("user_1", { coverLetterGenerationLimit: null });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ update: { coverLetterGenerationLimit: null } }),
+    );
+  });
+
+  it("pins and clears the fit analysis override independently of the other limits", async () => {
+    aiUserLimitUpsertMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: null,
+      profileGenerationLimit: null,
+      coverLetterGenerationLimit: null,
+      fitAnalysisGenerationLimit: 9,
+      tokenLimit: null,
+    });
+
+    const pinned = await setAiUserLimitOverrides("user_1", { fitAnalysisGenerationLimit: 9 });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ fitAnalysisGenerationLimit: 9, coverLetterGenerationLimit: null }),
+        update: { fitAnalysisGenerationLimit: 9 },
+      }),
+    );
+    expect(pinned.fitAnalysis).toBe(9);
+
+    await setAiUserLimitOverrides("user_1", { fitAnalysisGenerationLimit: null });
+
+    expect(aiUserLimitUpsertMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ update: { fitAnalysisGenerationLimit: null } }),
+    );
   });
 
   it("clears an override when the field is explicitly null, leaving unspecified fields untouched", async () => {
-    aiUserLimitUpsertMock.mockResolvedValue({ vacancyGenerationLimit: null, hrGenerationLimit: 10, tokenLimit: null });
+    aiUserLimitUpsertMock.mockResolvedValue({
+      vacancyGenerationLimit: null,
+      hrGenerationLimit: 10,
+      profileGenerationLimit: null,
+      tokenLimit: null,
+    });
 
     await setAiUserLimitOverrides("user_1", { vacancyGenerationLimit: null });
 

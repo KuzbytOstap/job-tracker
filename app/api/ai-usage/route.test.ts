@@ -32,6 +32,9 @@ const USAGE = {
   resetAt: "2026-08-10T00:00:00.000Z",
   vacancy: { used: 10, limit: 10, exhausted: true },
   hr: { used: 2, limit: 10, exhausted: false },
+  profile: { used: 4, limit: 50, exhausted: false },
+  coverLetter: { used: 1, limit: 20, exhausted: false },
+  fitAnalysis: { used: 3, limit: 30, exhausted: false },
   tokens: { used: 500, limit: 20_000, exhausted: false },
 };
 
@@ -72,6 +75,9 @@ describe("GET /api/ai-usage", () => {
       resetAt: USAGE.resetAt,
       vacancy: { ...USAGE.vacancy, pendingRequest: true },
       hr: { ...USAGE.hr, pendingRequest: false },
+      profile: { ...USAGE.profile, pendingRequest: false },
+      coverLetter: { ...USAGE.coverLetter, pendingRequest: false },
+      fitAnalysis: { ...USAGE.fitAnalysis, pendingRequest: false },
       tokens: { ...USAGE.tokens, pendingRequest: false },
     });
     expect(getAiUsageStatusMock).toHaveBeenCalledWith("test-user-id");

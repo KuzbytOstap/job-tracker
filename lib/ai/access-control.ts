@@ -7,6 +7,9 @@ export type AiAccessErrorCode =
   | "AI_SUSPENDED"
   | "VACANCY_LIMIT_REACHED"
   | "HR_LIMIT_REACHED"
+  | "PROFILE_LIMIT_REACHED"
+  | "COVER_LETTER_LIMIT_REACHED"
+  | "FIT_ANALYSIS_LIMIT_REACHED"
   | "TOKEN_LIMIT_REACHED";
 
 export class AiAccessError extends Error {
@@ -26,6 +29,9 @@ export function aiAccessErrorStatus(code: AiAccessErrorCode): number {
       return 403;
     case "VACANCY_LIMIT_REACHED":
     case "HR_LIMIT_REACHED":
+    case "PROFILE_LIMIT_REACHED":
+    case "COVER_LETTER_LIMIT_REACHED":
+    case "FIT_ANALYSIS_LIMIT_REACHED":
     case "TOKEN_LIMIT_REACHED":
       return 429;
   }
@@ -57,9 +63,15 @@ export async function requireAiAccessApproved(userId: string): Promise<void> {
 type EffectiveLimitsAndUsage = {
   vacancyLimit: number;
   hrLimit: number;
+  profileLimit: number;
+  coverLetterLimit: number;
+  fitAnalysisLimit: number;
   tokenLimit: number;
   vacancyUsed: number;
   hrUsed: number;
+  profileUsed: number;
+  coverLetterUsed: number;
+  fitAnalysisUsed: number;
   tokenUsed: number;
 };
 
@@ -78,12 +90,78 @@ async function loadEffectiveLimitsAndUsage(userId: string, date: Date): Promise<
     vacancyLimit:
       (userLimit?.vacancyGenerationLimit ?? globalLimits.vacancyGenerationLimit) + daily.vacancyGenerationBonus,
     hrLimit: (userLimit?.hrGenerationLimit ?? globalLimits.hrGenerationLimit) + daily.hrGenerationBonus,
+    profileLimit: userLimit?.profileGenerationLimit ?? globalLimits.profileGenerationLimit,
+    coverLetterLimit: userLimit?.coverLetterGenerationLimit ?? globalLimits.coverLetterGenerationLimit,
+    fitAnalysisLimit: userLimit?.fitAnalysisGenerationLimit ?? globalLimits.fitAnalysisGenerationLimit,
     tokenLimit: (userLimit?.tokenLimit ?? globalLimits.tokenLimit) + daily.tokenBonus,
     vacancyUsed: daily.vacancyGenerationCount,
     hrUsed: daily.hrGenerationCount,
+    profileUsed: daily.profileGenerationCount,
+    coverLetterUsed: daily.coverLetterGenerationCount,
+    fitAnalysisUsed: daily.fitAnalysisGenerationCount,
     tokenUsed: daily.tokenCount,
   };
 }
+
+type DailyCounts = {
+  vacancyGenerationCount: number;
+  hrGenerationCount: number;
+  profileGenerationCount: number;
+  coverLetterGenerationCount: number;
+  fitAnalysisGenerationCount: number;
+};
+
+type FeatureCounter = {
+  limitOf: (limits: EffectiveLimitsAndUsage) => number;
+  countOf: (daily: DailyCounts) => number;
+  where: (limit: number) => Prisma.AiUsageDailyWhereInput;
+  increment: Prisma.AiUsageDailyUpdateManyMutationInput;
+  decrement: Prisma.AiUsageDailyUpdateManyMutationInput;
+  limitError: { code: AiAccessErrorCode; message: string };
+};
+
+const FEATURE_COUNTERS: Record<AiFeature, FeatureCounter> = {
+  [AiFeature.VACANCY_GENERATION]: {
+    limitOf: (limits) => limits.vacancyLimit,
+    countOf: (daily) => daily.vacancyGenerationCount,
+    where: (limit) => ({ vacancyGenerationCount: { lt: limit } }),
+    increment: { vacancyGenerationCount: { increment: 1 } },
+    decrement: { vacancyGenerationCount: { decrement: 1 } },
+    limitError: { code: "VACANCY_LIMIT_REACHED", message: "Daily vacancy generation limit reached." },
+  },
+  [AiFeature.HR_GENERATION]: {
+    limitOf: (limits) => limits.hrLimit,
+    countOf: (daily) => daily.hrGenerationCount,
+    where: (limit) => ({ hrGenerationCount: { lt: limit } }),
+    increment: { hrGenerationCount: { increment: 1 } },
+    decrement: { hrGenerationCount: { decrement: 1 } },
+    limitError: { code: "HR_LIMIT_REACHED", message: "Daily HR question generation limit reached." },
+  },
+  [AiFeature.PROFILE]: {
+    limitOf: (limits) => limits.profileLimit,
+    countOf: (daily) => daily.profileGenerationCount,
+    where: (limit) => ({ profileGenerationCount: { lt: limit } }),
+    increment: { profileGenerationCount: { increment: 1 } },
+    decrement: { profileGenerationCount: { decrement: 1 } },
+    limitError: { code: "PROFILE_LIMIT_REACHED", message: "Daily profile AI limit reached." },
+  },
+  [AiFeature.COVER_LETTER]: {
+    limitOf: (limits) => limits.coverLetterLimit,
+    countOf: (daily) => daily.coverLetterGenerationCount,
+    where: (limit) => ({ coverLetterGenerationCount: { lt: limit } }),
+    increment: { coverLetterGenerationCount: { increment: 1 } },
+    decrement: { coverLetterGenerationCount: { decrement: 1 } },
+    limitError: { code: "COVER_LETTER_LIMIT_REACHED", message: "Daily cover letter limit reached." },
+  },
+  [AiFeature.FIT_ANALYSIS]: {
+    limitOf: (limits) => limits.fitAnalysisLimit,
+    countOf: (daily) => daily.fitAnalysisGenerationCount,
+    where: (limit) => ({ fitAnalysisGenerationCount: { lt: limit } }),
+    increment: { fitAnalysisGenerationCount: { increment: 1 } },
+    decrement: { fitAnalysisGenerationCount: { decrement: 1 } },
+    limitError: { code: "FIT_ANALYSIS_LIMIT_REACHED", message: "Daily fit analysis limit reached." },
+  },
+};
 
 export type AiQuotaStatus = {
   used: number;
@@ -95,6 +173,9 @@ export type AiUsageStatus = {
   resetAt: string;
   vacancy: AiQuotaStatus;
   hr: AiQuotaStatus;
+  profile: AiQuotaStatus;
+  coverLetter: AiQuotaStatus;
+  fitAnalysis: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 
@@ -110,10 +191,20 @@ export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
   await requireAiAccessApproved(userId);
 
   const date = utcDateOnly(new Date());
-  const { vacancyLimit, hrLimit, tokenLimit, vacancyUsed, hrUsed, tokenUsed } = await loadEffectiveLimitsAndUsage(
-    userId,
-    date,
-  );
+  const {
+    vacancyLimit,
+    hrLimit,
+    profileLimit,
+    coverLetterLimit,
+    fitAnalysisLimit,
+    tokenLimit,
+    vacancyUsed,
+    hrUsed,
+    profileUsed,
+    coverLetterUsed,
+    fitAnalysisUsed,
+    tokenUsed,
+  } = await loadEffectiveLimitsAndUsage(userId, date);
 
   const resetAt = new Date(date);
   resetAt.setUTCDate(resetAt.getUTCDate() + 1);
@@ -122,6 +213,17 @@ export async function getAiUsageStatus(userId: string): Promise<AiUsageStatus> {
     resetAt: resetAt.toISOString(),
     vacancy: { used: vacancyUsed, limit: vacancyLimit, exhausted: vacancyUsed >= vacancyLimit },
     hr: { used: hrUsed, limit: hrLimit, exhausted: hrUsed >= hrLimit },
+    profile: { used: profileUsed, limit: profileLimit, exhausted: profileUsed >= profileLimit },
+    coverLetter: {
+      used: coverLetterUsed,
+      limit: coverLetterLimit,
+      exhausted: coverLetterUsed >= coverLetterLimit,
+    },
+    fitAnalysis: {
+      used: fitAnalysisUsed,
+      limit: fitAnalysisLimit,
+      exhausted: fitAnalysisUsed >= fitAnalysisLimit,
+    },
     tokens: { used: tokenUsed, limit: tokenLimit, exhausted: tokenUsed >= tokenLimit },
   };
 }
@@ -133,18 +235,11 @@ async function throwSpecificReservationError(
   featureLimit: number,
 ): Promise<never> {
   const current = await prisma.aiUsageDaily.findUnique({ where: { userId_date: { userId, date } } });
-  const currentCount =
-    feature === AiFeature.VACANCY_GENERATION
-      ? (current?.vacancyGenerationCount ?? 0)
-      : (current?.hrGenerationCount ?? 0);
+  const counter = FEATURE_COUNTERS[feature];
+  const currentCount = current ? counter.countOf(current) : 0;
 
   if (currentCount >= featureLimit) {
-    throw new AiAccessError(
-      feature === AiFeature.VACANCY_GENERATION ? "VACANCY_LIMIT_REACHED" : "HR_LIMIT_REACHED",
-      feature === AiFeature.VACANCY_GENERATION
-        ? "Daily vacancy generation limit reached."
-        : "Daily HR question generation limit reached.",
-    );
+    throw new AiAccessError(counter.limitError.code, counter.limitError.message);
   }
 
   throw new AiAccessError("TOKEN_LIMIT_REACHED", "Daily AI token limit reached.");
@@ -168,42 +263,25 @@ export async function reserveAiQuota(params: {
   await requireAiAccessApproved(userId);
 
   const date = utcDateOnly(new Date());
-  const { vacancyLimit, hrLimit, tokenLimit } = await loadEffectiveLimitsAndUsage(userId, date);
+  const limits = await loadEffectiveLimitsAndUsage(userId, date);
+  const counter = FEATURE_COUNTERS[feature];
+  const featureLimit = counter.limitOf(limits);
 
-  if (feature === AiFeature.VACANCY_GENERATION) {
-    const reserved = await prisma.aiUsageDaily.updateMany({
-      where: {
-        userId,
-        date,
-        vacancyGenerationCount: { lt: vacancyLimit },
-        tokenCount: { lte: tokenLimit - estimatedTokens },
-      },
-      data: {
-        vacancyGenerationCount: { increment: 1 },
-        tokenCount: { increment: estimatedTokens },
-      },
-    });
+  const reserved = await prisma.aiUsageDaily.updateMany({
+    where: {
+      userId,
+      date,
+      ...counter.where(featureLimit),
+      tokenCount: { lte: limits.tokenLimit - estimatedTokens },
+    },
+    data: {
+      ...counter.increment,
+      tokenCount: { increment: estimatedTokens },
+    },
+  });
 
-    if (reserved.count === 0) {
-      await throwSpecificReservationError(userId, date, feature, vacancyLimit);
-    }
-  } else {
-    const reserved = await prisma.aiUsageDaily.updateMany({
-      where: {
-        userId,
-        date,
-        hrGenerationCount: { lt: hrLimit },
-        tokenCount: { lte: tokenLimit - estimatedTokens },
-      },
-      data: {
-        hrGenerationCount: { increment: 1 },
-        tokenCount: { increment: estimatedTokens },
-      },
-    });
-
-    if (reserved.count === 0) {
-      await throwSpecificReservationError(userId, date, feature, hrLimit);
-    }
+  if (reserved.count === 0) {
+    await throwSpecificReservationError(userId, date, feature, featureLimit);
   }
 
   return { userId, feature, date, reservedTokens: estimatedTokens };
@@ -212,17 +290,10 @@ export async function reserveAiQuota(params: {
 export async function rollbackAiReservation(reservation: AiQuotaReservation): Promise<void> {
   const { userId, date, feature, reservedTokens } = reservation;
 
-  if (feature === AiFeature.VACANCY_GENERATION) {
-    await prisma.aiUsageDaily.update({
-      where: { userId_date: { userId, date } },
-      data: { vacancyGenerationCount: { decrement: 1 }, tokenCount: { decrement: reservedTokens } },
-    });
-  } else {
-    await prisma.aiUsageDaily.update({
-      where: { userId_date: { userId, date } },
-      data: { hrGenerationCount: { decrement: 1 }, tokenCount: { decrement: reservedTokens } },
-    });
-  }
+  await prisma.aiUsageDaily.update({
+    where: { userId_date: { userId, date } },
+    data: { ...FEATURE_COUNTERS[feature].decrement, tokenCount: { decrement: reservedTokens } },
+  });
 }
 
 export async function finalizeAiUsage(params: {
@@ -305,23 +376,36 @@ export async function runGatedAiCall<T>(params: {
       usage = report;
     });
   } catch (error) {
-    await rollbackAiReservation(reservation);
+    const reportedUsage = usage as AiUsageReport | null;
+    if (reportedUsage === null) {
+      await rollbackAiReservation(reservation);
+    } else {
+      await finalizeUsageQuietly({ reservation, applicationId: params.applicationId, usage: reportedUsage });
+    }
     throw error;
   }
 
+  await finalizeUsageQuietly({
+    reservation,
+    applicationId: params.applicationId,
+    usage: usage ?? { model: "unknown", inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+  });
+
+  return result;
+}
+
+async function finalizeUsageQuietly(params: {
+  reservation: AiQuotaReservation;
+  applicationId?: string | null;
+  usage: AiUsageReport;
+}): Promise<void> {
   try {
-    await finalizeAiUsage({
-      reservation,
-      applicationId: params.applicationId,
-      usage: usage ?? { model: "unknown", inputTokens: 0, outputTokens: 0, totalTokens: 0 },
-    });
+    await finalizeAiUsage(params);
   } catch (finalizeError) {
-    console.error("[ai-access-control] failed to finalize AI usage after a successful call; quota stays consumed", {
-      userId: reservation.userId,
-      feature: reservation.feature,
+    console.error("[ai-access-control] failed to finalize AI usage after a provider call; quota stays consumed", {
+      userId: params.reservation.userId,
+      feature: params.reservation.feature,
       error: finalizeError,
     });
   }
-
-  return result;
 }

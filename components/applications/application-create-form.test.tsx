@@ -5,12 +5,16 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApplicationCreateForm } from "@/components/applications/application-create-form";
+import { toast } from "sonner";
 import {
   ApiError,
+  analyzeApplicationFit,
   createApplication,
   extractApplicationFromPosting,
+  generateCoverLetter,
   getAiAccessStatus,
   getAiUsageStatus,
+  getCvs,
   requestMoreAiUsage,
 } from "@/lib/api";
 import type { ApplicationDTO, AiUsageStatusResponse } from "@/lib/api-types";
@@ -28,10 +32,13 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/api", () => ({
   createApplication: vi.fn(),
   extractApplicationFromPosting: vi.fn(),
+  generateCoverLetter: vi.fn(),
+  getCvs: vi.fn(),
   getAiAccessStatus: vi.fn(),
   requestAiAccess: vi.fn(),
   getAiUsageStatus: vi.fn(),
   requestMoreAiUsage: vi.fn(),
+  analyzeApplicationFit: vi.fn(),
   ApiError: class ApiError extends Error {
     readonly status: number;
     readonly details?: unknown;
@@ -48,12 +55,18 @@ const extractApplicationFromPostingMock = vi.mocked(extractApplicationFromPostin
 const getAiAccessStatusMock = vi.mocked(getAiAccessStatus);
 const getAiUsageStatusMock = vi.mocked(getAiUsageStatus);
 const requestMoreAiUsageMock = vi.mocked(requestMoreAiUsage);
+const generateCoverLetterMock = vi.mocked(generateCoverLetter);
+const getCvsMock = vi.mocked(getCvs);
+const analyzeApplicationFitMock = vi.mocked(analyzeApplicationFit);
 
 function fakeUsageStatus(overrides: Partial<AiUsageStatusResponse> = {}): AiUsageStatusResponse {
   return {
     resetAt: "2026-08-10T00:00:00.000Z",
     vacancy: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
     hr: { used: 0, limit: 10, exhausted: false, pendingRequest: false },
+    profile: { used: 0, limit: 50, exhausted: false, pendingRequest: false },
+    coverLetter: { used: 0, limit: 20, exhausted: false, pendingRequest: false },
+    fitAnalysis: { used: 0, limit: 30, exhausted: false, pendingRequest: false },
     tokens: { used: 0, limit: 20_000, exhausted: false, pendingRequest: false },
     ...overrides,
   };
@@ -140,6 +153,23 @@ beforeEach(() => {
   getAiUsageStatusMock.mockReset();
   getAiUsageStatusMock.mockResolvedValue(fakeUsageStatus());
   requestMoreAiUsageMock.mockReset();
+  analyzeApplicationFitMock.mockReset();
+  analyzeApplicationFitMock.mockResolvedValue({ status: "skipped", reason: "NO_CV_TEXT" });
+  generateCoverLetterMock.mockReset();
+  getCvsMock.mockReset();
+  getCvsMock.mockResolvedValue([
+    {
+      id: "cv_1",
+      label: "React Native",
+      language: "en",
+      isPrimary: true,
+      fileName: "rn.pdf",
+      fileSize: 1024,
+      hasText: true,
+      createdAt: "2026-11-01T00:00:00.000Z",
+      updatedAt: "2026-11-01T00:00:00.000Z",
+    },
+  ]);
 });
 
 afterEach(() => {
@@ -576,5 +606,98 @@ describe("ApplicationCreateForm AI quota gating", () => {
     await waitFor(() => expect(screen.getByText("Daily vacancy analysis limit reached")).toBeInTheDocument());
     expect(screen.queryByText("Daily vacancy generation limit reached.")).not.toBeInTheDocument();
     expect(getAiUsageStatusMock).toHaveBeenCalled();
+  });
+});
+
+describe("ApplicationCreateForm cover letter generation", () => {
+  it("keeps the generate button disabled until a job posting is pasted", () => {
+    renderForm();
+
+    expect(screen.getByRole("button", { name: "Generate cover letter" })).toBeDisabled();
+  });
+
+  it("writes the generated letter into the cover letter field using the typed company and position", async () => {
+    generateCoverLetterMock.mockResolvedValue({ status: "ok", letter: "Generated letter text" });
+    const user = userEvent.setup();
+    renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "We need an engineer");
+    await user.click(screen.getByRole("button", { name: "Generate cover letter" }));
+    await user.click(await screen.findByRole("button", { name: "Generate" }));
+    await user.click(await screen.findByRole("button", { name: "Use letter" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Cover letter (optional)")).toHaveValue("Generated letter text"));
+    expect(generateCoverLetterMock).toHaveBeenCalledWith({
+      vacancyText: "We need an engineer",
+      company: "Acme",
+      position: "Engineer",
+      cvId: "cv_1",
+    });
+  });
+});
+
+describe("ApplicationCreateForm fit analysis auto run", () => {
+  it("analyzes the fit of a created application that has a job posting", async () => {
+    const user = userEvent.setup();
+    createApplicationMock.mockResolvedValue(fakeApplication({ id: "app-42", jobPostingText: "posting text" }));
+    const { onCreated } = renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(analyzeApplicationFitMock).toHaveBeenCalledTimes(1));
+    expect(analyzeApplicationFitMock.mock.calls[0][0]).toBe("app-42");
+  });
+
+  it("does not analyze an application created without a job posting", async () => {
+    const user = userEvent.setup();
+    createApplicationMock.mockResolvedValue(fakeApplication({ jobPostingText: null }));
+    const { onCreated } = renderForm();
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+    expect(analyzeApplicationFitMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the creation flow untouched when the analysis fails", async () => {
+    const user = userEvent.setup();
+    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.error).mockClear();
+    analyzeApplicationFitMock.mockRejectedValue(new ApiError(500, "boom"));
+    createApplicationMock.mockResolvedValue(fakeApplication({ jobPostingText: "posting text" }));
+    const { onCreated } = renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(analyzeApplicationFitMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Company")).toHaveValue(""));
+  });
+
+  it("ignores a skipped analysis silently", async () => {
+    const user = userEvent.setup();
+    vi.mocked(toast.error).mockClear();
+    analyzeApplicationFitMock.mockResolvedValue({ status: "skipped", reason: "AI_ACCESS_REQUIRED" });
+    createApplicationMock.mockResolvedValue(fakeApplication({ jobPostingText: "posting text" }));
+    const { onCreated } = renderForm();
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Job posting"), "posting text");
+    await user.click(screen.getByRole("button", { name: /add application/i }));
+
+    await waitFor(() => expect(analyzeApplicationFitMock).toHaveBeenCalledTimes(1));
+    expect(onCreated).toHaveBeenCalledTimes(1);
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

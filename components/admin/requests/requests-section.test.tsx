@@ -79,9 +79,9 @@ function adminUser(overrides: Partial<AdminUserDTO> = {}): AdminUserDTO {
     email: "ada@example.com",
     role: "USER",
     aiAccessStatus: "APPROVED",
-    usage: { vacancy: 3, hr: 1, tokens: 400 },
-    limits: { vacancy: 10, hr: 10, tokens: 20_000 },
-    overrides: { vacancy: null, hr: null, tokens: null },
+    usage: { vacancy: 3, hr: 1, profile: 4, coverLetter: 2, fitAnalysis: 5, tokens: 400 },
+    limits: { vacancy: 10, hr: 10, profile: 50, coverLetter: 20, fitAnalysis: 30, tokens: 20_000 },
+    overrides: { vacancy: null, hr: null, profile: null, coverLetter: null, fitAnalysis: null, tokens: null },
     ...overrides,
   };
 }

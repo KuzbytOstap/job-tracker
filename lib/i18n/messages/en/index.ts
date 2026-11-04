@@ -23,6 +23,9 @@ import { ai } from "./ai";
 import { admin } from "./admin";
 import { errors } from "./errors";
 import { dnd } from "./dnd";
+import { profile } from "./profile";
+import { coverLetter } from "./coverLetter";
+import { fit } from "./fit";
 
 export const en = {
   common,
@@ -50,4 +53,7 @@ export const en = {
   admin,
   errors,
   dnd,
+  profile,
+  coverLetter,
+  fit,
 } as const;

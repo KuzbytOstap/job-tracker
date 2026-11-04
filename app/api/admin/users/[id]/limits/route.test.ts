@@ -77,6 +77,95 @@ describe("PATCH /api/admin/users/[id]/limits", () => {
     expect(await response.json()).toEqual({ vacancy: 20, hr: null, tokens: null });
   });
 
+  it("accepts a profile limit override and null to clear it", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+    setAiUserLimitOverridesMock.mockResolvedValue({ vacancy: null, hr: null, profile: 12, tokens: null });
+
+    const pinned = await PATCH(request({ profileGenerationLimit: 12 }), { params });
+    expect(pinned.status).toBe(200);
+    expect(setAiUserLimitOverridesMock).toHaveBeenCalledWith("user_1", { profileGenerationLimit: 12 });
+    expect(await pinned.json()).toEqual({ vacancy: null, hr: null, profile: 12, tokens: null });
+
+    const cleared = await PATCH(request({ profileGenerationLimit: null }), { params });
+    expect(cleared.status).toBe(200);
+    expect(setAiUserLimitOverridesMock).toHaveBeenLastCalledWith("user_1", { profileGenerationLimit: null });
+  });
+
+  it("accepts a cover letter limit override and null to clear it", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+    setAiUserLimitOverridesMock.mockResolvedValue({
+      vacancy: null,
+      hr: null,
+      profile: null,
+      coverLetter: 7,
+      tokens: null,
+    });
+
+    const pinned = await PATCH(request({ coverLetterGenerationLimit: 7 }), { params });
+    expect(pinned.status).toBe(200);
+    expect(setAiUserLimitOverridesMock).toHaveBeenCalledWith("user_1", { coverLetterGenerationLimit: 7 });
+    expect(await pinned.json()).toEqual({ vacancy: null, hr: null, profile: null, coverLetter: 7, tokens: null });
+
+    const cleared = await PATCH(request({ coverLetterGenerationLimit: null }), { params });
+    expect(cleared.status).toBe(200);
+    expect(setAiUserLimitOverridesMock).toHaveBeenLastCalledWith("user_1", { coverLetterGenerationLimit: null });
+  });
+
+  it("rejects a negative cover letter limit override", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+
+    const response = await PATCH(request({ coverLetterGenerationLimit: -5 }), { params });
+
+    expect(response.status).toBe(400);
+    expect(setAiUserLimitOverridesMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts a fit analysis limit override and null to clear it", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+    setAiUserLimitOverridesMock.mockResolvedValue({
+      vacancy: null,
+      hr: null,
+      profile: null,
+      coverLetter: null,
+      fitAnalysis: 4,
+      tokens: null,
+    });
+
+    const pinned = await PATCH(request({ fitAnalysisGenerationLimit: 4 }), { params });
+    expect(pinned.status).toBe(200);
+    expect(setAiUserLimitOverridesMock).toHaveBeenCalledWith("user_1", { fitAnalysisGenerationLimit: 4 });
+    expect(await pinned.json()).toEqual({
+      vacancy: null,
+      hr: null,
+      profile: null,
+      coverLetter: null,
+      fitAnalysis: 4,
+      tokens: null,
+    });
+
+    const cleared = await PATCH(request({ fitAnalysisGenerationLimit: null }), { params });
+    expect(cleared.status).toBe(200);
+    expect(setAiUserLimitOverridesMock).toHaveBeenLastCalledWith("user_1", { fitAnalysisGenerationLimit: null });
+  });
+
+  it("rejects a negative fit analysis limit override", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+
+    const response = await PATCH(request({ fitAnalysisGenerationLimit: -2 }), { params });
+
+    expect(response.status).toBe(400);
+    expect(setAiUserLimitOverridesMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a negative profile limit override", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+
+    const response = await PATCH(request({ profileGenerationLimit: -5 }), { params });
+
+    expect(response.status).toBe(400);
+    expect(setAiUserLimitOverridesMock).not.toHaveBeenCalled();
+  });
+
   it("maps AdminUserError to its status code", async () => {
     requireAdminMock.mockResolvedValue(ADMIN);
     setAiUserLimitOverridesMock.mockRejectedValue(new AdminUserError("NOT_FOUND", "User not found."));

@@ -95,6 +95,38 @@ describe("PATCH /api/admin/ai-requests/[id]", () => {
     expect(body.status).toBe(AiRequestStatus.APPROVED);
   });
 
+  it("accepts a null decision note and a null granted amount, as the admin dialogs send them", async () => {
+    requireAdminMock.mockResolvedValue(ADMIN);
+    decideAiRequestMock.mockResolvedValue({
+      id: "req_1",
+      type: AiRequestType.AI_ACCESS,
+      status: AiRequestStatus.APPROVED,
+      quotaDate: null,
+      message: null,
+      decidedAt: "2026-08-09T12:00:00.000Z",
+      decisionNote: null,
+      grantedAmount: null,
+      createdAt: "2026-08-09T10:00:00.000Z",
+      updatedAt: "2026-08-09T12:00:00.000Z",
+      user: { id: "user_1", name: "Ada", email: "ada@example.com" },
+      decidedByUser: { id: "admin_1", name: "Admin", email: "admin@example.com" },
+    });
+
+    const response = await PATCH(
+      request({ decision: "APPROVED", decisionNote: null, grantedAmount: null }),
+      { params },
+    );
+
+    expect(response.status).toBe(200);
+    expect(decideAiRequestMock).toHaveBeenCalledWith({
+      requestId: "req_1",
+      adminUserId: "admin_1",
+      decision: "APPROVED",
+      decisionNote: null,
+      grantedAmount: null,
+    });
+  });
+
   it("maps AdminAiRequestError to its status code", async () => {
     requireAdminMock.mockResolvedValue(ADMIN);
     decideAiRequestMock.mockRejectedValue(new AdminAiRequestError("STALE_REQUEST", "too old"));

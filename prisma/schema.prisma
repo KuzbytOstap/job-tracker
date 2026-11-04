@@ -49,6 +49,9 @@ enum AiAccessStatus {
 enum AiFeature {
   VACANCY_GENERATION
   HR_GENERATION
+  PROFILE
+  COVER_LETTER
+  FIT_ANALYSIS
 }
 
 enum AiRequestType {
@@ -70,33 +73,60 @@ enum PlatformReviewStatus {
   REJECTED
 }
 
+enum SalaryPeriod {
+  HOUR
+  MONTH
+  YEAR
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum WorkFormat {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum ProfileContextWeight {
+  COVERED
+  SUBSTANTIAL
+  MINOR
+}
+
 model JobApplication {
-  id                      String    @id @default(cuid())
+  id                      String          @id @default(cuid())
   company                 String
   position                String
   platform                Platform
   customPlatformId        String?
   customPlatform          CustomPlatform? @relation(fields: [customPlatformId], references: [id], onDelete: SetNull)
   suggestedPlatformName   String?
-  reviewReasons           String[]  @default([])
+  reviewReasons           String[]        @default([])
   link                    String?
-  status                  Status    @default(APPLIED)
-  hasTestTask             Boolean   @default(false)
-  testTaskDone            Boolean   @default(false)
+  status                  Status          @default(APPLIED)
+  hasTestTask             Boolean         @default(false)
+  testTaskDone            Boolean         @default(false)
   salaryExpectation       String?
   notes                   String?
   jobPostingText          String?
-  sourceUrls              String[]  @default([])
+  sourceUrls              String[]        @default([])
   coverLetterText         String?
   hrCallTranscript        String?
   hrInterviewQuestions    Json?
   hrQuestionsGeneratedAt  DateTime?
   hrEnhancementClaimedAt  DateTime?
   hrEnhancementClaimToken String?
-  appliedAt               DateTime  @default(now())
-  lastActivityAt          DateTime  @default(now())
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  fitAnalysis             Json?
+  fitAnalyzedAt           DateTime?
+  fitMismatchCount        Int?
+  appliedAt               DateTime        @default(now())
+  lastActivityAt          DateTime        @default(now())
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -143,51 +173,64 @@ model User {
   role           Role           @default(USER)
   aiAccessStatus AiAccessStatus @default(NOT_REQUESTED)
 
-  autoIgnoreAfterDays Int? @default(21)
+  autoIgnoreAfterDays Int?    @default(21)
   locale              String?
 
-  accounts          Account[]
-  jobApplications   JobApplication[]
-  aiUserLimit       AiUserLimit?
-  aiUsageDaily      AiUsageDaily[]
-  aiUsageEvents     AiUsageEvent[]
-  aiAccessRequests  AiAccessRequest[] @relation("AiAccessRequestUser")
-  aiDecidedRequests AiAccessRequest[] @relation("AiAccessRequestDecider")
-  customPlatforms        CustomPlatform[] @relation("CustomPlatformOwner")
-  decidedCustomPlatforms CustomPlatform[] @relation("CustomPlatformDecider")
+  accounts               Account[]
+  jobApplications        JobApplication[]
+  aiUserLimit            AiUserLimit?
+  aiUsageDaily           AiUsageDaily[]
+  aiUsageEvents          AiUsageEvent[]
+  aiAccessRequests       AiAccessRequest[]    @relation("AiAccessRequestUser")
+  aiDecidedRequests      AiAccessRequest[]    @relation("AiAccessRequestDecider")
+  customPlatforms        CustomPlatform[]     @relation("CustomPlatformOwner")
+  decidedCustomPlatforms CustomPlatform[]     @relation("CustomPlatformDecider")
+  profile                UserProfile?
+  cvs                    UserCv[]
+  profileContextItems    ProfileContextItem[]
+  coverLetterExamples    CoverLetterExample[]
 }
 
 model AiGlobalLimits {
-  id                     Int      @id @default(1)
-  vacancyGenerationLimit Int      @default(10)
-  hrGenerationLimit      Int      @default(10)
-  tokenLimit             Int      @default(20000)
-  updatedAt              DateTime @updatedAt
+  id                         Int      @id @default(1)
+  vacancyGenerationLimit     Int      @default(10)
+  hrGenerationLimit          Int      @default(10)
+  profileGenerationLimit     Int      @default(50)
+  coverLetterGenerationLimit Int      @default(20)
+  fitAnalysisGenerationLimit Int      @default(30)
+  tokenLimit                 Int      @default(20000)
+  updatedAt                  DateTime @updatedAt
 }
 
 model AiUserLimit {
-  id                     String   @id @default(cuid())
-  userId                 String   @unique
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vacancyGenerationLimit Int?
-  hrGenerationLimit      Int?
-  tokenLimit             Int?
-  updatedAt              DateTime @updatedAt
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vacancyGenerationLimit     Int?
+  hrGenerationLimit          Int?
+  profileGenerationLimit     Int?
+  coverLetterGenerationLimit Int?
+  fitAnalysisGenerationLimit Int?
+  tokenLimit                 Int?
+  updatedAt                  DateTime @updatedAt
 }
 
 model AiUsageDaily {
-  id                     String   @id @default(cuid())
-  userId                 String
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date                   DateTime @db.Date
-  vacancyGenerationCount Int      @default(0)
-  hrGenerationCount      Int      @default(0)
-  tokenCount             Int      @default(0)
-  vacancyGenerationBonus Int      @default(0)
-  hrGenerationBonus      Int      @default(0)
-  tokenBonus             Int      @default(0)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                         String   @id @default(cuid())
+  userId                     String
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                       DateTime @db.Date
+  vacancyGenerationCount     Int      @default(0)
+  hrGenerationCount          Int      @default(0)
+  profileGenerationCount     Int      @default(0)
+  coverLetterGenerationCount Int      @default(0)
+  fitAnalysisGenerationCount Int      @default(0)
+  tokenCount                 Int      @default(0)
+  vacancyGenerationBonus     Int      @default(0)
+  hrGenerationBonus          Int      @default(0)
+  tokenBonus                 Int      @default(0)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([date])
@@ -263,4 +306,71 @@ model StatusChange {
   changedAt     DateTime       @default(now())
 
   @@index([applicationId])
+}
+
+model UserProfile {
+  id                String           @id @default(cuid())
+  userId            String           @unique
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName         String?
+  lastName          String?
+  contactEmail      String?
+  phone             String?
+  addressStreet     String?
+  addressPostalCode String?
+  addressCity       String?
+  addressRegion     String?
+  addressCountry    String?
+  salaryAmount      Int?
+  salaryCurrency    String?
+  salaryPeriod      SalaryPeriod?
+  employmentTypes   EmploymentType[] @default([])
+  workFormats       WorkFormat[]     @default([])
+  coverLetterPrompt String?
+  cvHintSnoozedAt   DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model UserCv {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  language      String?
+  isPrimary     Boolean  @default(false)
+  fileName      String
+  fileSize      Int
+  fileData      Bytes
+  extractedText String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId], where: { isPrimary: true }, map: "UserCv_userId_primary_key")
+  @@index([userId])
+}
+
+model ProfileContextItem {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  weight    ProfileContextWeight?
+  impact    Int?
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([userId])
+}
+
+model CoverLetterExample {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vacancyText String
+  letterText  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }

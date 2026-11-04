@@ -36,6 +36,9 @@ function globalLimits(overrides: Partial<AiGlobalLimitsDTO> = {}): AiGlobalLimit
   return {
     vacancyGenerationLimit: 10,
     hrGenerationLimit: 10,
+    profileGenerationLimit: 50,
+    coverLetterGenerationLimit: 20,
+    fitAnalysisGenerationLimit: 30,
     tokenLimit: 20_000,
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,
@@ -95,6 +98,93 @@ describe("SettingsSection", () => {
       expect(updateAdminSettingsMock).toHaveBeenCalledWith({
         vacancyGenerationLimit: 15,
         hrGenerationLimit: 10,
+        profileGenerationLimit: 50,
+        coverLetterGenerationLimit: 20,
+        fitAnalysisGenerationLimit: 30,
+        tokenLimit: 20_000,
+      }),
+    );
+  });
+
+  it("shows the profile limit and saves an edited value", async () => {
+    const user = userEvent.setup();
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    updateAdminSettingsMock.mockResolvedValue(globalLimits({ profileGenerationLimit: 25 }));
+
+    renderSection();
+
+    const profileInput = await screen.findByLabelText("Profile AI calls / day");
+    expect(profileInput).toHaveValue(50);
+    await user.clear(profileInput);
+    await user.type(profileInput, "25");
+
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+
+    await waitFor(() =>
+      expect(updateAdminSettingsMock).toHaveBeenCalledWith({
+        vacancyGenerationLimit: 10,
+        hrGenerationLimit: 10,
+        profileGenerationLimit: 25,
+        coverLetterGenerationLimit: 20,
+        fitAnalysisGenerationLimit: 30,
+        tokenLimit: 20_000,
+      }),
+    );
+  });
+
+  it("shows the cover letter limit and saves an edited value", async () => {
+    const user = userEvent.setup();
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    updateAdminSettingsMock.mockResolvedValue(globalLimits({ coverLetterGenerationLimit: 35 }));
+
+    renderSection();
+
+    const letterInput = await screen.findByLabelText("Cover letters / day");
+    expect(letterInput).toHaveValue(20);
+    await user.clear(letterInput);
+    await user.type(letterInput, "35");
+
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+
+    await waitFor(() =>
+      expect(updateAdminSettingsMock).toHaveBeenCalledWith({
+        vacancyGenerationLimit: 10,
+        hrGenerationLimit: 10,
+        profileGenerationLimit: 50,
+        coverLetterGenerationLimit: 35,
+        fitAnalysisGenerationLimit: 30,
+        tokenLimit: 20_000,
+      }),
+    );
+  });
+
+  it("shows the fit analysis limit and saves an edited value", async () => {
+    const user = userEvent.setup();
+    getAdminSettingsMock.mockResolvedValue(globalLimits());
+    updateAdminSettingsMock.mockResolvedValue(globalLimits({ fitAnalysisGenerationLimit: 45 }));
+
+    renderSection();
+
+    const fitInput = await screen.findByLabelText("Fit analyses / day");
+    expect(fitInput).toHaveValue(30);
+    await user.clear(fitInput);
+    await user.type(fitInput, "45");
+
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+
+    await waitFor(() =>
+      expect(updateAdminSettingsMock).toHaveBeenCalledWith({
+        vacancyGenerationLimit: 10,
+        hrGenerationLimit: 10,
+        profileGenerationLimit: 50,
+        coverLetterGenerationLimit: 20,
+        fitAnalysisGenerationLimit: 45,
         tokenLimit: 20_000,
       }),
     );

@@ -12,6 +12,17 @@ import type { HrInterviewQuestionSet } from "@/lib/hr-interview-questions";
 
 type WithStringDates<T, K extends keyof T> = Omit<T, K> & { [P in K]: string };
 
+export type FitCriterionValue = "SALARY" | "WORK_FORMAT" | "EMPLOYMENT_TYPE" | "EXPERIENCE_YEARS" | "TECHNOLOGIES";
+export type FitVerdictValue = "MATCH" | "MISMATCH" | "UNKNOWN";
+export type FitItemDTO = {
+  criterion: FitCriterionValue;
+  verdict: FitVerdictValue;
+  vacancyValue: string | null;
+  yourValue: string | null;
+  reason: string;
+};
+export type FitAnalysisDTO = { items: FitItemDTO[]; analyzedAt: string };
+
 export type StatusChangeDTO = WithStringDates<StatusChange, "changedAt">;
 
 export type CustomPlatformRefDTO = {
@@ -27,6 +38,9 @@ export type ApplicationDTO = Omit<
   | "userId"
   | "hrEnhancementClaimedAt"
   | "hrEnhancementClaimToken"
+  | "fitAnalysis"
+  | "fitAnalyzedAt"
+  | "fitMismatchCount"
   | "reviewReasons"
   | "suggestedPlatformName"
   | "customPlatformId"
@@ -40,6 +54,7 @@ export type ApplicationDTO = Omit<
   statusChanges: StatusChangeDTO[];
   hrInterviewQuestions: HrInterviewQuestionSet | null;
   hrQuestionsGeneratedAt: string | null;
+  fitAnalysis?: FitAnalysisDTO | null;
 };
 
 // Lightweight projection returned by the list endpoint. It carries only what
@@ -66,6 +81,7 @@ export type ApplicationListItemDTO = {
   appliedAt: string;
   lastActivityAt: string;
   updatedAt: string;
+  fitMismatchCount?: number | null;
 };
 
 export type ApplicationsListResponse = {
@@ -101,6 +117,152 @@ export type AutoIgnoreSettingsDTO = {
   autoIgnoreAfterDays: number | null;
 };
 
+export type SalaryPeriodValue = "HOUR" | "MONTH" | "YEAR";
+export type EmploymentTypeValue = "FULL_TIME" | "PART_TIME" | "CONTRACT";
+export type WorkFormatValue = "REMOTE" | "ONSITE" | "HYBRID";
+
+export type ProfileDTO = {
+  firstName: string | null;
+  lastName: string | null;
+  contactEmail: string | null;
+  phone: string | null;
+  address: {
+    street: string | null;
+    postalCode: string | null;
+    city: string | null;
+    region: string | null;
+    country: string | null;
+  };
+  salary: {
+    amount: number | null;
+    currency: string | null;
+    period: SalaryPeriodValue | null;
+  };
+  employmentTypes: EmploymentTypeValue[];
+  workFormats: WorkFormatValue[];
+  coverLetterPrompt: string | null;
+  defaultCoverLetterPrompt: string;
+};
+
+export type UpdateProfilePayload = {
+  firstName?: string | null;
+  lastName?: string | null;
+  contactEmail?: string | null;
+  phone?: string | null;
+  address?: {
+    street?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    region?: string | null;
+    country?: string | null;
+  };
+  salary?: {
+    amount?: number | null;
+    currency?: string | null;
+    period?: SalaryPeriodValue | null;
+  };
+  employmentTypes?: EmploymentTypeValue[];
+  workFormats?: WorkFormatValue[];
+  coverLetterPrompt?: string | null;
+};
+
+export type UpdateCvPayload = {
+  label?: string;
+  language?: string | null;
+  isPrimary?: true;
+};
+
+export type CoverLetterExamplePayload = {
+  vacancyText: string;
+  letterText: string;
+};
+
+export type CvSuggestionsResponseDTO =
+  | { status: "ok"; suggestions: CvSuggestionDTO[] }
+  | { status: "skipped"; reason: string };
+
+export type GenerateCoverLetterPayload = {
+  vacancyText: string;
+  company?: string | null;
+  position?: string | null;
+  cvId?: string;
+};
+
+export type CoverLetterGenerationDTO =
+  | { status: "ok"; letter: string }
+  | { status: "skipped"; reason: string };
+
+export type FitAnalysisOutcomeDTO =
+  | { status: "ok"; application: ApplicationDTO }
+  | { status: "skipped"; reason: string };
+
+export type ContextItemWeightValue = "COVERED" | "SUBSTANTIAL" | "MINOR";
+
+export type ContextItemDTO = {
+  id: string;
+  text: string;
+  weight: ContextItemWeightValue | null;
+  impact: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ContextScoringDTO = {
+  scored: number;
+  remaining: number;
+  skipped: string | null;
+};
+
+export type ContextItemSaveResultDTO = {
+  item: ContextItemDTO;
+  scoring: ContextScoringDTO;
+};
+
+export type CvDTO = {
+  id: string;
+  label: string;
+  language: string | null;
+  isPrimary: boolean;
+  fileName: string;
+  fileSize: number;
+  hasText: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CvIdentitySuggestionsDTO = {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+};
+
+export type CvUploadResultDTO = {
+  cv: CvDTO;
+  textStatus: "extracted" | "missing";
+  identitySuggestions: CvIdentitySuggestionsDTO | null;
+  skippedReason: string | null;
+};
+
+export type CvUpdateHintDTO = {
+  visible: boolean;
+  substantialCount: number;
+  snoozed: boolean;
+};
+
+export type CvSuggestionDTO = {
+  itemId: string;
+  bullet: string;
+};
+
+export type CoverLetterExampleDTO = {
+  id: string;
+  vacancyText: string;
+  letterText: string;
+  createdAt: string;
+};
+
 export type AiAccessStatusResponse = {
   status: AiAccessStatus;
 };
@@ -118,6 +280,9 @@ export type AiUsageStatusResponse = {
   resetAt: string;
   vacancy: AiQuotaStatus;
   hr: AiQuotaStatus;
+  profile: AiQuotaStatus;
+  coverLetter: AiQuotaStatus;
+  fitAnalysis: AiQuotaStatus;
   tokens: AiQuotaStatus;
 };
 
@@ -220,12 +385,18 @@ export type AdminAiRequestsListResponse = {
 export type AdminQuotaAmounts = {
   vacancy: number;
   hr: number;
+  profile: number;
+  coverLetter: number;
+  fitAnalysis: number;
   tokens: number;
 };
 
 export type AdminUserOverrides = {
   vacancy: number | null;
   hr: number | null;
+  profile: number | null;
+  coverLetter: number | null;
+  fitAnalysis: number | null;
   tokens: number | null;
 };
 
@@ -247,6 +418,9 @@ export type AdminUsersListResponse = {
 export type AiGlobalLimitsDTO = {
   vacancyGenerationLimit: number;
   hrGenerationLimit: number;
+  profileGenerationLimit: number;
+  coverLetterGenerationLimit: number;
+  fitAnalysisGenerationLimit: number;
   tokenLimit: number;
   updatedAt: string;
 };

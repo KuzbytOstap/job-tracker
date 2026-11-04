@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "@/lib/i18n/api-errors";
 import { moveApplicationToStatus } from "@/lib/board-mutations";
 import { queryKeys } from "@/lib/query-keys";
 import { upsertApplicationInList } from "@/lib/cache-updates";
+import { fitMismatchCountOf } from "@/lib/fit-analysis";
 import { resolveMoveStatusPayload } from "@/lib/status-transitions";
 import {
   applyApplicationToCaches,
@@ -88,6 +89,7 @@ export function useMoveApplicationToStatus() {
           hasTestTask: payload.hasTestTask ?? source.hasTestTask,
           testTaskDone: source.testTaskDone,
           salaryExpectation: source.salaryExpectation,
+          fitMismatchCount: fitMismatchCountOf(source),
           appliedAt: source.appliedAt,
           lastActivityAt: new Date().toISOString(),
           updatedAt: source.updatedAt,

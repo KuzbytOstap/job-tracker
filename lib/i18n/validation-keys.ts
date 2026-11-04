@@ -12,6 +12,11 @@ const VALIDATION_MESSAGE_KEYS: Record<string, MessageKey> = {
   "HR call transcript is too long": "validation.hrTranscriptTooLong",
   "Enter a platform name": "validation.platformNameRequired",
   "Enter a valid platform name": "validation.platformNameInvalid",
+  "Enter a valid email address": "profile.validation.invalidEmail",
+  "Enter a whole number": "profile.validation.invalidNumber",
+  "Use a 3 letter currency code": "profile.validation.invalidCurrency",
+  "Choose the pay period": "profile.validation.periodRequired",
+  "Text is too long": "profile.validation.tooLong",
 };
 
 const PLATFORM_NAME_TOO_LONG = /^Platform name must be at most (\d+) characters$/;

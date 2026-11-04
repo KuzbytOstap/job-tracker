@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck, type LucideIcon } from "lucide-react";
+import { ShieldCheck, UserRound, type LucideIcon } from "lucide-react";
 import { BOARD_COLUMNS, getStatusPageHref } from "@/lib/board-columns";
 import { useStatsQuery } from "@/hooks/use-stats";
 import { useT } from "@/components/i18n/i18n-provider";
@@ -82,11 +82,10 @@ export function PipelineNavigationRail({ isAdmin }: PipelineNavigationRailProps)
         })}
       </div>
 
-      {isAdmin && (
-        <div className="mt-auto flex flex-col gap-0.5 border-t border-[var(--gh-border)] pt-3">
-          <RailLink href="/admin" label={t("nav.admin")} icon={ShieldCheck} />
-        </div>
-      )}
+      <div className="mt-auto flex flex-col gap-0.5 border-t border-[var(--gh-border)] pt-3">
+        <RailLink href="/profile" label={t("nav.profile")} icon={UserRound} />
+        {isAdmin && <RailLink href="/admin" label={t("nav.admin")} icon={ShieldCheck} />}
+      </div>
     </nav>
   );
 }

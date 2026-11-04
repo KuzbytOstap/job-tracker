@@ -8,6 +8,7 @@ import { PlatformBadge } from "@/components/dashboard/platform-badge";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { TestTaskChip } from "@/components/applications/test-task-chip";
 import { ReviewChip } from "@/components/applications/review-chip";
+import { FitMismatchChip } from "@/components/applications/fit-mismatch-chip";
 import { useAutoIgnoreDays } from "@/components/applications/auto-ignore-days-context";
 import { useI18n } from "@/components/i18n/i18n-provider";
 import { getVisibleReviewReasons } from "@/lib/review-reasons";
@@ -100,6 +101,7 @@ export function ApplicationCard({
             <StatusBadge status={application.effectiveStatus} className="kanban-card-status-badge" />
             {application.hasTestTask && <TestTaskChip done={application.testTaskDone} />}
             <ReviewChip reasons={getVisibleReviewReasons(application)} />
+            <FitMismatchChip count={application.fitMismatchCount} />
           </div>
 
           <div className="kanban-card-meta flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
