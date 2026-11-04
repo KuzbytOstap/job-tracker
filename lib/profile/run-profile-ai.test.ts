@@ -79,8 +79,21 @@ describe("runProfileOperation", () => {
     );
     expect(operation.countInputTokens).toHaveBeenCalledWith(INPUT);
     expect(operation.run).toHaveBeenCalledWith(INPUT, { onUsage: expect.any(Function) });
-    expect(mocks.requireAiAccessApproved).not.toHaveBeenCalled();
+    expect(mocks.requireAiAccessApproved).toHaveBeenCalledWith("user_1");
     expect(outcome.ok).toBe(true);
+  });
+
+  it("checks access before counting any tokens or touching the provider with a real provider", async () => {
+    const { operation, provider } = fakeProvider("openai");
+    mocks.getProfileProvider.mockReturnValue(provider);
+    mocks.requireAiAccessApproved.mockRejectedValue(new AiAccessError("AI_ACCESS_REQUIRED", "no access"));
+
+    const outcome = await runProfileOperation({ userId: "user_1", select: (p) => p.scoreContextItem, input: INPUT });
+
+    expect(outcome).toEqual({ ok: false, reason: "AI_ACCESS_REQUIRED" });
+    expect(operation.countInputTokens).not.toHaveBeenCalled();
+    expect(operation.run).not.toHaveBeenCalled();
+    expect(mocks.runGatedAiCall).not.toHaveBeenCalled();
   });
 
   it("reserves the feature it is given instead of PROFILE", async () => {

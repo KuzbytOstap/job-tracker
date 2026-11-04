@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { LoaderCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +50,7 @@ export function CoverLetterGeneratorDialog({
   const t = useT();
   const hintId = useId();
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const aiAccess = useAiAccessStatus();
   const hasVacancy = jobPostingText.trim().length > 0;
   const accessStatus = aiAccess.data?.status;
@@ -78,7 +79,13 @@ export function CoverLetterGeneratorDialog({
           {accessLocked ? t("coverLetter.needsAccess") : t("coverLetter.needsVacancy")}
         </p>
       )}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && busy) return;
+          setOpen(next);
+        }}
+      >
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("coverLetter.title")}</DialogTitle>
@@ -92,6 +99,7 @@ export function CoverLetterGeneratorDialog({
               currentLetter={currentLetter}
               onUse={onUse}
               onClose={() => setOpen(false)}
+              onBusyChange={setBusy}
             />
           )}
         </DialogContent>
@@ -100,7 +108,10 @@ export function CoverLetterGeneratorDialog({
   );
 }
 
-type GeneratorBodyProps = CoverLetterGeneratorDialogProps & { onClose: () => void };
+type GeneratorBodyProps = CoverLetterGeneratorDialogProps & {
+  onClose: () => void;
+  onBusyChange: (busy: boolean) => void;
+};
 
 function cvOptionLabel(cv: CvDTO, primarySuffix: string): string {
   const language = cv.language ? ` (${cv.language})` : "";
@@ -108,7 +119,15 @@ function cvOptionLabel(cv: CvDTO, primarySuffix: string): string {
   return `${cv.label}${language}${primary}`;
 }
 
-function GeneratorBody({ jobPostingText, company, position, currentLetter, onUse, onClose }: GeneratorBodyProps) {
+function GeneratorBody({
+  jobPostingText,
+  company,
+  position,
+  currentLetter,
+  onUse,
+  onClose,
+  onBusyChange,
+}: GeneratorBodyProps) {
   const t = useT();
   const cvSelectId = useId();
   const letterId = useId();
@@ -121,6 +140,11 @@ function GeneratorBody({ jobPostingText, company, position, currentLetter, onUse
   const [letter, setLetter] = useState<string | null>(null);
   const [skipReason, setSkipReason] = useState<string | null>(null);
   const [confirmingReplace, setConfirmingReplace] = useState(false);
+
+  useEffect(() => {
+    onBusyChange(mutation.isPending);
+    return () => onBusyChange(false);
+  }, [mutation.isPending, onBusyChange]);
 
   const usableCvs = (cvsQuery.data ?? []).filter((cv) => cv.hasText);
   const cvId =
@@ -326,7 +350,9 @@ function GeneratorBody({ jobPostingText, company, position, currentLetter, onUse
         </div>
       ) : (
         <DialogFooter>
-          <DialogClose render={<Button type="button" variant="outline" />}>{t("common.close")}</DialogClose>
+          <DialogClose render={<Button type="button" variant="outline" disabled={mutation.isPending} />}>
+            {t("common.close")}
+          </DialogClose>
           {letter !== null && (
             <Button type="button" disabled={mutation.isPending} onClick={handleUse}>
               {t("coverLetter.use")}

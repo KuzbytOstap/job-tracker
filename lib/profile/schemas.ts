@@ -123,7 +123,13 @@ export const updateExampleSchema = z
   .strict()
   .refine((value) => Object.keys(value).length > 0, { message: "At least one field is required" });
 
-const vacancyLabel = nullableText(PROFILE_FIELD_MAX_LENGTH).transform((value) => value ?? null);
+const vacancyLabel = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((value) => {
+    const label = value?.trim().slice(0, PROFILE_FIELD_MAX_LENGTH).trimEnd() ?? "";
+    return label === "" ? null : label;
+  });
 
 export const generateCoverLetterSchema = z
   .object({

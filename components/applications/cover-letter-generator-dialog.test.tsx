@@ -203,6 +203,21 @@ describe("CoverLetterGeneratorDialog generation", () => {
     expect(button).toHaveAttribute("aria-busy", "true");
   });
 
+  it("cannot be closed while a letter is being written, so the paid letter is not lost", async () => {
+    state.pending = true;
+    const user = userEvent.setup();
+    renderDialog();
+
+    await openDialog(user);
+
+    const closeButtons = screen.getAllByRole("button", { name: "Close" });
+    expect(closeButtons.some((button) => (button as HTMLButtonElement).disabled)).toBe(true);
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
   it("shows how much of the daily letter limit is used", async () => {
     const user = userEvent.setup();
     renderDialog();

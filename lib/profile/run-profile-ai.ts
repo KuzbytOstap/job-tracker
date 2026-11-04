@@ -24,8 +24,9 @@ export async function runProfileOperation<I, O>(params: {
     const provider = getProfileProvider();
     const operation = select(provider);
 
+    await requireAiAccessApproved(userId);
+
     if (provider.name === "mock") {
-      await requireAiAccessApproved(userId);
       return { ok: true, result: await operation.run(input) };
     }
 

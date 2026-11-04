@@ -82,7 +82,8 @@ describe("readUpload", () => {
   });
 
   it("returns 400 when the file field is missing or is plain text", async () => {
-    for (const entries of [{ label: "x" }, { file: "not a file" }]) {
+    const cases: Record<string, string>[] = [{ label: "x" }, { file: "not a file" }];
+    for (const entries of cases) {
       const result = await readUpload(multipart(entries));
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.response.status).toBe(400);

@@ -170,8 +170,18 @@ describe("generateCoverLetterSchema", () => {
     expect(parsed).toEqual({ vacancyText: "Text", company: "Acme", position: "Engineer", cvId: "cv_2" });
   });
 
-  it("rejects an over long company and an empty CV id", () => {
-    expect(generateCoverLetterSchema.safeParse({ vacancyText: "t", company: "a".repeat(201) }).success).toBe(false);
+  it("cuts an over long company or position to 200 characters instead of rejecting the request", () => {
+    const parsed = generateCoverLetterSchema.parse({
+      vacancyText: "t",
+      company: "a".repeat(250),
+      position: `${"b".repeat(199)}  c`,
+    });
+
+    expect(parsed.company).toBe("a".repeat(200));
+    expect(parsed.position).toBe("b".repeat(199));
+  });
+
+  it("rejects an empty CV id", () => {
     expect(generateCoverLetterSchema.safeParse({ vacancyText: "t", cvId: "  " }).success).toBe(false);
   });
 
